@@ -1,0 +1,21 @@
+[tool.pdm]
+
+[project]
+name = "np_codeocean"
+version = "0.1.0"
+description = "Tools for uploading and interacting with Mindscope Neuropixels experiments on Code Ocean"
+authors = [
+    {name = "Ben Hardcastle", email = "ben.hardcastle@alleninstitute.org"},
+]
+dependencies = [
+    "np_session",
+    "np_tools",
+    "aind-data-transfer[ephys]",
+]
+requires-python = ">=3.8"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
