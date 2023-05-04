@@ -22,3 +22,6 @@ license = {text = "MIT"}
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+
+[project.scripts]
+"upload" = "np_codeocean.upload:main"
