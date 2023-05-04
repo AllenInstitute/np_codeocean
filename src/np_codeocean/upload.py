@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import pathlib
 import sys
-import tempfile
 from pathlib import Path
 from typing import NamedTuple
 
@@ -21,7 +20,7 @@ CONFIG = np_config.fetch('/projects/np_codeocean')
 class CodeOceanUpload(NamedTuple):
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
     
-    Paths are in tempdirs, with symlinks to files on np-exp.
+    Paths are symlinks to files on np-exp.
     """
     session: np_session.Session
     """Session object that the paths belong to."""
@@ -111,11 +110,12 @@ def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOcea
     - job file for feeding into `aind-data-transfer`
     """
     
-    root = Path(tempfile.mkdtemp())
-    logger.debug(f'Created temporary directory {root} for CodeOcean upload')
+    session = np_session.Session(session)
+    root = np_session.NPEXP_PATH / 'codeocean' / session.folder
+    logger.debug(f'Created directory {root} for CodeOcean upload')
     
     upload = CodeOceanUpload(
-        session = np_session.Session(session), 
+        session = session, 
         behavior = np_config.normalize_path(root / 'behavior'),
         ephys = np_config.normalize_path(root / 'ephys'),
         job = np_config.normalize_path(root / 'upload.csv'),
