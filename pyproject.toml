@@ -8,9 +8,12 @@ authors = [
     {name = "Ben Hardcastle", email = "ben.hardcastle@alleninstitute.org"},
 ]
 dependencies = [
-    "np_session",
+    "np_session>=0.6.0",
     "np_tools",
-    "aind-data-transfer[ephys]",
+    "aind-data-transfer[ephys]>=0.15",
+    "cmake",
+    "setuptools>=36.2.0",
+    "awscli",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
