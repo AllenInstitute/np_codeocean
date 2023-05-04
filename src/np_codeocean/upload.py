@@ -16,6 +16,7 @@ import np_tools
 
 logger = np_logging.get_logger(__name__)
 
+CONFIG = np_config.fetch('/projects/np_codeocean')
 
 class CodeOceanUpload(NamedTuple):
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
@@ -84,13 +85,13 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
     return {
         'data-source': np_config.normalize_path(ephys).as_posix(),
         'behavior-dir': np_config.normalize_path(behavior).as_posix(),
-        's3-bucket': np_config.fetch('/np_codeocean/s3-bucket'),
-        'subject-id': session.mouse.id,
+        's3-bucket': CONFIG['s3-bucket'],
+        'subject-id': str(session.mouse),
         'experiment-type': 'ecephys',
         'modality': 'ECEPHYS',
         'acq-date': f'{session.date:%Y-%m-%d}',
-        'acq-time': session.experiment_start.strftime('%H-%M-%S'),
-        'aws-param-store-name': np_config.fetch('/np_codeocean/aws-param-store-name'), 
+        'acq-time': f'{session.start:%H-%M-%S}',
+        'aws-param-store-name': CONFIG['aws-param-store-name'],
     } # type: ignore
 
 def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behavior: Path) -> None:
