@@ -11,8 +11,6 @@ import np_config
 import np_logging
 import np_session
 import np_tools
-import typer
-import rich.progress
 
 logger = np_logging.get_logger(__name__)
 
@@ -128,24 +126,14 @@ def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOcea
     return upload
 
 
-def cli(session: str | pathlib.Path | np_session.Session)-> None:
-    with rich.progress.Progress(
-        rich.progress.SpinnerColumn(),
-        rich.progress.TextColumn("[progress.description]{task.description}"),
-        transient=True,
-    ) as progress:
-        progress.add_task(description="Creating symlinks...", total=None)
-        upload = create_codeocean_upload(session)
-        np_logging.web('np_codeocean').info(f'Uploading {upload.session}')
-        progress.add_task(description="Compressing...", total=None)
-        s3_upload_job.GenericS3UploadJobList(["--jobs-csv-file", upload.job.as_posix()]).run_job()
+def upload_session(session: str | int | pathlib.Path | np_session.Session)-> None:
+    upload = create_codeocean_upload(str(session))
+    np_logging.web('np_codeocean').info(f'Uploading {upload.session}')
+    s3_upload_job.GenericS3UploadJobList(["--jobs-csv-file", upload.job.as_posix()]).run_job()
     np_logging.web('np_codeocean').info(f'Finished uploading {upload.session}')
     
-
-def main():
-    # np_logging.getLogger()
-    # # np_logging.getLogger('aind-data-transfer').handlers = []
-    typer.run(cli)
+def main() -> None:
+    upload_session(sys.argv[1])
     
 if __name__ == '__main__':
     main()
