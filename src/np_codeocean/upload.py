@@ -42,24 +42,16 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path) -> None:
     
     Relative paths are preserved, so `dest` will essentially be a merge of
     _probeABC / _probeDEF folders.
+    
+    Top-level items other than `Record Node *` folders are excluded.
     """
     logger.info(f'Creating symlinks to raw ephys data files in {session.npexp_path}...')
-    ephys_subfolders = np_tools.get_raw_ephys_subfolders(session.npexp_path)
-    logger.debug(f'Found {len(ephys_subfolders)} ephys subfolders: {ephys_subfolders}')
-    for ephys_folder in ephys_subfolders:
-        superfluous_recording_dirs: tuple[pathlib.Path, ...] = tuple(
-            _.parent for _ in np_tools.get_superfluous_oebin_paths(ephys_folder)
-        )
-        logger.debug(f'Found {len(superfluous_recording_dirs)} superfluous recording dirs to exclude: {superfluous_recording_dirs}')
-        for src in ephys_folder.rglob('*'):
-            is_superfluous_path = any(_ in src.parents for _ in superfluous_recording_dirs)
-            if is_superfluous_path:
-                continue
-            if src.is_file():
-                np_tools.symlink(src, dest / src.relative_to(ephys_folder))
+    for abs_path, rel_path in np_tools.get_filtered_ephys_paths_relative_to_record_node_parents(session.npexp_path):
+        if abs_path.is_file():
+            np_tools.symlink(abs_path, dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {session.npexp_path}')
 
-
+         
 def create_behavior_symlinks(session: np_session.Session, dest: Path) -> None:
     """Create symlinks in `dest` pointing to files in top-level of session
     folder on np-exp, plus all files in `exp` subfolder, if present.
@@ -91,6 +83,7 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
         'acq-time': f'{session.start:%H-%M-%S}',
         'aws-param-store-name': CONFIG['aws-param-store-name'],
     } # type: ignore
+
 
 def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behavior: Path) -> None:
     logger.info(f'Creating upload job file {job} for session {session}...')
