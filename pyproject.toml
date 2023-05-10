@@ -8,8 +8,8 @@ authors = [
     {name = "Ben Hardcastle", email = "ben.hardcastle@alleninstitute.org"},
 ]
 dependencies = [
-    "np_session>=0.6.0",
-    "np_tools",
+    "np_session>=0.6.4",
+    "np_tools>=0.1.12",
     "aind-data-transfer[ephys]>=0.15",
     "cmake",
     "setuptools>=36.2.0",
