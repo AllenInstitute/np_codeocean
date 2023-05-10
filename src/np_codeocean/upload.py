@@ -12,6 +12,8 @@ import np_logging
 import np_session
 import np_tools
 
+import np_codeocean.utils as utils 
+
 logger = np_logging.get_logger(__name__)
 
 CONFIG = np_config.fetch('/projects/np_codeocean')
@@ -119,7 +121,8 @@ def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOcea
     return upload
 
 
-def upload_session(session: str | int | pathlib.Path | np_session.Session)-> None:
+def upload_session(session: str | int | pathlib.Path | np_session.Session) -> None:
+    utils.ensure_credentials()
     upload = create_codeocean_upload(str(session))
     np_logging.web('np_codeocean').info(f'Uploading {upload.session}')
     s3_upload_job.GenericS3UploadJobList(["--jobs-csv-file", upload.job.as_posix()]).run_job()
