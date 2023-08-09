@@ -10,10 +10,11 @@ authors = [
 dependencies = [
     "np_session>=0.6.4",
     "np_tools>=0.1.12",
-    "aind-data-transfer[ephys]>=0.15",
-    "cmake",
+    "aind-data-transfer[ephys]>=0.20",
+    #"cmake",
     "setuptools>=36.2.0",
-    "awscli",
+    #"awscli",
+    "np-config>=0.4.24",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
