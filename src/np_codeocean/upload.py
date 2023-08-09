@@ -49,7 +49,7 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path) -> None:
     """
     logger.info(f'Creating symlinks to raw ephys data files in {session.npexp_path}...')
     for abs_path, rel_path in np_tools.get_filtered_ephys_paths_relative_to_record_node_parents(session.npexp_path):
-        if abs_path.is_file():
+        if not abs_path.is_dir():
             np_tools.symlink(abs_path, dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {session.npexp_path}')
 
@@ -60,7 +60,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path) -> None:
     """
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
-        if src.is_file():
+        if not src.is_dir():
             np_tools.symlink(src, dest / src.relative_to(session.npexp_path))
     logger.debug(f'Finished creating symlinks to top-level files in {session.npexp_path}')
 
@@ -68,7 +68,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path) -> None:
         return
     
     for src in (session.npexp_path / 'exp').rglob('*'):
-        if src.is_file():
+        if not src.is_dir():
             np_tools.symlink(src, dest / src.relative_to(session.npexp_path))
     logger.debug(f'Finished creating symlinks to files in {session.npexp_path / "exp"}')
 
@@ -93,7 +93,7 @@ def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behav
     with open(job, 'w') as f:
         w = csv.writer(f)
         w.writerow(_csv.keys())
-        w.writerow(_csv.values())    
+        w.writerow(_csv.values()) 
 
 
 def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOceanUpload:
