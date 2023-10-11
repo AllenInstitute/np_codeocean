@@ -194,9 +194,7 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session) -> No
     np_logging.web('np_codeocean').info(f'Finished uploading {upload.session}')
     
 def main() -> None:
-    upload_session(sys.argv[1])
+    upload_session(sys.argv[1]) # ex: path to surface channel folder
     
 if __name__ == '__main__':
-    session = np_session.Session(r"\\allen\programs\mindscope\workgroups\dynamicrouting\PilotEphys\Task 2 pilot\DRpilot_660023_20230808_surface_channels")
-    get_surface_channel_start_time(session)
-    #main()
+    main()
