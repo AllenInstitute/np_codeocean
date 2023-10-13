@@ -89,16 +89,18 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path) -> None:
 
 
 def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, behavior: Path) -> dict[str, str | int]:
+    date = datetime.datetime(session.date.year, session.date.month, session.date.day)
+    session_date_time = date.combine(session.date, session.start)
+
     return {
-        'data-source': np_config.normalize_path(ephys).as_posix(),
-        'behavior-dir': np_config.normalize_path(behavior).as_posix(),
+        'modality0.source': np_config.normalize_path(ephys).as_posix(),
+        'modality1.source': np_config.normalize_path(behavior).as_posix(),
         's3-bucket': CONFIG['s3-bucket'],
         'subject-id': str(session.mouse),
-        'experiment-type': 'ecephys',
-        'modality': 'ECEPHYS',
-        'acq-date': f'{session.date:%Y-%m-%d}',
-        'acq-time': f'{session.start:%H-%M-%S}',
-        'aws-param-store-name': CONFIG['aws-param-store-name'],
+        'platform': 'ecephys',
+        'modality0': 'ECEPHYS',
+        'modaility1': 'behavior-videos',
+        'acq-datetime': f'{session_date_time.strftime("%Y-%m-%d %H:%M:%S")}'
     } # type: ignore
 
 def get_surface_channel_start_time(session: np_session.Session) -> datetime.datetime:
@@ -115,15 +117,16 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     return timestamp
         
 def get_surface_channel_ephys_upload_csv_for_session(session: np_session.Session, ephys:Path) -> dict[str, str | int]:
+    date = datetime.datetime(session.date.year, session.date.month, session.date.day)
+    session_date_time = date.combine(session.date, get_surface_channel_start_time(session).time())
+
     return {
-        'data-source': np_config.normalize_path(ephys).as_posix(),
+        'modality0.source': np_config.normalize_path(ephys).as_posix(),
         's3-bucket': CONFIG['s3-bucket'],
         'subject-id': str(session.mouse),
-        'experiment-type': 'ecephys',
-        'modality': 'ECEPHYS',
-        'acq-date': f'{session.date:%Y-%m-%d}',
-        'acq-time': f'{get_surface_channel_start_time(session):%H-%M-%S}_surface_channels', # probably won't work but worth a shot
-        'aws-param-store-name': CONFIG['aws-param-store-name'],
+        'platform': 'ecephys',
+        'modality0': 'ECEPHYS',
+        'acq-datetime': f'{session_date_time.strftime("%Y-%m-%d %H:%M:%S")}'
     } # type: ignore
 
 def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behavior: Path) -> None:
@@ -168,7 +171,12 @@ def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOcea
 
 def create_codeocean_surface_channel_upload(session: str | int | np_session.Session) -> CodeOceanSurfaceChannelUpload:
     session = np_session.Session(session)
-    root = np_session.NPEXP_PATH / 'codeocean' / f'{session.folder}_surface_channels'
+
+    if 'surface_channels' in str(session.npexp_path).lower():
+        root = np_session.NPEXP_PATH / 'codeocean' / f'{session.folder}_surface_channels'
+    else:
+        raise ValueError(f'Surface channel not in directory path for {session}. Not proceeding with upload')
+    
     logger.debug(f'Created directory {root} for Surface Channel CodeOcean upload')
 
     upload = CodeOceanSurfaceChannelUpload(
@@ -184,7 +192,7 @@ def create_codeocean_surface_channel_upload(session: str | int | np_session.Sess
 def upload_session(session: str | int | pathlib.Path | np_session.Session) -> None:
     utils.ensure_credentials()
 
-    if 'surface' in str(session):
+    if 'surface_channels' in str(session).lower():
         upload = create_codeocean_surface_channel_upload(str(session))
     else:
         upload = create_codeocean_upload(str(session))
@@ -197,4 +205,5 @@ def main() -> None:
     upload_session(sys.argv[1]) # ex: path to surface channel folder
     
 if __name__ == '__main__':
-    main()
+    create_codeocean_surface_channel_upload(r"\\allen\programs\mindscope\workgroups\dynamicrouting\PilotEphys\Task 2 pilot\DRpilot_660023_20230808_surface_channels")
+    #main()
