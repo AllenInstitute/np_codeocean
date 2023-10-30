@@ -103,6 +103,8 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
 def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, behavior: Path | None) -> dict[str, str | int]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels"
+    >>> is_surface_channel_recording(path)
+    True
     >>> upload = create_codeocean_upload(path)
     >>> ephys_upload_csv = get_ephys_upload_csv_for_session(upload.session, upload.ephys, upload.behavior)
     >>> ephys_upload_csv['modality0.source']
