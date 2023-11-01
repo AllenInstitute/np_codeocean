@@ -198,8 +198,10 @@ def main() -> None:
     upload_session(sys.argv[1]) # ex: path to surface channel folder
 
 if __name__ == '__main__':
-    import doctest
+
+  import doctest
 
     doctest.testmod(
         optionflags=(doctest.IGNORE_EXCEPTION_DETAIL | doctest.NORMALIZE_WHITESPACE)
     )
+    main()
