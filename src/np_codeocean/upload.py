@@ -113,7 +113,7 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
     >>> ephys_upload_csv['modality0.source']
     '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_660023_20230808_surface_channels/ephys'
     >>> ephys_upload_csv.keys()
-    dict_keys(['aws_param_store_name', 'codeocean_api_token', 'codeocean_domain', 'metadata_service_domain', 'aind_data_transfer_repo_location', 'modality0.source', 'modality0', 's3-bucket', 'subject-id', 'platform', 'acq-datetime'])
+    dict_keys(['modality0.source', 'modality0', 's3-bucket', 'subject-id', 'platform', 'acq-datetime'])
     """
     
     ephys_upload = {
