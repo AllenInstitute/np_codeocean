@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import csv
+import json
 import pathlib
 import sys
 import datetime
 from pathlib import Path
 from typing import NamedTuple
 
-import aind_data_transfer.jobs.s3_upload_job as s3_upload_job
 import np_config
 import np_logging
 import np_session
 import np_tools
 import doctest
 
-import np_codeocean.utils as utils 
+import requests
+
 
 logger = np_logging.get_logger(__name__)
 
@@ -183,13 +184,36 @@ def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOcea
     return upload
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session) -> None:
-    utils.ensure_credentials()
-
     upload = create_codeocean_upload(str(session))
-        
-    np_logging.web('np_codeocean').info(f'Uploading {upload.session}')
-    s3_upload_job.GenericS3UploadJobList(["--jobs-csv-file", upload.job.as_posix()]).run_job()
-    np_logging.web('np_codeocean').info(f'Finished uploading {upload.session}')
+    put_csv_for_hpc_upload((upload))
+    
+    np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc')
+
+def put_csv_for_hpc_upload(upload_job: CodeOceanUpload) -> None:
+    # TODO check job isn't already on slurm/ in queue 
+    URL = "http://aind-data-transfer-service/api"
+    SESSION = requests.Session()
+    files = dict(file=upload_job.job.read_bytes())
+    response = SESSION.post(url=f"{URL}/validate_csv", files=files)
+    if response.status_code != 200:
+        raise eval(response.json()['data']['errors'][0])
+    post_request_content = {'jobs': [
+            {
+                "hpc_settings": json.dumps({"time_limit": 60 * 15}),
+                "upload_job_settings": response.json()["data"]["jobs"][0],
+                "script": "",
+            }
+        ]
+    }
+    response = SESSION.post(
+        url=f"{URL}/submit_hpc_jobs", 
+        json=post_request_content,
+    )
+    if response.status_code != 200:
+        try:
+            raise eval(response.json()['data']['errors'][0])
+        except (KeyError, IndexError, requests.exceptions.JSONDecodeError):
+            response.raise_for_status()
     
 def main() -> None:
     upload_session(sys.argv[1]) # ex: path to surface channel folder
