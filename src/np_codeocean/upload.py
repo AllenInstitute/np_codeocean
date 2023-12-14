@@ -37,7 +37,9 @@ class CodeOceanUpload(NamedTuple):
 
     job: Path
     """File containing job parameters for `aind-data-transfer`"""
-    
+
+def as_posix(path: pathlib.Path) -> str:
+    return path.as_posix()[1:]
 
 def create_ephys_symlinks(session: np_session.Session, dest: Path) -> None:
     """Create symlinks in `dest` pointing to raw ephys data files on np-exp, with only one
@@ -51,7 +53,7 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path) -> None:
     logger.info(f'Creating symlinks to raw ephys data files in {session.npexp_path}...')
     for abs_path, rel_path in np_tools.get_filtered_ephys_paths_relative_to_record_node_parents(session.npexp_path):
         if not abs_path.is_dir():
-            np_tools.symlink(abs_path, dest / rel_path)
+            np_tools.symlink(as_posix(abs_path), dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {session.npexp_path}')
 
          
@@ -63,7 +65,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> 
         logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
         for src in session.npexp_path.glob('*'):
             if not src.is_dir():
-                np_tools.symlink(src, dest / src.relative_to(session.npexp_path))
+                np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
         logger.debug(f'Finished creating symlinks to top-level files in {session.npexp_path}')
 
         if not (session.npexp_path / 'exp').exists():
@@ -71,7 +73,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> 
         
         for src in (session.npexp_path / 'exp').rglob('*'):
             if not src.is_dir():
-                np_tools.symlink(src, dest / src.relative_to(session.npexp_path))
+                np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
         logger.debug(f'Finished creating symlinks to files in {session.npexp_path / "exp"}')
 
 def is_surface_channel_recording(path_name: str) -> bool:
