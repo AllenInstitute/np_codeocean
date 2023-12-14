@@ -130,7 +130,7 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
 
     if behavior is not None:
         ephys_upload['modality1.source'] = np_config.normalize_path(behavior).as_posix()
-        ephys_upload['modality1'] = 'behavior_videos'
+        ephys_upload['modality1'] = 'behavior-videos'
     
     if is_surface_channel_recording(session.npexp_path.as_posix()):
         date = datetime.datetime(session.date.year, session.date.month, session.date.day)
@@ -171,7 +171,7 @@ def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOcea
         behavior = None
     else:
         root = np_session.NPEXP_PATH / 'codeocean' / session.folder
-        behavior = np_config.normalize_path(root / 'behavior')
+        behavior = np_config.normalize_path(root / 'behavior-videos')
 
     logger.debug(f'Created directory {root} for CodeOcean upload')
     
