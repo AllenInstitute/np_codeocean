@@ -10,11 +10,9 @@ authors = [
 dependencies = [
     "np_session>=0.6.4",
     "np_tools>=0.1.12",
-    "aind-data-transfer[ephys]>=0.29.4",
-    #"cmake",
-    "setuptools>=36.2.0",
-    #"awscli",
     "np-config>=0.4.24",
+    "requests>=2.31.0",
+    "npc-session>=0.1.30",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
@@ -53,12 +51,21 @@ dev = [
 ruff = "ruff --fix src"
 blue = "blue src"
 pytest = "pytest --cov"
-prebuild = {composite = ["blue", "ruff", "pytest"]}
+prebuild = { composite = ["blue", "ruff", "pytest"] }
 bump = "bump -p pyproject.toml"
-build = {composite = ["prebuild", "pdm build"]}
-dry-run = {composite = ["prebuild", "pdm build", "pdm publish --no-build --repository https://test.pypi.org/simple"]}
-publish = {composite = ["prebuild", "bump", "pdm build", "pdm publish --no-build"]}
-pub = {composite = ["bump", "pdm publish"]}
+build = { composite = ["prebuild", "pdm build"] }
+dry-run = { composite = [
+    "prebuild",
+    "pdm build",
+    "pdm publish --no-build --repository https://test.pypi.org/simple",
+] }
+publish = { composite = [
+    "prebuild",
+    "bump",
+    "pdm build",
+    "pdm publish --no-build",
+] }
+pub = { composite = ["bump", "pdm publish"] }
 
 [build-system]
 requires = ["pdm-backend"]
