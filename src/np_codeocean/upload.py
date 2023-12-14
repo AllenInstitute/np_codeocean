@@ -116,11 +116,6 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
     """
     
     ephys_upload = {
-        'aws_param_store_name': np_config.fetch('/projects/np_codeocean')['aws-param-store-name'],
-        'codeocean_api_token': np_config.fetch('/projects/np_codeocean/codeocean')['credentials']['token'],
-        'codeocean_domain': np_config.fetch('/projects/np_codeocean/codeocean')['credentials']['domain'],
-        'metadata_service_domain': np_config.fetch('/projects/np_codeocean/internal')['metadata_service_domain'],
-        'aind_data_transfer_repo_location': np_config.fetch('/projects/np_codeocean/internal')['aind_data_transfer_repo_location'],
         'modality0.source': np_config.normalize_path(ephys).as_posix(),
         'modality0': 'ecephys',
         's3-bucket': CONFIG['s3-bucket'],
