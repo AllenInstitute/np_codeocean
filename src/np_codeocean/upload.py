@@ -11,8 +11,10 @@ from typing import NamedTuple
 import np_config
 import np_logging
 import np_session
+import npc_session
 import np_tools
 import doctest
+import polars as pl
 
 import requests
 
@@ -20,6 +22,8 @@ import requests
 logger = np_logging.get_logger(__name__)
 
 CONFIG = np_config.fetch('/projects/np_codeocean')
+AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
+
 
 class CodeOceanUpload(NamedTuple):
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
@@ -137,6 +141,69 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
     
     return ephys_upload
 
+
+def is_in_hpc_upload_queue(csv_path: pathlib.Path) -> bool:
+    """Check if an upload job has been submitted to the hpc upload queue.
+    
+    - currently assumes one job per csv
+    - does not check status (job may be FINISHED rather than RUNNING)
+    
+    >>> is_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
+    False
+    """
+    # get subject-id, acq-datetime from csv
+    df = pl.read_csv(csv_path, eol_char='\r')
+    for col in df.get_columns():
+        if col.name.startswith('subject') and col.name.endswith('id'):
+            subject = npc_session.SubjectRecord(col[0])
+            continue
+        if col.name.startswith('acq') and 'datetime' in col.name.lower():
+            dt = npc_session.DatetimeRecord(col[0])
+            continue
+    partial_session_id = f"{subject}_{dt.replace(' ', '_').replace(':', '-')}"
+    
+    jobs_response = requests.get(f"{AIND_DATA_TRANSFER_SERVICE}/jobs")
+    jobs_response.raise_for_status()
+    return partial_session_id in jobs_response.content.decode()
+    
+def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
+    """Submit a single job upload csv to the aind-data-transfer-service, for
+    upload to S3 on the hpc.
+    
+    - gets validated version of csv
+    - checks session is not already being uploaded
+    - submits csv via http request
+    """
+    def _raise_for_status(response: requests.Response) -> None:
+        """pydantic validation errors are returned as strings that can be eval'd
+        to get the real error class + message."""
+        if response.status_code != 200:
+            try:
+                raise eval(response.json()['data']['errors'][0])
+            except (KeyError, IndexError, requests.exceptions.JSONDecodeError):
+                response.raise_for_status()
+    
+    validate_csv_response = requests.post(url=f"{AIND_DATA_TRANSFER_SERVICE}/api/validate_csv", files=dict(file=csv_path.read_bytes()))
+    _raise_for_status(validate_csv_response)
+    
+    if is_in_hpc_upload_queue(csv_path):
+        logger.warning(f"Job already submitted for {csv_path}")
+        return
+    
+    post_csv_response = requests.post(
+        url=f"{AIND_DATA_TRANSFER_SERVICE}/api/submit_hpc_jobs", 
+        json=dict(
+            jobs=[
+                    dict(
+                        hpc_settings=json.dumps({"time_limit": 60 * 15}),
+                        upload_job_settings=validate_csv_response.json()["data"]["jobs"][0],
+                        script="",
+                    )
+                ]
+        ),
+    )
+    _raise_for_status(post_csv_response)
+    
 def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behavior: Path | None) -> None:
     logger.info(f'Creating upload job file {job} for session {session}...')
     _csv = get_ephys_upload_csv_for_session(session, ephys, behavior)
@@ -185,41 +252,16 @@ def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOcea
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session) -> None:
     upload = create_codeocean_upload(str(session))
-    put_csv_for_hpc_upload((upload))
-    
-    np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc')
+    np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
+    put_csv_for_hpc_upload(upload.job)
+    logger.debug(f'Submitted {upload.session} to hpc upload queue')
 
-def put_csv_for_hpc_upload(upload_job: CodeOceanUpload) -> None:
-    # TODO check job isn't already on slurm/ in queue 
-    URL = "http://aind-data-transfer-service/api"
-    SESSION = requests.Session()
-    files = dict(file=upload_job.job.read_bytes())
-    response = SESSION.post(url=f"{URL}/validate_csv", files=files)
-    if response.status_code != 200:
-        raise eval(response.json()['data']['errors'][0])
-    post_request_content = {'jobs': [
-            {
-                "hpc_settings": json.dumps({"time_limit": 60 * 15}),
-                "upload_job_settings": response.json()["data"]["jobs"][0],
-                "script": "",
-            }
-        ]
-    }
-    response = SESSION.post(
-        url=f"{URL}/submit_hpc_jobs", 
-        json=post_request_content,
-    )
-    if response.status_code != 200:
-        try:
-            raise eval(response.json()['data']['errors'][0])
-        except (KeyError, IndexError, requests.exceptions.JSONDecodeError):
-            response.raise_for_status()
     
 def main() -> None:
     upload_session(sys.argv[1]) # ex: path to surface channel folder
 
 if __name__ == '__main__':
-
+    # is_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
     import doctest
 
     doctest.testmod(
