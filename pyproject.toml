@@ -33,7 +33,7 @@ Issues = "https://github.com/AllenInstitute/np_codeocean/issues"
 
 [project.scripts]
 "upload" = "np_codeocean.upload:main"
-
+"upload_sessions" = "np_codeocean.scripts.upload_sessions:main"
 [project.optional-dependencies]
 dev = [
     "bump>=1.3.2",
