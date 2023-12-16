@@ -9,7 +9,7 @@ authors = [
 ]
 dependencies = [
     "np_session>=0.6.4",
-    "np_tools>=0.1.12",
+    "np-tools>=0.1.21",
     "np-config>=0.4.24",
     "requests>=2.31.0",
     "npc-session>=0.1.30",

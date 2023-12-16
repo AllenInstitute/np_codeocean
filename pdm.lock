@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:1441a6ed211ebb347ede06df9ad1abfc8b23c841cc3dbdb9acc34347a1b33199"
+content_hash = "sha256:576ef60ac35511f483598f3c733ac83c5acc27585c0241fbe38ae42ba2fd8de1"
 
 [[package]]
 name = "appdirs"
@@ -963,7 +963,7 @@ files = [
 
 [[package]]
 name = "np-tools"
-version = "0.1.20"
+version = "0.1.21"
 requires_python = "<4,>=3.7"
 summary = "General-purpose tools for common tasks encountered in Mindscope Neuropixels workflows."
 groups = ["default"]
@@ -977,8 +977,8 @@ dependencies = [
     "rich>=13.3.5",
 ]
 files = [
-    {file = "np_tools-0.1.20-py3-none-any.whl", hash = "sha256:db5f185e04310f93a2b16dfd183ed6c4e74fe5cbd0b8d8c9da5d66b4a8aee8f2"},
-    {file = "np_tools-0.1.20.tar.gz", hash = "sha256:ac420e11dcbf1a9f231f6a026645b8feb2c65807a87f28a2d11209e802f21f7c"},
+    {file = "np_tools-0.1.21-py3-none-any.whl", hash = "sha256:24ee6cb2cbaf7f3b126168597dd6684e7540f71ff09e2afc61150843e35b87d4"},
+    {file = "np_tools-0.1.21.tar.gz", hash = "sha256:f32ffa505360d366b32a8734796b7fb7953d4c9a71fb143613bffc9af5fa70ee"},
 ]
 
 [[package]]
