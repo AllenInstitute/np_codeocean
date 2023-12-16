@@ -57,10 +57,6 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
     
     Top-level items other than `Record Node *` folders are excluded.
     """
-
-    if recording_dirs is not None and isinstance(recording_dirs, str):
-        recording_dirs = tuple(recording_dirs)
-
     logger.info(f'Creating symlinks to raw ephys data files in {session.npexp_path}...')
     for abs_path, rel_path in np_tools.get_filtered_ephys_paths_relative_to_record_node_parents(
         session.npexp_path, specific_recording_dir_names=recording_dirs
