@@ -12,8 +12,8 @@ split_recordings: dict[str, tuple[str, ...]] = {
     "//allen/programs/mindscope/workgroups/templeton/TTOC/2022-09-20_14-10-18_628801": (),
     "//allen/programs/mindscope/workgroups/templeton/TTOC/2023-07-20_12-21-41_670181": (),
     "//allen/programs/mindscope/workgroups/templeton/TTOC/2023-07-25_09-47-29_670180": (),
-    "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_681532_20231019": (),
-    "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_686176_20231206": ('recording1', 'recording1'), 
+    "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_681532_20231019": ('recording1', 'recording2'),
+    "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_686176_20231206": ('recording1', 'recording2'), 
 }
 split_recording_folders: set[str] = set(split_recordings.keys())
 
