@@ -195,7 +195,7 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
         json=dict(
             jobs=[
                     dict(
-                        hpc_settings=json.dumps({"time_limit": 60 * 15}),
+                        hpc_settings=json.dumps({"time_limit": 60 * 15, "mail_user": "arjun.sridhar@alleninstitute.org"}),
                         upload_job_settings=validate_csv_response.json()["data"]["jobs"][0],
                         script="",
                     )
