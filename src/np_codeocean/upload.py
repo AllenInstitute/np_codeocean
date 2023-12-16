@@ -7,6 +7,7 @@ import sys
 import datetime
 from pathlib import Path
 from typing import NamedTuple
+from collections import Iterable
 
 import np_config
 import np_logging
@@ -46,7 +47,8 @@ class CodeOceanUpload(NamedTuple):
 def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
 
-def create_ephys_symlinks(session: np_session.Session, dest: Path) -> None:
+def create_ephys_symlinks(session: np_session.Session, dest: Path, 
+                          recording_dirs: Iterable[str] | None = None) -> None:
     """Create symlinks in `dest` pointing to raw ephys data files on np-exp, with only one
     `recording` per `Record Node` folder (the largest, if multiple found).
     
@@ -55,6 +57,11 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path) -> None:
     
     Top-level items other than `Record Node *` folders are excluded.
     """
+
+    if recording_dirs is not None and isinstance(recording_dirs, str):
+        recording_dirs = tuple(recording_dirs)
+
+    # TODO: pass recording dirs as parameter to np_tools function
     logger.info(f'Creating symlinks to raw ephys data files in {session.npexp_path}...')
     for abs_path, rel_path in np_tools.get_filtered_ephys_paths_relative_to_record_node_parents(session.npexp_path):
         if not abs_path.is_dir():
@@ -212,7 +219,8 @@ def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behav
         w.writerow(_csv.keys())
         w.writerow(_csv.values()) 
 
-def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOceanUpload:
+def create_codeocean_upload(session: str | int | np_session.Session, 
+                            recording_dirs: Iterable[str] | None = None) -> CodeOceanUpload:
     """
     >>> upload = create_codeocean_upload("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels")
     >>> upload.behavior is None
@@ -245,19 +253,21 @@ def create_codeocean_upload(session: str | int | np_session.Session) -> CodeOcea
         job = np_config.normalize_path(root / 'upload.csv'),
         )
 
-    create_ephys_symlinks(upload.session, upload.ephys)
+    create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     create_behavior_symlinks(upload.session, upload.behavior)
     create_upload_job(upload.session, upload.job, upload.ephys, upload.behavior)    
     return upload
 
-def upload_session(session: str | int | pathlib.Path | np_session.Session) -> None:
-    upload = create_codeocean_upload(str(session))
+def upload_session(session: str | int | pathlib.Path | np_session.Session, 
+                   recording_dirs: Iterable[str] | None = None) -> None:
+    upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     put_csv_for_hpc_upload(upload.job)
     logger.debug(f'Submitted {upload.session} to hpc upload queue')
 
     
 def main() -> None:
+    # TODO add input argument for recording dir name
     upload_session(sys.argv[1]) # ex: path to surface channel folder
 
 if __name__ == '__main__':
