@@ -267,8 +267,8 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
 
     
 def main() -> None:
-    # TODO add input argument for recording dir name
-    upload_session(sys.argv[1]) # ex: path to surface channel folder
+    # TODO proper argparser
+    upload_session(sys.argv[1], sys.argv[2:]) # ex: path to surface channel folder
 
 if __name__ == '__main__':
     # is_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
