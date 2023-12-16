@@ -7,7 +7,7 @@ import sys
 import datetime
 from pathlib import Path
 from typing import NamedTuple
-from collections import Iterable
+from collections.abc import Iterable
 
 import np_config
 import np_logging
