@@ -261,6 +261,13 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     put_csv_for_hpc_upload(upload.job)
     logger.debug(f'Submitted {upload.session} to hpc upload queue')
+    
+    if (is_split_recording := 
+        recording_dirs is not None 
+        and len(tuple(recording_dirs)) > 1 
+        and isinstance(recording_dirs, str)
+    ):
+        logger.warning(f"Split recording {upload.session} will need to be sorted manually with `CONCAT=True`")
 
     
 def main() -> None:
