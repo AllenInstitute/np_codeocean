@@ -4,7 +4,7 @@ import pathlib
 import dotenv
 import np_session
 
-from np_codeocean import aind_data_schema
+from np_codeocean import aind_data
 
 dotenv.load_dotenv()
 
@@ -17,7 +17,7 @@ except KeyError:
 
 @pytest.mark.onprem
 def test_aind_dataschema(tmpdir):
-    aind_data_schema.generate_rig(
+    aind_data.generate_rig(
         np_session.Session(session_id),
         pathlib.Path("./tests/resources/rig.json"),
         tmpdir,

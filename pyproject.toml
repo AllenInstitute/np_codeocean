@@ -14,7 +14,7 @@ dependencies = [
     "requests>=2.31.0",
     "npc-session>=0.1.30",
     "polars>=0.19.19",
-    "aind-metadata-mapper @ git+https://github.com/mochic/aind-metadata-mapper.git@enh/neuropixels",
+    "aind-metadata-mapper @ git+https://github.com/mochic/aind-metadata-mapper.git@enh/neuropixels"
 ]
 requires-python = ">=3.10"
 readme = "README.md"

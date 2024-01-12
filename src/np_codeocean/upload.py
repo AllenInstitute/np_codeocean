@@ -19,6 +19,8 @@ import polars as pl
 
 import requests
 
+from . import aind_data
+
 
 logger = np_logging.get_logger(__name__)
 
@@ -111,7 +113,12 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     timestamp = datetime.datetime.fromtimestamp(timestamp_value / 1e3)
     return timestamp
 
-def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, behavior: Path | None) -> dict[str, str | int]:
+def get_ephys_upload_csv_for_session(
+        session: np_session.Session,
+        ephys: Path,
+        behavior: Path | None,
+        metadata: Path = None,
+) -> dict[str, str | int]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels"
     >>> is_surface_channel_recording(path)
@@ -130,6 +137,7 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
         's3-bucket': CONFIG['s3-bucket'],
         'subject-id': str(session.mouse),
         'platform': 'ecephys',
+        'metadata_dir': "",
     }
 
     if behavior is not None:
@@ -143,6 +151,9 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
     else:
         ephys_upload['acq-datetime'] = f'{session.start.strftime("%Y-%m-%d %H:%M:%S")}'
     
+    if metadata is not None:
+        ephys_upload['metadata_dir'] = np_config.normalize_path(metadata).as_posix()
+
     return ephys_upload
 
 
@@ -248,10 +259,17 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         behavior = behavior,
         ephys = np_config.normalize_path(root / 'ephys'),
         job = np_config.normalize_path(root / 'upload.csv'),
-        )
+    )
 
     create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     create_behavior_symlinks(upload.session, upload.behavior)
+
+    try:
+        metadata = np_session.NPEXP_PATH / 'codeocean'
+    except Exception:
+        metadata = None
+        logger.debug(exc_info=True)
+
     create_upload_job(upload.session, upload.job, upload.ephys, upload.behavior)    
     return upload
 
