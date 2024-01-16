@@ -1,11 +1,10 @@
 import logging
-import np_session
+import pathlib
 import shutil
 import tempfile
-import pathlib
-from aind_metadata_mapper.neuropixels import mvr_rig, sync_rig, \
-    open_ephys_rig
 
+import np_session
+from aind_metadata_mapper.neuropixels import mvr_rig, open_ephys_rig, sync_rig
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ def generate_rig_context_dir(
 ) -> pathlib.Path:
     rig_context_dir = pathlib.Path(tempfile.mkdtemp())
     # copy all open ephys settings files, rename to avoid naming clashes
-    for open_ephys_settings_file in session.npexp_path.glob("**\settings.xml"):
+    for open_ephys_settings_file in session.npexp_path.glob(r"**\settings.xml"):
         shutil.copy(
             open_ephys_settings_file,
             rig_context_dir / f'{open_ephys_settings_file.parts[-2]}.open_ephys.{open_ephys_settings_file.name}',
