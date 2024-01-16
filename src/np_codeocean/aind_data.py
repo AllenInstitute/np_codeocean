@@ -43,7 +43,7 @@ def generate_rig(
             rig_context_dir,
             config_resource_name=sync_resource_name,
             sync_daq_name="Sync",
-        )
+        ).run_job()
 
     mvr_resource_name = "mvr.ini"
     if (rig_context_dir / mvr_resource_name).is_file():
@@ -57,14 +57,14 @@ def generate_rig(
                 "Camera 3": "Face forward",
             },
             mvr_resource_name=mvr_resource_name,
-        )
+        ).run_job()
     
     for open_ephys_settings in rig_context_dir.glob("*.open_ephys.settings.xml"):
         open_ephys_rig.OpenEphysRigEtl(
             rig_context_dir,
             rig_context_dir,
             open_ephys_settings_resource_name=open_ephys_settings.name,
-        )
+        ).run_job()
 
     shutil.copy(
         rig_context_dir / "rig.json",
