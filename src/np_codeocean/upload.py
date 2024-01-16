@@ -137,7 +137,6 @@ def get_ephys_upload_csv_for_session(
         's3-bucket': CONFIG['s3-bucket'],
         'subject-id': str(session.mouse),
         'platform': 'ecephys',
-        'metadata_dir': "",
     }
 
     if behavior is not None:
@@ -264,13 +263,25 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     create_behavior_symlinks(upload.session, upload.behavior)
 
-    try:
-        metadata = np_session.NPEXP_PATH / 'codeocean'
-    except Exception:
+    metadata_template_dir = pathlib.Path(CONFIG["aind-data-template-dir"])
+    rig_json_path = metadata_template_dir / f"{session.rig.id}.json"
+    if rig_json_path.is_file():
+        metadata = root / 'metadata'
+        metadata.mkdir(exist_ok=True)
+        try:
+            aind_data.generate_rig(
+                session,
+                rig_json_path,
+                metadata,
+            )
+        except Exception:
+            logger.debug("Error generating metadata.", exc_info=True)
+    else:
         metadata = None
-        logger.debug(exc_info=True)
+        logger.debug(f"No metadata template found at: {rig_json_path}")
 
-    create_upload_job(upload.session, upload.job, upload.ephys, upload.behavior)    
+    create_upload_job(
+        upload.session, upload.job, upload.ephys, upload.behavior, metadata)    
     return upload
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
