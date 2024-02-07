@@ -117,7 +117,7 @@ def get_ephys_upload_csv_for_session(
         session: np_session.Session,
         ephys: Path,
         behavior: Path | None,
-        metadata: Path = None,
+        metadata: Path | None,
 ) -> dict[str, str | int]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels"
@@ -218,9 +218,16 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
     )
     _raise_for_status(post_csv_response)
     
-def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behavior: Path | None) -> None:
+def create_upload_job(
+        session: np_session.Session,
+        job: Path,
+        ephys: Path,
+        behavior: Path | None,
+        metadata: Path | None,
+) -> None:
     logger.info(f'Creating upload job file {job} for session {session}...')
-    _csv = get_ephys_upload_csv_for_session(session, ephys, behavior)
+    _csv = get_ephys_upload_csv_for_session(
+        session, ephys, behavior, metadata)
     with open(job, 'w') as f:
         w = csv.writer(f)
         w.writerow(_csv.keys())
