@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import json
+from multiprocessing import context
 import pathlib
 import sys
 import datetime
@@ -36,7 +38,12 @@ class CodeOceanUpload(NamedTuple):
 
     behavior: Path | None
     """Directory of symlinks to files in top-level of session folder on np-exp,
-    plus all files in `exp` and `qc` subfolders, if present."""
+    plus all files in `exp` and `qc` subfolders, if present. Excludes behavior video files
+    and video info jsons."""
+    
+    behavior_videos: Path | None    
+    """Directory of symlinks to behavior video files and video info jsons in
+    top-level of session folder on np-exp."""
     
     ephys: Path
     """Directory of symlinks to raw ephys data files on np-exp, with only one
@@ -66,7 +73,14 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
             np_tools.symlink(as_posix(abs_path), dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {session.npexp_path}')
 
-         
+def is_behavior_video_file(path: Path) -> bool:
+    if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
+        return False
+    with contextlib.suppress(ValueError):
+        _ = npc_session.extract_mvr_camera_name(path.as_posix())
+        return True
+    return False
+
 def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> None:
     """Create symlinks in `dest` pointing to files in top-level of session
     folder on np-exp, plus all files in `exp` subfolder, if present.
@@ -77,7 +91,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> 
     subfolder_names = ('exp', 'qc')
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
-        if not src.is_dir():
+        if not src.is_dir() and not is_behavior_video_file(src):
             np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
     logger.debug(f'Finished creating symlinks to top-level files in {session.npexp_path}')
 
@@ -90,6 +104,19 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> 
                 np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
         logger.debug(f'Finished creating symlinks to {name!r} files')
 
+def create_behavior_videos_symlinks(session: np_session.Session, dest: Path | None) -> None:
+    """Create symlinks in `dest` pointing to MVR video files and info jsons in top-level of session
+    folder on np-exp.
+    """
+    if dest is None: 
+        logger.debug(f"No behavior_videos folder supplied for {session}")
+        return
+    logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
+    for src in session.npexp_path.glob('*'):
+        if is_behavior_video_file(src):
+            np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
+    logger.debug(f'Finished creating symlinks to behavior video files in {session.npexp_path}')
+    
 def is_surface_channel_recording(path_name: str) -> bool:
     """
     >>> session = np_session.Session("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels")
@@ -242,21 +269,25 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     if is_surface_channel_recording(session.npexp_path.as_posix()):
         root = np_session.NPEXP_PATH / 'codeocean' / f'{session.folder}_surface_channels'
         behavior = None
+        behavior_videos = None
     else:
         root = np_session.NPEXP_PATH / 'codeocean' / session.folder
-        behavior = np_config.normalize_path(root / 'behavior-videos')
-
+        behavior = np_config.normalize_path(root / 'behavior')
+        behavior_videos = behavior.with_name('behavior-videos')
+        
     logger.debug(f'Created directory {root} for CodeOcean upload')
     
     upload = CodeOceanUpload(
         session = session, 
         behavior = behavior,
+        behavior_videos = behavior_videos,
         ephys = np_config.normalize_path(root / 'ephys'),
         job = np_config.normalize_path(root / 'upload.csv'),
         )
 
     create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     create_behavior_symlinks(upload.session, upload.behavior)
+    create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
     create_upload_job(upload.session, upload.job, upload.ephys, upload.behavior)    
     return upload
 
