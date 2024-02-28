@@ -36,7 +36,7 @@ class CodeOceanUpload(NamedTuple):
 
     behavior: Path | None
     """Directory of symlinks to files in top-level of session folder on np-exp,
-    plus all files in `exp` subfolder, if present."""
+    plus all files in `exp` and `qc` subfolders, if present."""
     
     ephys: Path
     """Directory of symlinks to raw ephys data files on np-exp, with only one
@@ -71,20 +71,24 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> 
     """Create symlinks in `dest` pointing to files in top-level of session
     folder on np-exp, plus all files in `exp` subfolder, if present.
     """
-    if dest is not None:
-        logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
-        for src in session.npexp_path.glob('*'):
-            if not src.is_dir():
-                np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
-        logger.debug(f'Finished creating symlinks to top-level files in {session.npexp_path}')
+    if dest is None: 
+        logger.debug(f"No behavior folder supplied for {session}")
+        return
+    subfolder_names = ('exp', 'qc')
+    logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
+    for src in session.npexp_path.glob('*'):
+        if not src.is_dir():
+            np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
+    logger.debug(f'Finished creating symlinks to top-level files in {session.npexp_path}')
 
-        if not (session.npexp_path / 'exp').exists():
-            return
-        
-        for src in (session.npexp_path / 'exp').rglob('*'):
+    for name in subfolder_names:
+        subfolder = session.npexp_path / name
+        if not subfolder.exists():
+            continue
+        for src in subfolder.rglob('*'):
             if not src.is_dir():
                 np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
-        logger.debug(f'Finished creating symlinks to files in {session.npexp_path / "exp"}')
+        logger.debug(f'Finished creating symlinks to {name!r} files')
 
 def is_surface_channel_recording(path_name: str) -> bool:
     """
