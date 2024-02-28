@@ -131,10 +131,10 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     >>> get_surface_channel_start_time(session)
     datetime.datetime(2023, 8, 8, 15, 11, 14, 240000)
     """
-    sync_messages_path = tuple(session.npexp_path.glob('*/*/*/sync_messages.txt'))
-    if not sync_messages_path:
+    sync_messages_paths = tuple(session.npexp_path.glob('*/*/*/sync_messages.txt'))
+    if not sync_messages_paths:
         raise ValueError(f'No sync messages txt found for surface channel session {session}')
-    sync_messages_path = sync_messages_path[0]
+    sync_messages_path = sync_messages_paths[0]
 
     with open(sync_messages_path, 'r') as f:
         software_time_line = f.readlines()[0]
