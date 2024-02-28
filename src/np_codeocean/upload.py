@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import pathlib
@@ -271,8 +272,13 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
 
     
 def main() -> None:
-    # TODO proper argparser
-    upload_session(sys.argv[1], sys.argv[2:]) # ex: path to surface channel folder
+    upload_session(**vars(parse_args()))
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
+    parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
+    parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
+    return parser.parse_args()
 
 if __name__ == '__main__':
     # is_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
