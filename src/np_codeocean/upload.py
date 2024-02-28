@@ -18,6 +18,7 @@ import np_session
 import npc_session
 import np_tools
 import doctest
+import numpy as np
 import polars as pl
 
 import requests
@@ -65,13 +66,23 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
     
     Top-level items other than `Record Node *` folders are excluded.
     """
-    logger.info(f'Creating symlinks to raw ephys data files in {session.npexp_path}...')
+    root_path = session.npexp_path
+    if isinstance(session, np_session.PipelineSession) and session.lims_path is not None:
+        # if ephys has been uploaded to lims, use lims path, as large raw data may have
+        # been deleted from np-exp
+        if any(
+            np_tools.get_filtered_ephys_paths_relative_to_record_node_parents(
+                session.npexp_path, specific_recording_dir_names=recording_dirs
+            )
+        ):
+            root_path = session.lims_path
+    logger.info(f'Creating symlinks to raw ephys data files in {root_path}...')
     for abs_path, rel_path in np_tools.get_filtered_ephys_paths_relative_to_record_node_parents(
         session.npexp_path, specific_recording_dir_names=recording_dirs
         ):
         if not abs_path.is_dir():
             np_tools.symlink(as_posix(abs_path), dest / rel_path)
-    logger.debug(f'Finished creating symlinks to raw ephys data files in {session.npexp_path}')
+    logger.debug(f'Finished creating symlinks to raw ephys data files in {root_path}')
 
 def is_behavior_video_file(path: Path) -> bool:
     if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
