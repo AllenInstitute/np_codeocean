@@ -231,10 +231,17 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
         if response.status_code != 200:
             try:
                 raise eval(response.json()['data']['errors'][0])
-            except (KeyError, IndexError, requests.exceptions.JSONDecodeError):
-                response.raise_for_status()
-    
-    validate_csv_response = requests.post(url=f"{AIND_DATA_TRANSFER_SERVICE}/api/validate_csv", files=dict(file=csv_path.read_bytes()))
+            except (KeyError, IndexError, requests.exceptions.JSONDecodeError, SyntaxError) as exc1:
+                try:
+                    response.raise_for_status()
+                except requests.exceptions.HTTPError as exc2:
+                    raise exc2 from exc1
+                
+    with open(csv_path, 'rb') as f:
+        validate_csv_response = requests.post(
+            url=f"{AIND_DATA_TRANSFER_SERVICE}/api/validate_csv", 
+            files=dict(file=f),
+            )
     _raise_for_status(validate_csv_response)
     
     if is_in_hpc_upload_queue(csv_path):
@@ -259,14 +266,11 @@ def create_upload_job(upload: CodeOceanUpload) -> None:
     logger.info(f'Creating upload job file {upload.job} for session {upload.session}...')
     job: dict = get_ephys_upload_csv_for_session(upload)
     with open(upload.job, 'w') as f:
+        w = csv.writer(f, lineterminator='')
         w.writerow(job.keys())
-def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behavior: Path | None) -> None:
-    logger.info(f'Creating upload job file {job} for session {session}...')
-    _csv = get_ephys_upload_csv_for_session(session, ephys, behavior)
-    with open(job, 'w') as f:
-        w = csv.writer(f)
-        w.writerow(_csv.keys())
-        w.writerow(_csv.values()) 
+        w.writerow('\n')
+
+        w.writerow(job.values()) 
 
 def create_codeocean_upload(session: str | int | np_session.Session, 
                             recording_dirs: Iterable[str] | None = None) -> CodeOceanUpload:
