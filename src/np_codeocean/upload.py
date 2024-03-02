@@ -154,13 +154,13 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     timestamp = datetime.datetime.fromtimestamp(timestamp_value / 1e3)
     return timestamp
 
-def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, behavior: Path | None) -> dict[str, str | int]:
+def get_ephys_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels"
     >>> is_surface_channel_recording(path)
     True
     >>> upload = create_codeocean_upload(path)
-    >>> ephys_upload_csv = get_ephys_upload_csv_for_session(upload.session, upload.ephys, upload.behavior)
+    >>> ephys_upload_csv = get_ephys_upload_csv_for_session(upload)
     >>> ephys_upload_csv['modality0.source']
     '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_660023_20230808_surface_channels/ephys'
     >>> ephys_upload_csv.keys()
@@ -168,23 +168,27 @@ def get_ephys_upload_csv_for_session(session: np_session.Session, ephys: Path, b
     """
     
     ephys_upload = {
-        'modality0.source': np_config.normalize_path(ephys).as_posix(),
+        'modality0.source': np_config.normalize_path(upload.ephys).as_posix(),
         'modality0': 'ecephys',
         's3-bucket': CONFIG['s3-bucket'],
-        'subject-id': str(session.mouse),
+        'subject-id': str(upload.session.mouse),
         'platform': 'ecephys',
     }
 
-    if behavior is not None:
-        ephys_upload['modality1.source'] = np_config.normalize_path(behavior).as_posix()
-        ephys_upload['modality1'] = 'behavior-videos'
+    if upload.behavior is not None:
+        ephys_upload['modality1.source'] = np_config.normalize_path(upload.behavior).as_posix()
+        ephys_upload['modality1'] = 'behavior'
     
-    if is_surface_channel_recording(session.npexp_path.as_posix()):
-        date = datetime.datetime(session.date.year, session.date.month, session.date.day)
-        session_date_time = date.combine(session.date, get_surface_channel_start_time(session).time())
+    if upload.behavior_videos is not None:
+        ephys_upload['modality2.source'] = np_config.normalize_path(upload.behavior_videos).as_posix()
+        ephys_upload['modality2'] = 'behavior-videos'
+    
+    if is_surface_channel_recording(upload.session.npexp_path.as_posix()):
+        date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
+        session_date_time = date.combine(upload.session.date, get_surface_channel_start_time(upload.session).time())
         ephys_upload['acq-datetime'] = f'{session_date_time.strftime("%Y-%m-%d %H:%M:%S")}'
     else:
-        ephys_upload['acq-datetime'] = f'{session.start.strftime("%Y-%m-%d %H:%M:%S")}'
+        ephys_upload['acq-datetime'] = f'{upload.session.start.strftime("%Y-%m-%d %H:%M:%S")}'
     
     return ephys_upload
 
@@ -251,6 +255,11 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
     )
     _raise_for_status(post_csv_response)
     
+def create_upload_job(upload: CodeOceanUpload) -> None:
+    logger.info(f'Creating upload job file {upload.job} for session {upload.session}...')
+    job: dict = get_ephys_upload_csv_for_session(upload)
+    with open(upload.job, 'w') as f:
+        w.writerow(job.keys())
 def create_upload_job(session: np_session.Session, job: Path, ephys: Path, behavior: Path | None) -> None:
     logger.info(f'Creating upload job file {job} for session {session}...')
     _csv = get_ephys_upload_csv_for_session(session, ephys, behavior)
@@ -299,7 +308,7 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     create_behavior_symlinks(upload.session, upload.behavior)
     create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
-    create_upload_job(upload.session, upload.job, upload.ephys, upload.behavior)    
+    create_upload_job(upload)    
     return upload
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
