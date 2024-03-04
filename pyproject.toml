@@ -2,7 +2,7 @@
 
 [project]
 name = "np_codeocean"
-version = "0.1.5"
+version = "0.1.6"
 description = "Tools for uploading and interacting with Mindscope Neuropixels experiments on Code Ocean"
 authors = [
     {name = "Ben Hardcastle", email = "ben.hardcastle@alleninstitute.org"},
