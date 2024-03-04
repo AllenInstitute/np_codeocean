@@ -78,7 +78,7 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
             root_path = session.lims_path
     logger.info(f'Creating symlinks to raw ephys data files in {root_path}...')
     for abs_path, rel_path in np_tools.get_filtered_ephys_paths_relative_to_record_node_parents(
-        session.npexp_path, specific_recording_dir_names=recording_dirs
+        root_path, specific_recording_dir_names=recording_dirs
         ):
         if not abs_path.is_dir():
             np_tools.symlink(as_posix(abs_path), dest / rel_path)
