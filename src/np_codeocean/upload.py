@@ -53,6 +53,9 @@ class CodeOceanUpload(NamedTuple):
     job: Path
     """File containing job parameters for `aind-data-transfer`"""
 
+    force_cloud_sync: bool = False
+    """If True, re-upload and re-make raw asset even if data exists on S3."""
+    
 def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
 
@@ -154,7 +157,7 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     timestamp = datetime.datetime.fromtimestamp(timestamp_value / 1e3)
     return timestamp
 
-def get_ephys_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int]:
+def get_ephys_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels"
     >>> is_surface_channel_recording(path)
@@ -164,7 +167,7 @@ def get_ephys_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str |
     >>> ephys_upload_csv['modality0.source']
     '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_660023_20230808_surface_channels/ephys'
     >>> ephys_upload_csv.keys()
-    dict_keys(['modality0.source', 'modality0', 's3-bucket', 'subject-id', 'platform', 'acq-datetime'])
+    dict_keys(['modality0.source', 'modality0', 'subject-id', 'platform', 'acq-datetime', 'force_cloud_sync'])
     """
     
     ephys_upload = {
@@ -173,6 +176,7 @@ def get_ephys_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str |
         's3-bucket': CONFIG['s3-bucket'],
         'subject-id': str(upload.session.mouse),
         'platform': 'ecephys',
+        'force_cloud_sync': upload.force_cloud_sync,
     }
 
     if upload.behavior is not None:
@@ -273,7 +277,9 @@ def create_upload_job(upload: CodeOceanUpload) -> None:
         w.writerow(job.values()) 
 
 def create_codeocean_upload(session: str | int | np_session.Session, 
-                            recording_dirs: Iterable[str] | None = None) -> CodeOceanUpload:
+                            recording_dirs: Iterable[str] | None = None,
+                            force_cloud_sync: bool = False,
+                            ) -> CodeOceanUpload:
     """
     >>> upload = create_codeocean_upload("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels")
     >>> upload.behavior is None
@@ -307,6 +313,7 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         behavior_videos = behavior_videos,
         ephys = np_config.normalize_path(root / 'ephys'),
         job = np_config.normalize_path(root / 'upload.csv'),
+        force_cloud_sync=force_cloud_sync,
         )
 
     create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
@@ -316,8 +323,10 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     return upload
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
-                   recording_dirs: Iterable[str] | None = None) -> None:
-    upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs)
+                   recording_dirs: Iterable[str] | None = None,
+                   force: bool = False,
+                   ) -> None:
+    upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs, force_cloud_sync=force)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     put_csv_for_hpc_upload(upload.job)
     logger.debug(f'Submitted {upload.session} to hpc upload queue')
@@ -336,6 +345,7 @@ def main() -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
     parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
+    parser.add_argument('force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
     return parser.parse_args()
 
