@@ -173,7 +173,6 @@ def get_ephys_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str |
     ephys_upload = {
         'modality0.source': np_config.normalize_path(upload.ephys).as_posix(),
         'modality0': 'ecephys',
-        's3-bucket': CONFIG['s3-bucket'],
         'subject-id': str(upload.session.mouse),
         'platform': 'ecephys',
         'force_cloud_sync': upload.force_cloud_sync,
