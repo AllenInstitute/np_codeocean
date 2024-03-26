@@ -130,7 +130,7 @@ def create_behavior_videos_symlinks(session: np_session.Session, dest: Path | No
     
 def is_surface_channel_recording(path_name: str) -> bool:
     """
-    >>> session = np_session.Session("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels")
+    >>> session = np_session.Session("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels")
     >>> is_surface_channel_recording(session.npexp_path.as_posix())
     True
     """
@@ -138,9 +138,9 @@ def is_surface_channel_recording(path_name: str) -> bool:
 
 def get_surface_channel_start_time(session: np_session.Session) -> datetime.datetime:
     """
-    >>> session = np_session.Session("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels")
+    >>> session = np_session.Session("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels")
     >>> get_surface_channel_start_time(session)
-    datetime.datetime(2023, 8, 8, 15, 11, 14, 240000)
+    datetime.datetime(2023, 11, 29, 14, 56, 25, 219000)
     """
     sync_messages_paths = tuple(session.npexp_path.glob('*/*/*/sync_messages.txt'))
     if not sync_messages_paths:
@@ -156,17 +156,16 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
 
 def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
     """
-    >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels"
+    >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
     >>> is_surface_channel_recording(path)
     True
     >>> upload = create_codeocean_upload(path)
     >>> ephys_upload_csv = get_upload_csv_for_session(upload)
     >>> ephys_upload_csv['modality0.source']
-    '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_660023_20230808_surface_channels/ephys'
+    '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_690706_20231129_surface_channels/ephys'
     >>> ephys_upload_csv.keys()
-    dict_keys(['modality0.source', 'modality0', 'subject-id', 'platform', 'acq-datetime', 'force_cloud_sync'])
+    dict_keys(['platform', 'subject-id', 'force_cloud_sync', 'modality0', 'modality0.source', 'acq-datetime'])
     """
-    
     params = {
         'platform': 'ecephys',
         'subject-id': str(upload.session.mouse),
@@ -315,9 +314,9 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         force_cloud_sync=force_cloud_sync,
         )
 
-    create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
-    create_behavior_symlinks(upload.session, upload.behavior)
-    create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+    # create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
+    # create_behavior_symlinks(upload.session, upload.behavior)
+    # create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
     create_upload_job(upload)    
     return upload
 
