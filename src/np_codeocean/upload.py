@@ -264,7 +264,7 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
     _raise_for_status(post_csv_response)
 
 def is_ephys_session(session: np_session.Session) -> bool:
-    return bool(next(session.npexp_path.glob('settings.xml'), None))
+    return bool(next(session.npexp_path.rglob('settings.xml'), None))
 
 def create_upload_job(upload: CodeOceanUpload) -> None:
     logger.info(f'Creating upload job file {upload.job} for session {upload.session}...')
