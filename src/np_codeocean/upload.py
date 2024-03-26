@@ -280,18 +280,17 @@ def create_codeocean_upload(session: str | int | np_session.Session,
                             recording_dirs: Iterable[str] | None = None,
                             force_cloud_sync: bool = False,
                             ) -> CodeOceanUpload:
-    """
-    >>> upload = create_codeocean_upload("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_660023_20230808_surface_channels")
-    >>> upload.behavior is None
-    True
-    >>> upload.ephys.exists()
-    True
-    """
     """Create directories of symlinks to np-exp files with correct structure
     for upload to CodeOcean.
     
     - only one `recording` per `Record Node` folder (largest if multiple found)
     - job file for feeding into `aind-data-transfer`
+    
+    >>> upload = create_codeocean_upload("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels")
+    >>> upload.behavior is None
+    True
+    >>> upload.ephys.exists()
+    True
     """
     
     session = np_session.Session(session)
