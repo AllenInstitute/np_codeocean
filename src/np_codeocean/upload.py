@@ -314,9 +314,9 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         force_cloud_sync=force_cloud_sync,
         )
 
-    # create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
-    # create_behavior_symlinks(upload.session, upload.behavior)
-    # create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+    create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
+    create_behavior_symlinks(upload.session, upload.behavior)
+    create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
     create_upload_job(upload)    
     return upload
 
