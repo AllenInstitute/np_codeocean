@@ -168,6 +168,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
     """
     
     params = {
+        'platform': 'ecephys',
         'subject-id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
     }
@@ -181,7 +182,6 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
             params[f'modality{idx}'] = modality_name
             params[f'modality{idx}.source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
             idx += 1
-    params['platform'] = 'ecephys' if upload.ephys is not None else 'behavior'
             
     if is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
