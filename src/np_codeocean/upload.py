@@ -325,14 +325,18 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     >>> upload.ephys.exists()
     True
     """
-    
-    session = np_session.Session(session)
 
-    if is_surface_channel_recording(session.npexp_path.as_posix()):
+    if is_surface_channel_recording(str(session)):
+        session = np_session.Session(session)
+        if not is_surface_channel_recording(session.npexp_path.name):
+            # manually assign surface channel path 
+            session = np_session.Session(session.npexp_path.parent / f'{session.folder}_surface_channels')
+            assert session.npexp_path.exists(), f"Surface channel path {session.npexp_path} does not exist in same folder as main session recording"
         root = np_session.NPEXP_PATH / 'codeocean' / f'{session.folder}_surface_channels'
         behavior = None
         behavior_videos = None
     else:
+        session = np_session.Session(session)
         root = np_session.NPEXP_PATH / 'codeocean' / session.folder
         behavior = np_config.normalize_path(root / 'behavior')
         behavior_videos = behavior.with_name('behavior-videos')
