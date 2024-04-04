@@ -95,27 +95,22 @@ def correct_structure(dest: Path) -> None:
         logger.debug(f'Examining oebin: {oebin_path} for correction')
         oebin_obj = np_tools.read_oebin(np_config.normalize_path(oebin_path.readlink()))
 
+        events_dir = oebin_path.parent / 'events'
         # iterate over copy of list so as to not disrupt iteration when elements are removed
         for device in [device for device in oebin_obj['events']]:
-            events_dir = oebin_path.parents[0] / 'events'
-            device_dir = device['folder_name']
-            logger.debug(f"\nsearching {events_dir} for {device_dir}")
-            if list(events_dir.rglob(device_dir)) == []:
-                logger.debug(f'{device_dir} not found in {events_dir}, removing from structure.oebin')
+            if list(events_dir.rglob(device['folder_name'])) == []:
+                logger.info(f'{device["folder_name"]} not found in {events_dir}, removing from structure.oebin')
                 oebin_obj['events'].remove(device)
         
+        continuous_dir = oebin_path.parent / 'continuous'
         # iterate over copy of list so as to not disrupt iteration when elements are removed
         for device in [device for device in oebin_obj['continuous']]:
-            continuous_dir = oebin_path.parents[0] / 'continuous'
-            device_dir = device['folder_name']
-            logger.debug(f"\nsearching {continuous_dir} for {device_dir}")
-            if list(continuous_dir.rglob(device_dir)) == []:
-                logger.debug(f'{device_dir} not found in {continuous_dir}, removing from structure.oebin')
+            if list(continuous_dir.rglob(device['folder_name'])) == []:
+                logger.info(f'{device["folder_name"]} not found in {continuous_dir}, removing from structure.oebin')
                 oebin_obj['continuous'].remove(device)
 
         oebin_path.unlink()
-        with open(oebin_path, 'w', encoding='utf-8') as f:
-            json.dump(oebin_obj, f, ensure_ascii=False, indent=4)
+        oebin_path.write_text(json.dumps(oebin_obj, indent=4))
         logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
 
 def is_behavior_video_file(path: Path) -> bool:
