@@ -95,20 +95,14 @@ def correct_structure(dest: Path) -> None:
         logger.debug(f'Examining oebin: {oebin_path} for correction')
         oebin_obj = np_tools.read_oebin(np_config.normalize_path(oebin_path.readlink()))
 
-        events_dir = oebin_path.parent / 'events'
-        # iterate over copy of list so as to not disrupt iteration when elements are removed
-        for device in [device for device in oebin_obj['events']]:
-            if list(events_dir.rglob(device['folder_name'])) == []:
-                logger.info(f'{device["folder_name"]} not found in {events_dir}, removing from structure.oebin')
-                oebin_obj['events'].remove(device)
+        for subdir_name in ('events', 'continuous'):
+            subdir = oebin_path.parent / subdir_name
+            # iterate over copy of list so as to not disrupt iteration when elements are removed
+            for device in [device for device in oebin_obj[subdir_name]]:
+                if list(subdir.rglob(device['folder_name'])) == []:
+                    logger.info(f'{device["folder_name"]} not found in {subdir}, removing from structure.oebin')
+                    oebin_obj[subdir_name].remove(device)
         
-        continuous_dir = oebin_path.parent / 'continuous'
-        # iterate over copy of list so as to not disrupt iteration when elements are removed
-        for device in [device for device in oebin_obj['continuous']]:
-            if list(continuous_dir.rglob(device['folder_name'])) == []:
-                logger.info(f'{device["folder_name"]} not found in {continuous_dir}, removing from structure.oebin')
-                oebin_obj['continuous'].remove(device)
-
         oebin_path.unlink()
         oebin_path.write_text(json.dumps(oebin_obj, indent=4))
         logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
