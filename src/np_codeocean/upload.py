@@ -99,7 +99,7 @@ def correct_structure(dest: Path) -> None:
             subdir = oebin_path.parent / subdir_name
             # iterate over copy of list so as to not disrupt iteration when elements are removed
             for device in [device for device in oebin_obj[subdir_name]]:
-                if list(subdir.rglob(device['folder_name'])) == []:
+                if not (subdir / device['folder_name']).exists():
                     logger.info(f'{device["folder_name"]} not found in {subdir}, removing from structure.oebin')
                     oebin_obj[subdir_name].remove(device)
         
