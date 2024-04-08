@@ -90,7 +90,7 @@ def correct_structure(dest: Path) -> None:
     In case some probes are missing, remove device entries from structure.oebin files with folders that don't actually exist.
     """
     logger.debug('Creating modified structure.oebin')
-    oebin_paths = dest.glob('**/*structure.oebin')
+    oebin_paths = dest.rglob('recording[0-9]*/structure.oebin')
     for oebin_path in oebin_paths:
         logger.debug(f'Examining oebin: {oebin_path} for correction')
         oebin_obj = np_tools.read_oebin(np_config.normalize_path(oebin_path.readlink()))
