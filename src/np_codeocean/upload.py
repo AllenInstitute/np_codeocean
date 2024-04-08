@@ -83,6 +83,29 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
         if not abs_path.is_dir():
             np_tools.symlink(as_posix(abs_path), dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {root_path}')
+    correct_structure(dest)
+
+def correct_structure(dest: Path) -> None:
+    """
+    In case some probes are missing, remove device entries from structure.oebin files with folders that don't actually exist.
+    """
+    logger.debug('Creating modified structure.oebin')
+    oebin_paths = dest.glob('**/*structure.oebin')
+    for oebin_path in oebin_paths:
+        logger.debug(f'Examining oebin: {oebin_path} for correction')
+        oebin_obj = np_tools.read_oebin(np_config.normalize_path(oebin_path.readlink()))
+
+        for subdir_name in ('events', 'continuous'):
+            subdir = oebin_path.parent / subdir_name
+            # iterate over copy of list so as to not disrupt iteration when elements are removed
+            for device in [device for device in oebin_obj[subdir_name]]:
+                if list(subdir.rglob(device['folder_name'])) == []:
+                    logger.info(f'{device["folder_name"]} not found in {subdir}, removing from structure.oebin')
+                    oebin_obj[subdir_name].remove(device)
+        
+        oebin_path.unlink()
+        oebin_path.write_text(json.dumps(oebin_obj, indent=4))
+        logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
 
 def is_behavior_video_file(path: Path) -> bool:
     if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
