@@ -87,25 +87,33 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
 
 def correct_structure(dest: Path) -> None:
     """
-    In case some probes are missing, remove device entries from structure.oebin files with folders that don't actually exist.
+    In case some probes are missing, remove device entries from structure.oebin
+    files for devices with folders that have not been preserved.
     """
-    logger.debug('Creating modified structure.oebin')
-    oebin_paths = dest.rglob('recording[0-9]*/structure.oebin')
-    for oebin_path in oebin_paths:
+    logger.debug('Checking structure.oebin for missing folders...')
+    recording_dirs = dest.rglob('recording[0-9]')
+    for recording_dir in recording_dirs:
+        if not recording_dir.is_dir():
+            continue
+        oebin_path = recording_dir / 'structure.oebin'
+        if not (oebin_path.is_symlink() or oebin_path.exists()):
+            logger.warning(f'No structure.oebin found in {recording_dir}')
+            continue
         logger.debug(f'Examining oebin: {oebin_path} for correction')
         oebin_obj = np_tools.read_oebin(np_config.normalize_path(oebin_path.readlink()))
-
-        for subdir_name in ('events', 'continuous'):
+        any_removed = False
+        for subdir_name in ('events', 'continuous'):    
             subdir = oebin_path.parent / subdir_name
             # iterate over copy of list so as to not disrupt iteration when elements are removed
             for device in [device for device in oebin_obj[subdir_name]]:
                 if not (subdir / device['folder_name']).exists():
                     logger.info(f'{device["folder_name"]} not found in {subdir}, removing from structure.oebin')
                     oebin_obj[subdir_name].remove(device)
-        
-        oebin_path.unlink()
-        oebin_path.write_text(json.dumps(oebin_obj, indent=4))
-        logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
+                    any_removed = True
+        if any_removed:
+            oebin_path.unlink()
+            oebin_path.write_text(json.dumps(oebin_obj, indent=4))
+            logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
 
 def is_behavior_video_file(path: Path) -> bool:
     if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
