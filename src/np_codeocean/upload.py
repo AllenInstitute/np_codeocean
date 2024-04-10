@@ -123,13 +123,10 @@ def is_behavior_video_file(path: Path) -> bool:
         return True
     return False
 
-def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> None:
+def create_behavior_symlinks(session: np_session.Session, dest: Path) -> None:
     """Create symlinks in `dest` pointing to files in top-level of session
     folder on np-exp, plus all files in `exp` subfolder, if present.
     """
-    if dest is None: 
-        logger.debug(f"No behavior folder supplied for {session}")
-        return
     subfolder_names = ('exp', 'qc')
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
@@ -146,13 +143,10 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> 
                 np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
         logger.debug(f'Finished creating symlinks to {name!r} files')
 
-def create_behavior_videos_symlinks(session: np_session.Session, dest: Path | None) -> None:
+def create_behavior_videos_symlinks(session: np_session.Session, dest: Path) -> None:
     """Create symlinks in `dest` pointing to MVR video files and info jsons in top-level of session
     folder on np-exp.
     """
-    if dest is None: 
-        logger.debug(f"No behavior_videos folder supplied for {session}")
-        return
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
         if is_behavior_video_file(src):
@@ -348,10 +342,12 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
         )
-
-    create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
-    create_behavior_symlinks(upload.session, upload.behavior)
-    create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+    if upload.ephys:
+        create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
+    if upload.behavior:
+        create_behavior_symlinks(upload.session, upload.behavior)
+    if upload.behavior_videos:
+        create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
     create_upload_job(upload)    
     return upload
 
