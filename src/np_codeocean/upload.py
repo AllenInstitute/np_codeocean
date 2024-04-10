@@ -91,7 +91,7 @@ def correct_structure(dest: Path) -> None:
     files for devices with folders that have not been preserved.
     """
     logger.debug('Checking structure.oebin for missing folders...')
-    recording_dirs = dest.rglob('recording[0-9]')
+    recording_dirs = dest.rglob('recording[0-9]*')
     for recording_dir in recording_dirs:
         if not recording_dir.is_dir():
             continue
