@@ -20,6 +20,7 @@ import numpy as np
 import polars as pl
 import requests
 from pydantic import ValidationError # may be returned from aind-data-transfer-service
+from np_aind_metadata import np_codeocean as np_aind_metadata_codeocean
 
 logger = np_logging.get_logger(__name__)
 
@@ -348,6 +349,19 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         create_behavior_symlinks(upload.session, upload.behavior)
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+
+    try:
+        np_aind_metadata_codeocean.update_session_and_rig(
+            root,
+            pathlib.Path(CONFIG["rig_metadata_dir"]),
+            "dynamic_routing",
+        )
+    except Exception:
+        logger.error(
+            "Failed to update session and rig metadata for CodeOcean upload",
+            exc_info=True,
+        )
+
     create_upload_job(upload)    
     return upload
 
