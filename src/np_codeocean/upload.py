@@ -351,10 +351,11 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
 
     try:
-        np_aind_metadata_codeocean.update_session_and_rig(
-            root,
-            pathlib.Path(CONFIG["rig_metadata_dir"]),
-            "dynamic_routing",
+        np_aind_metadata_codeocean.add_rig_to_dynamic_routing_session_dir(
+            np_config.normalize_path(root),
+            np_config.normalize_path(
+                pathlib.Path(CONFIG["rig_metadata_dir"])
+            ),
         )
     except Exception:
         logger.error(
