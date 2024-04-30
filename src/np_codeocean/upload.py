@@ -356,6 +356,7 @@ def create_codeocean_upload(session: str | int | np_session.Session,
             np_config.normalize_path(
                 pathlib.Path(CONFIG["rig_metadata_dir"])
             ),
+            session.date,
         )
     except Exception:
         logger.error(

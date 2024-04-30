@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:56a8869bccd75020f0d042475d5842d8c688f60be87fdf76baa2d28f715ef9d4"
+content_hash = "sha256:fb2f71d04fe067d9797c721fac5867f3de5e991f663f76ad11649bdc6ed6c63f"
 
 [[package]]
 name = "aind-data-schema"
@@ -935,7 +935,7 @@ files = [
 
 [[package]]
 name = "np-aind-metadata"
-version = "0.1.6"
+version = "0.1.7"
 requires_python = ">=3.10"
 summary = ""
 dependencies = [
@@ -946,8 +946,8 @@ dependencies = [
     "pyyaml>=6.0.1",
 ]
 files = [
-    {file = "np_aind_metadata-0.1.6-py3-none-any.whl", hash = "sha256:0507d0d851e0c665bf2f5804f0be88d9df22316d06a8e24fb6672bbd13d5cd9b"},
-    {file = "np_aind_metadata-0.1.6.tar.gz", hash = "sha256:f7e58887bfaee44c266b6679cb02d3e71c937b5f9f5d1603107ad0c65b0a8307"},
+    {file = "np_aind_metadata-0.1.7-py3-none-any.whl", hash = "sha256:de9692830b76b6033a90ca2e1e04778b2b8368f574fbf34421a5b16f6bf58840"},
+    {file = "np_aind_metadata-0.1.7.tar.gz", hash = "sha256:a12da903cffb256ef48506e436701fc268ec9ac6d9bfdbc58eb66d19a5d1d371"},
 ]
 
 [[package]]
