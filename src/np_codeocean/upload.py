@@ -61,20 +61,26 @@ def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
 
 
-def create_aind_metadata_symlinks(session: np_session.Session, dest: Path) -> None:
+def create_aind_metadata_symlinks(session: np_session.Session, dest: Path) -> bool:
     """
     Create symlinks in `dest` pointing to aind metadata json files from the root directory
-    on np-exp
+    on np-exp. Returns True if any metadata files are found in np-exp and the `aind_metadata`
+    folder is created.
     """
     if dest is None: 
         logger.debug(f"No metadata folder supplied for {session}")
         return
+    has_metadata_files = False
     for src in session.npexp_path.glob('*'):
-        for metadata_file_suffix in ('session', 'data_description', 'procedures', 'processing', 'subject'):
-            if src.stem + src.suffix == f'{metadata_file_suffix}.json':
+        for metadata_file_name in ('session', 'data_description', 'procedures', 'processing', 'subject'):
+            if src.stem + src.suffix == f'{metadata_file_name}.json':
                 np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))    
-    logger.debug(f'Finished creating symlinks to aind metadata files in {session.npexp_path}')
-
+                has_metadata_files = True
+    if has_metadata_files:
+        logger.debug(f'Finished creating symlinks to aind metadata files in {session.npexp_path}')
+    else:
+        logger.debug(f'No metadata files found in {session.npexp_path}; No symlinks for metadata were made')
+    return has_metadata_files
 
 def create_ephys_symlinks(session: np_session.Session, dest: Path, 
                           recording_dirs: Iterable[str] | None = None) -> None:
@@ -198,7 +204,7 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     timestamp = datetime.datetime.fromtimestamp(timestamp_value / 1e3)
     return timestamp
 
-def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
+def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
     >>> is_surface_channel_recording(path)
@@ -214,7 +220,6 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
         'platform': 'ecephys',
         'subject-id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
-        'metadata_dir': np_config.normalize_path(getattr(upload, 'aind_metadata')).as_posix()
     }
     idx = 0
     for modality_name, attr_name in {
@@ -226,6 +231,9 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
             params[f'modality{idx}'] = modality_name
             params[f'modality{idx}.source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
             idx += 1
+    
+    if include_metadata:
+        params['metadata_dir'] = np_config.normalize_path(getattr(upload, 'aind_metadata')).as_posix()
             
     if is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
@@ -310,9 +318,9 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
 def is_ephys_session(session: np_session.Session) -> bool:
     return bool(next(session.npexp_path.rglob('settings.xml'), None))
 
-def create_upload_job(upload: CodeOceanUpload) -> None:
+def create_upload_job(upload: CodeOceanUpload, include_metadata: bool) -> None:
     logger.info(f'Creating upload job file {upload.job} for session {upload.session}...')
-    job: dict = get_upload_csv_for_session(upload)
+    job: dict = get_upload_csv_for_session(upload, include_metadata)
     with open(upload.job, 'w') as f:
         w = csv.writer(f, lineterminator='')
         w.writerow(job.keys())
@@ -367,8 +375,8 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     create_behavior_symlinks(upload.session, upload.behavior)
     create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
-    create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
-    create_upload_job(upload)    
+    include_metadata = create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
+    create_upload_job(upload, include_metadata)  
     return upload
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
