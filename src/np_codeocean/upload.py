@@ -407,10 +407,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 if __name__ == '__main__':
-    # import doctest
+    import doctest
 
-    # doctest.testmod(
-    #     optionflags=(doctest.IGNORE_EXCEPTION_DETAIL | doctest.NORMALIZE_WHITESPACE),
-    # )
+    doctest.testmod(
+        optionflags=(doctest.IGNORE_EXCEPTION_DETAIL | doctest.NORMALIZE_WHITESPACE),
+    )
 
     main()
