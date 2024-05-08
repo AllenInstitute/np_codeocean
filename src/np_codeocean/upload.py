@@ -18,6 +18,8 @@ import np_tools
 import npc_session
 import polars as pl
 import requests
+import typing
+from pydantic import ValidationError # may be returned from aind-data-transfer-service
 from np_aind_metadata.integrations import dynamic_routing_task
 
 logger = np_logging.get_logger(__name__)
@@ -51,6 +53,15 @@ class CodeOceanUpload:
 
     force_cloud_sync: bool = False
     """If True, re-upload and re-make raw asset even if data exists on S3."""
+
+    modality: typing.Literal['ecephys', 'behavior']
+    """Modality of the session."""
+
+    @property
+    def project_name(self) -> str:
+        if isinstance(self.session, np_session.PipelineSession):
+            return "OpenScope"
+        return "Dynamic Routing"
     
     @property
     def project_name(self) -> str:
@@ -322,6 +333,7 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     >>> upload.ephys.exists()
     True
     """
+    modality = 'ecephys' if is_ephys_session(session) else 'behavior'
 
     if is_surface_channel_recording(str(session)):
         session = np_session.Session(session)
@@ -336,7 +348,8 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         session = np_session.Session(session)
         root = np_session.NPEXP_PATH / 'codeocean' / session.folder
         behavior = np_config.normalize_path(root / 'behavior')
-        behavior_videos = behavior.with_name('behavior-videos')
+        if modality in ('ecephys', ):
+            behavior_videos = behavior.with_name('behavior-videos')
         
     logger.debug(f'Created directory {root} for CodeOcean upload')
     
@@ -347,6 +360,7 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         ephys = np_config.normalize_path(root / 'ephys') if is_ephys_session(session) else None,
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
+        modality=modality,
         )
     if upload.ephys:
         create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
@@ -395,6 +409,7 @@ def main() -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
     parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
+    parser.add_argument()
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
     return parser.parse_args()
