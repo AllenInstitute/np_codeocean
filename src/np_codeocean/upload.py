@@ -20,6 +20,7 @@ import polars as pl
 import requests
 import typing
 from pydantic import ValidationError # may be returned from aind-data-transfer-service
+from np_aind_metadata import update
 from np_aind_metadata.integrations import dynamic_routing_task
 
 logger = np_logging.get_logger(__name__)
@@ -365,19 +366,50 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
 
-    try:
-        dynamic_routing_task.add_rig_to_session_dir(
-            np_config.normalize_path(root),
-            session.date,
+    session_dir = np_config.normalize_path(root)
+    if modality in ('ecephys', ):
+        logger.debug(
+            "Adding rig metadata for ecephys session. modality=%s"
+            % modality)
+        try:
+            dynamic_routing_task.add_rig_to_session_dir(
+                session_dir,
+                session.date,
+                np_config.normalize_path(
+                    pathlib.Path(CONFIG["rig_metadata_dir"])
+                ),
+            )
+        except Exception:
+            logger.error(
+                "Failed to update session and rig metadata for Code Ocean upload.",
+                exc_info=True,
+            )
+    else:
+        logger.debug(
+            "Adding rig metadata for behavior only session. modality=%s"
+            % modality)
+        task_paths = list(
+            session_dir.glob("Dynamic*.hdf5")
+        )
+        logger.debug("Scraped task_paths: %s" % task_paths)
+        rig_model_path = dynamic_routing_task.copy_task_rig(
+            task_paths[0],
+            session_dir / "rig.json",
             np_config.normalize_path(
                 pathlib.Path(CONFIG["rig_metadata_dir"])
             ),
         )
-    except Exception:
-        logger.error(
-            "Failed to update session and rig metadata for Code Ocean upload.",
-            exc_info=True,
+        logger.debug("Rig model path: %s" % rig_model_path)
+        update.update_rig_modification_date(rig_model_path, session.date)
+        session_model_path = dynamic_routing_task.scrape_session_model_path(
+            session_dir,
         )
+        dynamic_routing_task.update_session_from_rig(
+            session_model_path,
+            rig_model_path,
+            session_model_path,
+        )
+
 
     create_upload_job(upload)    
     return upload
