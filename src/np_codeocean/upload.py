@@ -52,6 +52,12 @@ class CodeOceanUpload:
     force_cloud_sync: bool = False
     """If True, re-upload and re-make raw asset even if data exists on S3."""
     
+    @property
+    def project(self) -> str:
+        if isinstance(self.session, np_session.PipelineSession):
+            return "OpenScope"
+        return "Dynamic Routing"
+    
 def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
 
@@ -188,9 +194,10 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
     >>> ephys_upload_csv['modality0.source']
     '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_690706_20231129_surface_channels/ephys'
     >>> ephys_upload_csv.keys()
-    dict_keys(['platform', 'subject-id', 'force_cloud_sync', 'modality0', 'modality0.source', 'acq-datetime'])
+    dict_keys(['project', 'platform', 'subject-id', 'force_cloud_sync', 'modality0', 'modality0.source', 'acq-datetime'])
     """
     params = {
+        'project': upload.project,
         'platform': 'ecephys',
         'project_name': "Dynamic Routing",
         'subject-id': str(upload.session.mouse),
@@ -254,7 +261,7 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
         to get the real error class + message."""
         if response.status_code != 200:
             try:
-                x = response.json()['data']['errors']
+                response.json()['data']['errors']
                 import pdb; pdb.set_trace()
             except (KeyError, IndexError, requests.exceptions.JSONDecodeError, SyntaxError) as exc1:
                 try:
