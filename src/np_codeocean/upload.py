@@ -345,11 +345,10 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         session = np_session.Session(session)
         root = np_session.NPEXP_PATH / 'codeocean' / session.folder
         behavior = np_config.normalize_path(root / 'behavior')
-        if modality in ('ecephys', ):
-            behavior_videos = behavior.with_name('behavior-videos')
-        
+        behavior_videos = behavior.with_name('behavior-videos')
+
     logger.debug(f'Created directory {root} for CodeOcean upload')
-    
+
     upload = CodeOceanUpload(
         session = session, 
         behavior = behavior,
