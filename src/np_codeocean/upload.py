@@ -4,7 +4,7 @@ import argparse
 import contextlib
 import csv
 import datetime
-import dataclass
+import dataclasses
 import doctest
 import json
 import pathlib
@@ -27,7 +27,9 @@ logger = np_logging.get_logger(__name__)
 CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 
-@dataclass.dataclass
+SessionModality = typing.Literal['ecephys', 'behavior']
+
+@dataclasses.dataclass
 class CodeOceanUpload:
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
         Paths are symlinks to files on np-exp.
@@ -54,15 +56,9 @@ class CodeOceanUpload:
     force_cloud_sync: bool = False
     """If True, re-upload and re-make raw asset even if data exists on S3."""
 
-    modality: typing.Literal['ecephys', 'behavior']
+    modality: SessionModality
     """Modality of the session."""
 
-    @property
-    def project_name(self) -> str:
-        if isinstance(self.session, np_session.PipelineSession):
-            return "OpenScope"
-        return "Dynamic Routing"
-    
     @property
     def project_name(self) -> str:
         if isinstance(self.session, np_session.PipelineSession):
@@ -333,7 +329,7 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     >>> upload.ephys.exists()
     True
     """
-    modality = 'ecephys' if is_ephys_session(session) else 'behavior'
+    modality: SessionModality = 'ecephys' if is_ephys_session(session) else 'behavior'
 
     if is_surface_channel_recording(str(session)):
         session = np_session.Session(session)
@@ -409,7 +405,6 @@ def main() -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
     parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
-    parser.add_argument()
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
     return parser.parse_args()
