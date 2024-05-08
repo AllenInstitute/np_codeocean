@@ -194,6 +194,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
     """
     params = {
         'platform': 'ecephys',
+        'project_name': "Dynamic Routing",
         'subject-id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
     }
