@@ -385,27 +385,33 @@ def create_codeocean_upload(session: str | int | np_session.Session,
             )
     elif modality in ('behavior', ):
         logger.debug("Adding rig metadata for behavior only session.")
-        task_paths = list(
-            session_dir.glob("Dynamic*.hdf5")
-        )
-        logger.debug("Scraped task_paths: %s" % task_paths)
-        rig_model_path = dynamic_routing_task.copy_task_rig(
-            task_paths[0],
-            session_dir / "rig.json",
-            np_config.normalize_path(
-                pathlib.Path(CONFIG["rig_metadata_dir"])
-            ),
-        )
-        logger.debug("Rig model path: %s" % rig_model_path)
-        update.update_rig_modification_date(rig_model_path, session.date)
-        session_model_path = dynamic_routing_task.scrape_session_model_path(
-            session_dir,
-        )
-        dynamic_routing_task.update_session_from_rig(
-            session_model_path,
-            rig_model_path,
-            session_model_path,
-        )
+        try:
+            task_paths = list(
+                session_dir.glob("Dynamic*.hdf5")
+            )
+            logger.debug("Scraped task_paths: %s" % task_paths)
+            rig_model_path = dynamic_routing_task.copy_task_rig(
+                task_paths[0],
+                session_dir / "rig.json",
+                np_config.normalize_path(
+                    pathlib.Path(CONFIG["rig_metadata_dir"])
+                ),
+            )
+            logger.debug("Rig model path: %s" % rig_model_path)
+            update.update_rig_modification_date(rig_model_path, session.date)
+            session_model_path = dynamic_routing_task.scrape_session_model_path(
+                session_dir,
+            )
+            dynamic_routing_task.update_session_from_rig(
+                session_model_path,
+                rig_model_path,
+                session_model_path,
+            )
+        except Exception:
+            logger.error(
+                "Failed to update session and rig metadata for Code Ocean upload.",
+                exc_info=True,
+            )
     else:
         raise Exception("Unexpected modality: %s" % modality)
 
