@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:3b2779b1141322325d94584c58f068062fe4e2adbd639213d0f056a88f48df01"
+content_hash = "sha256:e2f39b48aca7bb97f5f7840271f47f70db6bcdfc1da9b39b0987cd943fd6b0d2"
 
 [[package]]
 name = "aind-data-schema"
@@ -935,7 +935,7 @@ files = [
 
 [[package]]
 name = "np-aind-metadata"
-version = "0.1.11"
+version = "0.1.12"
 requires_python = ">=3.10"
 summary = ""
 dependencies = [
@@ -946,8 +946,8 @@ dependencies = [
     "pyyaml>=6.0.1",
 ]
 files = [
-    {file = "np_aind_metadata-0.1.11-py3-none-any.whl", hash = "sha256:f33d2f118c392c6dc466d5a8a50a12d0e9317fb4069ba258989c11d4efd2052d"},
-    {file = "np_aind_metadata-0.1.11.tar.gz", hash = "sha256:9f08f40a5aa725ae465244240b43fdc6759a0a99667a656a6d4580dc2b22dd5b"},
+    {file = "np_aind_metadata-0.1.12-py3-none-any.whl", hash = "sha256:54d5570abb502a21431c637a03490102989caba918ba7f196d150261fe0db95d"},
+    {file = "np_aind_metadata-0.1.12.tar.gz", hash = "sha256:db809fe17e54f18bc83e8a6fb44940cfc31061d21db08ebc2835b2cd40336e9e"},
 ]
 
 [[package]]
@@ -1220,16 +1220,16 @@ files = [
 
 [[package]]
 name = "polars"
-version = "0.20.23"
+version = "0.20.24"
 requires_python = ">=3.8"
 summary = "Blazingly fast DataFrame library"
 files = [
-    {file = "polars-0.20.23-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:9b1001a29e785126f0e189786223c45bf9c7696ed3d221a61dd629ff5e8229d3"},
-    {file = "polars-0.20.23-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:7de724f9b7f94c76008023b1ef9319e7dccada97e98d48d548be487be8dc2ea6"},
-    {file = "polars-0.20.23-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f109512a456f9f8bdc20e5b19e5794471d4a1a507f99daf1afe1b41eb3227c41"},
-    {file = "polars-0.20.23-cp38-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:bfd10ffabafecba3bb836f9e267405abc8259da5fb8d5e74096d46eea802a295"},
-    {file = "polars-0.20.23-cp38-abi3-win_amd64.whl", hash = "sha256:de69adcfe4a92821f28c0223b801e56a36682a7aac32df8e860e6df7678f4c8a"},
-    {file = "polars-0.20.23.tar.gz", hash = "sha256:4503c446c7771d5b52d5bff4f2dbf2e999a87a1cc3c89931db255cff43218436"},
+    {file = "polars-0.20.24-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:a2c7282e0c81f038c9800ec4e1d97fe53dcacbba9632baf31a633e8bf12caab3"},
+    {file = "polars-0.20.24-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:02587e12435e583693351c4757cf571b90165ceb53b031e891aadf2c816cc59d"},
+    {file = "polars-0.20.24-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dfbb129941dd0cfa05f0fb5ef1cde341fed336b4dfcb81c3bef6f3f6b899cb17"},
+    {file = "polars-0.20.24-cp38-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:9921df98cee040903d35aef2c7237182240451e1ad413116a82e1e166d8fe943"},
+    {file = "polars-0.20.24-cp38-abi3-win_amd64.whl", hash = "sha256:dc0fb1169d3d0b286793421a6919c6a9f06235b9f93c1e00f01f199e038d3681"},
+    {file = "polars-0.20.24.tar.gz", hash = "sha256:a0c11f3b5e756bab7ba164ed73104c96fa9c861efce157fe8991b3eafeb4b0b8"},
 ]
 
 [[package]]
