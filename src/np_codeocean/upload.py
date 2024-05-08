@@ -383,10 +383,8 @@ def create_codeocean_upload(session: str | int | np_session.Session,
                 "Failed to update session and rig metadata for Code Ocean upload.",
                 exc_info=True,
             )
-    else:
-        logger.debug(
-            "Adding rig metadata for behavior only session. modality=%s"
-            % modality)
+    elif modality in ('behavior', ):
+        logger.debug("Adding rig metadata for behavior only session.")
         task_paths = list(
             session_dir.glob("Dynamic*.hdf5")
         )
@@ -408,7 +406,8 @@ def create_codeocean_upload(session: str | int | np_session.Session,
             rig_model_path,
             session_model_path,
         )
-
+    else:
+        raise Exception("Unexpected modality: %s" % modality)
 
     create_upload_job(upload)    
     return upload
