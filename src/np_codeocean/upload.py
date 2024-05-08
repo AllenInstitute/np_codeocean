@@ -3,23 +3,21 @@ from __future__ import annotations
 import argparse
 import contextlib
 import csv
+import datetime
+import dataclass
+import doctest
 import json
 import pathlib
-import datetime
-from pathlib import Path
-from typing import NamedTuple
 from collections.abc import Iterable
+from pathlib import Path
 
 import np_config
 import np_logging
 import np_session
-import npc_session
 import np_tools
-import doctest
-import numpy as np
+import npc_session
 import polars as pl
 import requests
-from pydantic import ValidationError # may be returned from aind-data-transfer-service
 from np_aind_metadata.integrations import dynamic_routing_task
 
 logger = np_logging.get_logger(__name__)
@@ -27,8 +25,8 @@ logger = np_logging.get_logger(__name__)
 CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 
-
-class CodeOceanUpload(NamedTuple):
+@dataclass.dataclass
+class CodeOceanUpload:
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
         Paths are symlinks to files on np-exp.
     """
