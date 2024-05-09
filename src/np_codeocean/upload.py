@@ -379,13 +379,6 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         force_cloud_sync=force_cloud_sync,
         )
 
-    if upload.ephys:
-        create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
-    if upload.behavior:
-        create_behavior_symlinks(upload.session, upload.behavior)
-    if upload.behavior_videos:
-        create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
-
     if upload.project_name == 'DynamicRouting':
         try:
             dynamic_routing_task.add_rig_to_session_dir(
@@ -401,9 +394,12 @@ def create_codeocean_upload(session: str | int | np_session.Session,
                 exc_info=True,
             )
 
-    create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
-    create_behavior_symlinks(upload.session, upload.behavior)
-    create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+    if upload.ephys:
+        create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
+    if upload.behavior:
+        create_behavior_symlinks(upload.session, upload.behavior)
+    if upload.behavior_videos:
+        create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
     include_metadata = create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
     create_upload_job(upload, include_metadata)  
     return upload
@@ -413,9 +409,9 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
                    force: bool = False,
                    ) -> None:
     upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs, force_cloud_sync=force)
-    # np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
-    # put_csv_for_hpc_upload(upload.job)
-    # logger.debug(f'Submitted {upload.session} to hpc upload queue')
+    np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
+    put_csv_for_hpc_upload(upload.job)
+    logger.debug(f'Submitted {upload.session} to hpc upload queue')
     
     if (is_split_recording := 
         recording_dirs is not None 
