@@ -4,7 +4,7 @@ import argparse
 import contextlib
 import csv
 import datetime
-import dataclass
+import dataclasses
 import doctest
 import json
 import pathlib
@@ -18,6 +18,7 @@ import np_tools
 import npc_session
 import polars as pl
 import requests
+from pydantic import ValidationError # may be returned from aind-data-transfer-service
 from np_aind_metadata.integrations import dynamic_routing_task
 
 logger = np_logging.get_logger(__name__)
@@ -25,7 +26,7 @@ logger = np_logging.get_logger(__name__)
 CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 
-@dataclass.dataclass
+@dataclasses.dataclass
 class CodeOceanUpload:
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
         Paths are symlinks to files on np-exp.
@@ -46,6 +47,10 @@ class CodeOceanUpload:
     """Directory of symlinks to raw ephys data files on np-exp, with only one
     `recording` per `Record Node` folder."""
 
+    aind_metadata: Path | None
+    """Directory of symlinks to aind metadata json files in top-level of session folder 
+    on np-exp."""
+
     job: Path
     """File containing job parameters for `aind-data-transfer`"""
 
@@ -60,6 +65,28 @@ class CodeOceanUpload:
     
 def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
+
+
+def create_aind_metadata_symlinks(session: np_session.Session, dest: Path) -> bool:
+    """
+    Create symlinks in `dest` pointing to aind metadata json files from the root directory
+    on np-exp. Returns True if any metadata files are found in np-exp and the `aind_metadata`
+    folder is created.
+    """
+    if dest is None: 
+        logger.debug(f"No metadata folder supplied for {session}")
+        return
+    has_metadata_files = False
+    for src in session.npexp_path.glob('*'):
+        for metadata_file_name in ('session', 'data_description', 'procedures', 'processing', 'rig', 'subject'):
+            if src.stem + src.suffix == f'{metadata_file_name}.json':
+                np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))    
+                has_metadata_files = True
+    if has_metadata_files:
+        logger.debug(f'Finished creating symlinks to aind metadata files in {session.npexp_path}')
+    else:
+        logger.debug(f'No metadata files found in {session.npexp_path}; No symlinks for metadata were made')
+    return has_metadata_files
 
 def create_ephys_symlinks(session: np_session.Session, dest: Path, 
                           recording_dirs: Iterable[str] | None = None) -> None:
@@ -92,33 +119,26 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
 
 def correct_structure(dest: Path) -> None:
     """
-    In case some probes are missing, remove device entries from structure.oebin
-    files for devices with folders that have not been preserved.
+    In case some probes are missing, remove device entries from structure.oebin files with folders that don't actually exist.
     """
-    logger.debug('Checking structure.oebin for missing folders...')
-    recording_dirs = dest.rglob('recording[0-9]*')
-    for recording_dir in recording_dirs:
-        if not recording_dir.is_dir():
-            continue
-        oebin_path = recording_dir / 'structure.oebin'
-        if not (oebin_path.is_symlink() or oebin_path.exists()):
-            logger.warning(f'No structure.oebin found in {recording_dir}')
-            continue
+    logger.debug('Creating modified structure.oebin')
+    oebin_paths = dest.glob('**\\structure.oebin')
+    print(list(oebin_paths))
+    for oebin_path in oebin_paths:
         logger.debug(f'Examining oebin: {oebin_path} for correction')
         oebin_obj = np_tools.read_oebin(np_config.normalize_path(oebin_path.readlink()))
-        any_removed = False
-        for subdir_name in ('events', 'continuous'):    
+
+        for subdir_name in ('events', 'continuous'):
             subdir = oebin_path.parent / subdir_name
             # iterate over copy of list so as to not disrupt iteration when elements are removed
             for device in [device for device in oebin_obj[subdir_name]]:
                 if not (subdir / device['folder_name']).exists():
                     logger.info(f'{device["folder_name"]} not found in {subdir}, removing from structure.oebin')
                     oebin_obj[subdir_name].remove(device)
-                    any_removed = True
-        if any_removed:
-            oebin_path.unlink()
-            oebin_path.write_text(json.dumps(oebin_obj, indent=4))
-            logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
+        
+        oebin_path.unlink()
+        oebin_path.write_text(json.dumps(oebin_obj, indent=4))
+        logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
 
 def is_behavior_video_file(path: Path) -> bool:
     if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
@@ -128,10 +148,13 @@ def is_behavior_video_file(path: Path) -> bool:
         return True
     return False
 
-def create_behavior_symlinks(session: np_session.Session, dest: Path) -> None:
+def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> None:
     """Create symlinks in `dest` pointing to files in top-level of session
     folder on np-exp, plus all files in `exp` subfolder, if present.
     """
+    if dest is None: 
+        logger.debug(f"No behavior folder supplied for {session}")
+        return
     subfolder_names = ('exp', 'qc')
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
@@ -148,10 +171,13 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path) -> None:
                 np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
         logger.debug(f'Finished creating symlinks to {name!r} files')
 
-def create_behavior_videos_symlinks(session: np_session.Session, dest: Path) -> None:
+def create_behavior_videos_symlinks(session: np_session.Session, dest: Path | None) -> None:
     """Create symlinks in `dest` pointing to MVR video files and info jsons in top-level of session
     folder on np-exp.
     """
+    if dest is None: 
+        logger.debug(f"No behavior_videos folder supplied for {session}")
+        return
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
         if is_behavior_video_file(src):
@@ -184,7 +210,7 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     timestamp = datetime.datetime.fromtimestamp(timestamp_value / 1e3)
     return timestamp
 
-def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
+def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
     >>> is_surface_channel_recording(path)
@@ -212,6 +238,9 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
             params[f'modality{idx}'] = modality_name
             params[f'modality{idx}.source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
             idx += 1
+    
+    if include_metadata:
+        params['metadata_dir'] = np_config.normalize_path(getattr(upload, 'aind_metadata')).as_posix()
             
     if is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
@@ -296,9 +325,9 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
 def is_ephys_session(session: np_session.Session) -> bool:
     return bool(next(session.npexp_path.rglob('settings.xml'), None))
 
-def create_upload_job(upload: CodeOceanUpload) -> None:
+def create_upload_job(upload: CodeOceanUpload, include_metadata: bool) -> None:
     logger.info(f'Creating upload job file {upload.job} for session {upload.session}...')
-    job: dict = get_upload_csv_for_session(upload)
+    job: dict = get_upload_csv_for_session(upload, include_metadata)
     with open(upload.job, 'w') as f:
         w = csv.writer(f, lineterminator='')
         w.writerow(job.keys())
@@ -345,31 +374,34 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         behavior = behavior,
         behavior_videos = behavior_videos,
         ephys = np_config.normalize_path(root / 'ephys') if is_ephys_session(session) else None,
+        aind_metadata = np_config.normalize_path(root / 'aind_metadata'),
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
         )
+
+    if upload.project_name == 'DynamicRouting':
+        try:
+            dynamic_routing_task.add_rig_to_session_dir(
+                np_config.normalize_path(root),
+                session.date,
+                np_config.normalize_path(
+                    pathlib.Path(CONFIG["rig_metadata_dir"])
+                ),
+            )
+        except Exception:
+            logger.error(
+                "Failed to update session and rig metadata for Code Ocean upload.",
+                exc_info=True,
+            )
+
     if upload.ephys:
         create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     if upload.behavior:
         create_behavior_symlinks(upload.session, upload.behavior)
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
-
-    try:
-        dynamic_routing_task.add_rig_to_session_dir(
-            np_config.normalize_path(root),
-            session.date,
-            np_config.normalize_path(
-                pathlib.Path(CONFIG["rig_metadata_dir"])
-            ),
-        )
-    except Exception:
-        logger.error(
-            "Failed to update session and rig metadata for Code Ocean upload.",
-            exc_info=True,
-        )
-
-    create_upload_job(upload)    
+    include_metadata = create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
+    create_upload_job(upload, include_metadata)  
     return upload
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
@@ -405,3 +437,5 @@ if __name__ == '__main__':
     doctest.testmod(
         optionflags=(doctest.IGNORE_EXCEPTION_DETAIL | doctest.NORMALIZE_WHITESPACE),
     )
+
+    main()
