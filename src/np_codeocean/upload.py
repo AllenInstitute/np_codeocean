@@ -206,7 +206,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
     """
     params = {
         'project_name': upload.project_name,
-        'platform': 'ecephys',
+        'platform': upload.modality,
         'subject-id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
     }
@@ -233,10 +233,10 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
 
 def is_in_hpc_upload_queue(csv_path: pathlib.Path) -> bool:
     """Check if an upload job has been submitted to the hpc upload queue.
-    
+
     - currently assumes one job per csv
     - does not check status (job may be FINISHED rather than RUNNING)
-    
+
     >>> is_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
     False
     """
@@ -421,8 +421,12 @@ def create_codeocean_upload(session: str | int | np_session.Session,
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
                    recording_dirs: Iterable[str] | None = None,
                    force: bool = False,
+                   dry_run: bool = False,
                    ) -> None:
     upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs, force_cloud_sync=force)
+    if dry_run:
+        logger.info(f'Dry run: not submitting {upload.session} to hpc upload queue. dry_run={dry_run}')
+        return
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     put_csv_for_hpc_upload(upload.job)
     logger.debug(f'Submitted {upload.session} to hpc upload queue')
@@ -443,6 +447,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
+    parser.add_argument('--dry-run', action='store_true', help="Create upload job but do not submit to hpc upload queue.")
     return parser.parse_args()
 
 if __name__ == '__main__':
