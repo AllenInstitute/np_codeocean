@@ -4,7 +4,7 @@ import argparse
 import contextlib
 import csv
 import datetime
-import dataclass
+import dataclasses
 import doctest
 import json
 import pathlib
@@ -26,7 +26,7 @@ logger = np_logging.get_logger(__name__)
 CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 
-@dataclass.dataclass
+@dataclasses.dataclass
 class CodeOceanUpload:
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
         Paths are symlinks to files on np-exp.
@@ -386,19 +386,20 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
 
-    try:
-        dynamic_routing_task.add_rig_to_session_dir(
-            np_config.normalize_path(root),
-            session.date,
-            np_config.normalize_path(
-                pathlib.Path(CONFIG["rig_metadata_dir"])
-            ),
-        )
-    except Exception:
-        logger.error(
-            "Failed to update session and rig metadata for Code Ocean upload.",
-            exc_info=True,
-        )
+    if upload.project_name == 'DynamicRouting':
+        try:
+            dynamic_routing_task.add_rig_to_session_dir(
+                np_config.normalize_path(root),
+                session.date,
+                np_config.normalize_path(
+                    pathlib.Path(CONFIG["rig_metadata_dir"])
+                ),
+            )
+        except Exception:
+            logger.error(
+                "Failed to update session and rig metadata for Code Ocean upload.",
+                exc_info=True,
+            )
 
     create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     create_behavior_symlinks(upload.session, upload.behavior)
@@ -412,9 +413,9 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
                    force: bool = False,
                    ) -> None:
     upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs, force_cloud_sync=force)
-    np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
-    put_csv_for_hpc_upload(upload.job)
-    logger.debug(f'Submitted {upload.session} to hpc upload queue')
+    # np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
+    # put_csv_for_hpc_upload(upload.job)
+    # logger.debug(f'Submitted {upload.session} to hpc upload queue')
     
     if (is_split_recording := 
         recording_dirs is not None 
