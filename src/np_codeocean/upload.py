@@ -78,7 +78,7 @@ def create_aind_metadata_symlinks(session: np_session.Session, dest: Path) -> bo
         return
     has_metadata_files = False
     for src in session.npexp_path.glob('*'):
-        for metadata_file_name in ('session', 'data_description', 'procedures', 'processing', 'subject'):
+        for metadata_file_name in ('session', 'data_description', 'procedures', 'processing', 'rig', 'subject'):
             if src.stem + src.suffix == f'{metadata_file_name}.json':
                 np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))    
                 has_metadata_files = True
