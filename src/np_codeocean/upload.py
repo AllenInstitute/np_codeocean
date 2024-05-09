@@ -3,31 +3,31 @@ from __future__ import annotations
 import argparse
 import contextlib
 import csv
+import datetime
+import dataclass
+import doctest
 import json
 import pathlib
-import datetime
-from pathlib import Path
-from typing import NamedTuple
 from collections.abc import Iterable
+from pathlib import Path
 
 import np_config
 import np_logging
 import np_session
-import npc_session
 import np_tools
-import doctest
-import numpy as np
+import npc_session
 import polars as pl
 import requests
 from pydantic import ValidationError # may be returned from aind-data-transfer-service
+from np_aind_metadata.integrations import dynamic_routing_task
 
 logger = np_logging.get_logger(__name__)
 
 CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 
-
-class CodeOceanUpload(NamedTuple):
+@dataclass.dataclass
+class CodeOceanUpload:
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
         Paths are symlinks to files on np-exp.
     """
@@ -56,6 +56,12 @@ class CodeOceanUpload(NamedTuple):
 
     force_cloud_sync: bool = False
     """If True, re-upload and re-make raw asset even if data exists on S3."""
+    
+    @property
+    def project_name(self) -> str:
+        if isinstance(self.session, np_session.PipelineSession):
+            return "OpenScope"
+        return "Dynamic Routing"
     
 def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
@@ -214,9 +220,10 @@ def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) 
     >>> ephys_upload_csv['modality0.source']
     '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_690706_20231129_surface_channels/ephys'
     >>> ephys_upload_csv.keys()
-    dict_keys(['platform', 'subject-id', 'force_cloud_sync', 'modality0', 'modality0.source', 'acq-datetime'])
+    dict_keys(['project_name', 'platform', 'subject-id', 'force_cloud_sync', 'modality0', 'modality0.source', 'acq-datetime'])
     """
     params = {
+        'project_name': upload.project_name,
         'platform': 'ecephys',
         'subject-id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
@@ -282,7 +289,7 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
         to get the real error class + message."""
         if response.status_code != 200:
             try:
-                x = response.json()['data']['errors']
+                response.json()['data']['errors']
                 import pdb; pdb.set_trace()
             except (KeyError, IndexError, requests.exceptions.JSONDecodeError, SyntaxError) as exc1:
                 try:
@@ -370,6 +377,27 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         aind_metadata = np_config.normalize_path(root / 'aind_metadata'),
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
+        )
+
+    if upload.ephys:
+        create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
+    if upload.behavior:
+        create_behavior_symlinks(upload.session, upload.behavior)
+    if upload.behavior_videos:
+        create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+
+    try:
+        dynamic_routing_task.add_rig_to_session_dir(
+            np_config.normalize_path(root),
+            session.date,
+            np_config.normalize_path(
+                pathlib.Path(CONFIG["rig_metadata_dir"])
+            ),
+        )
+    except Exception:
+        logger.error(
+            "Failed to update session and rig metadata for Code Ocean upload.",
+            exc_info=True,
         )
 
     create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
