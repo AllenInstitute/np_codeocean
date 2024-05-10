@@ -25,6 +25,7 @@ logger = np_logging.get_logger(__name__)
 
 CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
+DEV_SERVICE = "http://aind-data-transfer-service-dev"
 
 @dataclasses.dataclass
 class CodeOceanUpload:
@@ -261,7 +262,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
     return params
 
 
-def is_in_hpc_upload_queue(csv_path: pathlib.Path) -> bool:
+def is_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
     """Check if an upload job has been submitted to the hpc upload queue.
     
     - currently assumes one job per csv
@@ -281,11 +282,11 @@ def is_in_hpc_upload_queue(csv_path: pathlib.Path) -> bool:
             continue
     partial_session_id = f"{subject}_{dt.replace(' ', '_').replace(':', '-')}"
     
-    jobs_response = requests.get(f"{AIND_DATA_TRANSFER_SERVICE}/jobs")
+    jobs_response = requests.get(f"{upload_service_url}/jobs")
     jobs_response.raise_for_status()
     return partial_session_id in jobs_response.content.decode()
     
-def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
+def put_csv_for_hpc_upload(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> None:
     """Submit a single job upload csv to the aind-data-transfer-service, for
     upload to S3 on the hpc.
     
@@ -308,17 +309,17 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
                 
     with open(csv_path, 'rb') as f:
         validate_csv_response = requests.post(
-            url=f"{AIND_DATA_TRANSFER_SERVICE}/api/validate_csv", 
+            url=f"{upload_service_url}/api/validate_csv", 
             files=dict(file=f),
             )
     _raise_for_status(validate_csv_response)
     
-    if is_in_hpc_upload_queue(csv_path):
+    if is_in_hpc_upload_queue(csv_path, upload_service_url):
         logger.warning(f"Job already submitted for {csv_path}")
         return
     
     post_csv_response = requests.post(
-        url=f"{AIND_DATA_TRANSFER_SERVICE}/api/submit_hpc_jobs", 
+        url=f"{upload_service_url}/api/submit_hpc_jobs", 
         json=dict(
             jobs=[
                     dict(
@@ -416,10 +417,11 @@ def create_codeocean_upload(session: str | int | np_session.Session,
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
                    recording_dirs: Iterable[str] | None = None,
                    force: bool = False,
+                   test: bool = False,
                    ) -> None:
     upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs, force_cloud_sync=force)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
-    put_csv_for_hpc_upload(upload.job)
+    put_csv_for_hpc_upload(upload.job, DEV_SERVICE if test else AIND_DATA_TRANSFER_SERVICE)
     logger.debug(f'Submitted {upload.session} to hpc upload queue')
     
     if (is_split_recording := 
@@ -437,6 +439,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
     parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
+    parser.add_argument('--test', action='store_true', help="use the test-upload service, uploading to the test CodeOcean server instead of the production server")
     parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
     return parser.parse_args()
 
