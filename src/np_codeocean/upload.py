@@ -76,6 +76,9 @@ def create_aind_metadata_symlinks(session: np_session.Session, dest: Path) -> bo
     if dest is None: 
         logger.debug(f"No metadata folder supplied for {session}")
         return
+    if not dest.exists():
+        dest.mkdir(parents=True)
+
     has_metadata_files = False
     for src in session.npexp_path.glob('*'):
         for metadata_file_name in ('session', 'data_description', 'procedures', 'processing', 'rig', 'subject'):
@@ -217,7 +220,7 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     timestamp = datetime.datetime.fromtimestamp(timestamp_value / 1e3)
     return timestamp
 
-def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) -> dict[str, str | int | bool]:
+def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
     >>> is_surface_channel_recording(path)
@@ -246,8 +249,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) 
             params[f'modality{idx}.source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
             idx += 1
     
-    if include_metadata:
-        params['metadata_dir'] = np_config.normalize_path(getattr(upload, 'aind_metadata')).as_posix()
+    params['metadata_dir'] = np_config.normalize_path(getattr(upload, 'aind_metadata')).as_posix()
             
     if is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
@@ -332,9 +334,9 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path) -> None:
 def is_ephys_session(session: np_session.Session) -> bool:
     return bool(next(session.npexp_path.rglob('settings.xml'), None))
 
-def create_upload_job(upload: CodeOceanUpload, include_metadata: bool) -> None:
+def create_upload_job(upload: CodeOceanUpload) -> None:
     logger.info(f'Creating upload job file {upload.job} for session {upload.session}...')
-    job: dict = get_upload_csv_for_session(upload, include_metadata)
+    job: dict = get_upload_csv_for_session(upload)
     with open(upload.job, 'w') as f:
         w = csv.writer(f, lineterminator='')
         w.writerow(job.keys())
@@ -407,8 +409,8 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         create_behavior_symlinks(upload.session, upload.behavior)
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
-    include_metadata = create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
-    create_upload_job(upload, include_metadata)  
+    create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
+    create_upload_job(upload)  
     return upload
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
