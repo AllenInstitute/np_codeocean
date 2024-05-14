@@ -350,6 +350,7 @@ def create_upload_job(upload: CodeOceanUpload, include_metadata: bool) -> None:
 
         w.writerow(job.values()) 
 
+
 def create_codeocean_upload(session: str | int | np_session.Session, 
                             recording_dirs: Iterable[str] | None = None,
                             force_cloud_sync: bool = False,
@@ -395,28 +396,6 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         force_cloud_sync=force_cloud_sync,
         modality=modality,
         )
-
-    if upload.project_name == 'DynamicRouting':
-        try:
-            dynamic_routing_task.add_rig_to_session_dir(
-                np_config.normalize_path(root),
-                session.date,
-                np_config.normalize_path(
-                    pathlib.Path(CONFIG["rig_metadata_dir"])
-                ),
-            )
-        except Exception:
-            logger.error(
-                "Failed to update session and rig metadata for Code Ocean upload.",
-                exc_info=True,
-            )
-
-    if upload.ephys:
-        create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
-    if upload.behavior:
-        create_behavior_symlinks(upload.session, upload.behavior)
-    if upload.behavior_videos:
-        create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
 
     session_dir = np_config.normalize_path(root)
     if modality in ('ecephys', ):
@@ -481,6 +460,12 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
         logger.info(f'Dry run. Not submitting {upload.session} to hpc upload queue. dry_run={dry_run}, upload={upload}')
         return
     include_metadata = create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
+    if upload.ephys:
+        create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
+    if upload.behavior:
+        create_behavior_symlinks(upload.session, upload.behavior)
+    if upload.behavior_videos:
+        create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
     create_upload_job(upload, include_metadata)  
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     put_csv_for_hpc_upload(upload.job, DEV_SERVICE if test else AIND_DATA_TRANSFER_SERVICE)
