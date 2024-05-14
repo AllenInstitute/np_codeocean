@@ -478,7 +478,7 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
                    ) -> None:
     upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs, force_cloud_sync=force)
     if dry_run:
-        logger.info(f'Dry run: not submitting {upload.session} to hpc upload queue. dry_run={dry_run}, upload={upload}')
+        logger.info(f'Dry run. Not submitting {upload.session} to hpc upload queue. dry_run={dry_run}, upload={upload}')
         return
     include_metadata = create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
     create_upload_job(upload, include_metadata)  
