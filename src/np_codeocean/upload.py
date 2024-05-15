@@ -18,7 +18,9 @@ import np_tools
 import npc_session
 import polars as pl
 import requests
+import typing
 from pydantic import ValidationError # may be returned from aind-data-transfer-service
+from np_aind_metadata import update
 from np_aind_metadata.integrations import dynamic_routing_task
 
 logger = np_logging.get_logger(__name__)
@@ -26,6 +28,8 @@ logger = np_logging.get_logger(__name__)
 CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 DEV_SERVICE = "http://aind-data-transfer-service-dev"
+
+SessionModality = typing.Literal['ecephys', 'behavior']
 
 @dataclasses.dataclass
 class CodeOceanUpload:
@@ -57,7 +61,10 @@ class CodeOceanUpload:
 
     force_cloud_sync: bool = False
     """If True, re-upload and re-make raw asset even if data exists on S3."""
-    
+
+    modality: SessionModality
+    """Modality of the session."""
+
     @property
     def project_name(self) -> str:
         if isinstance(self.session, np_session.PipelineSession):
@@ -235,7 +242,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
     """
     params = {
         'project_name': upload.project_name,
-        'platform': 'ecephys',
+        'platform': upload.modality,
         'subject-id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
     }
@@ -264,10 +271,10 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
 
 def is_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
     """Check if an upload job has been submitted to the hpc upload queue.
-    
+
     - currently assumes one job per csv
     - does not check status (job may be FINISHED rather than RUNNING)
-    
+
     >>> is_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
     False
     """
@@ -345,6 +352,7 @@ def create_upload_job(upload: CodeOceanUpload) -> None:
 
         w.writerow(job.values()) 
 
+
 def create_codeocean_upload(session: str | int | np_session.Session, 
                             recording_dirs: Iterable[str] | None = None,
                             force_cloud_sync: bool = False,
@@ -361,6 +369,7 @@ def create_codeocean_upload(session: str | int | np_session.Session,
     >>> upload.ephys.exists()
     True
     """
+    modality: SessionModality = 'ecephys' if is_ephys_session(session) else 'behavior'
 
     if is_surface_channel_recording(str(session)):
         session = np_session.Session(session)
@@ -376,9 +385,9 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         root = np_session.NPEXP_PATH / 'codeocean' / session.folder
         behavior = np_config.normalize_path(root / 'behavior')
         behavior_videos = behavior.with_name('behavior-videos')
-        
+
     logger.debug(f'Created directory {root} for CodeOcean upload')
-    
+
     upload = CodeOceanUpload(
         session = session, 
         behavior = behavior,
@@ -387,12 +396,17 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         aind_metadata = np_config.normalize_path(root / 'aind_metadata'),
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
+        modality=modality,
         )
 
-    if upload.project_name == 'DynamicRouting':
+    session_dir = np_config.normalize_path(root)
+    if modality in ('ecephys', ):
+        logger.debug(
+            "Adding rig metadata for ecephys session. modality=%s"
+            % modality)
         try:
             dynamic_routing_task.add_rig_to_session_dir(
-                np_config.normalize_path(root),
+                session_dir,
                 session.date,
                 np_config.normalize_path(
                     pathlib.Path(CONFIG["rig_metadata_dir"])
@@ -403,7 +417,50 @@ def create_codeocean_upload(session: str | int | np_session.Session,
                 "Failed to update session and rig metadata for Code Ocean upload.",
                 exc_info=True,
             )
+    elif modality in ('behavior', ):
+        logger.debug("Adding rig metadata for behavior only session.")
+        try:
+            task_paths = list(
+                session_dir.glob("Dynamic*.hdf5")
+            )
+            logger.debug("Scraped task_paths: %s" % task_paths)
+            rig_model_path = dynamic_routing_task.copy_task_rig(
+                task_paths[0],
+                session_dir / "rig.json",
+                np_config.normalize_path(
+                    pathlib.Path(CONFIG["rig_metadata_dir"])
+                ),
+            )
+            logger.debug("Rig model path: %s" % rig_model_path)
+            session_model_path = dynamic_routing_task.scrape_session_model_path(
+                session_dir,
+            )
+            dynamic_routing_task.update_session_from_rig(
+                session_model_path,
+                rig_model_path,
+                session_model_path,
+            )
+        except Exception:
+            logger.error(
+                "Failed to update session and rig metadata for Code Ocean upload.",
+                exc_info=True,
+            )
+    else:
+        raise Exception("Unexpected modality: %s" % modality)
+ 
+    return upload
 
+def upload_session(session: str | int | pathlib.Path | np_session.Session, 
+                   recording_dirs: Iterable[str] | None = None,
+                   force: bool = False,
+                   dry_run: bool = False,
+                   test: bool = False,
+                   ) -> None:
+    upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs, force_cloud_sync=force)
+    if dry_run:
+        logger.info(f'Dry run. Not submitting {upload.session} to hpc upload queue. dry_run={dry_run}, upload={upload}')
+        return
+    create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
     if upload.ephys:
         create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     if upload.behavior:
@@ -441,6 +498,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('--test', action='store_true', help="use the test-upload service, uploading to the test CodeOcean server instead of the production server")
     parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
+    parser.add_argument('--dry-run', action='store_true', help="Create upload job but do not submit to hpc upload queue.")
     return parser.parse_args()
 
 if __name__ == '__main__':
