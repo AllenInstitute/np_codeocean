@@ -430,7 +430,6 @@ def create_codeocean_upload(session: str | int | np_session.Session,
                 ),
             )
             logger.debug("Rig model path: %s" % rig_model_path)
-            update.update_rig_modification_date(rig_model_path, session.date)
             session_model_path = dynamic_routing_task.scrape_session_model_path(
                 session_dir,
             )
