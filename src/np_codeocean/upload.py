@@ -20,8 +20,8 @@ import polars as pl
 import requests
 import typing
 from pydantic import ValidationError # may be returned from aind-data-transfer-service
-from np_aind_metadata import update
-from np_aind_metadata.integrations import dynamic_routing_task
+# from np_aind_metadata import update
+# from np_aind_metadata.integrations import dynamic_routing_task
 
 logger = np_logging.get_logger(__name__)
 
@@ -59,11 +59,11 @@ class CodeOceanUpload:
     job: Path
     """File containing job parameters for `aind-data-transfer`"""
 
-    force_cloud_sync: bool = False
-    """If True, re-upload and re-make raw asset even if data exists on S3."""
-
     modality: SessionModality
     """Modality of the session."""
+
+    force_cloud_sync: bool = False
+    """If True, re-upload and re-make raw asset even if data exists on S3."""
 
     @property
     def project_name(self) -> str:
