@@ -351,10 +351,12 @@ def create_upload_job(upload: CodeOceanUpload, include_metadata: bool) -> None:
         w.writerow(job.values()) 
 
 
-def create_codeocean_upload(session: str | int | np_session.Session, 
-                            recording_dirs: Iterable[str] | None = None,
-                            force_cloud_sync: bool = False,
-                            ) -> CodeOceanUpload:
+def create_codeocean_upload(
+    session: str | int | np_session.Session,
+    codeocean_root: Path = np_session.NPEXP_PATH / 'codeocean',
+    recording_dirs: Iterable[str] | None = None,
+    force_cloud_sync: bool = False,
+) -> CodeOceanUpload:
     """Create directories of symlinks to np-exp files with correct structure
     for upload to CodeOcean.
     
@@ -375,12 +377,12 @@ def create_codeocean_upload(session: str | int | np_session.Session,
             # manually assign surface channel path 
             session = np_session.Session(session.npexp_path.parent / f'{session.folder}_surface_channels')
             assert session.npexp_path.exists(), f"Surface channel path {session.npexp_path} does not exist in same folder as main session recording"
-        root = np_session.NPEXP_PATH / 'codeocean' / f'{session.folder}_surface_channels'
+        root = codeocean_root / f'{session.folder}_surface_channels'
         behavior = None
         behavior_videos = None
     else:
         session = np_session.Session(session)
-        root = np_session.NPEXP_PATH / 'codeocean' / session.folder
+        root = codeocean_root / session.folder
         behavior = np_config.normalize_path(root / 'behavior')
         behavior_videos = behavior.with_name('behavior-videos')
 
@@ -395,7 +397,7 @@ def create_codeocean_upload(session: str | int | np_session.Session,
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
         modality=modality,
-        )
+    )
 
     session_dir = np_config.normalize_path(root)
     if modality in ('ecephys', ):
@@ -454,7 +456,15 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
                    dry_run: bool = False,
                    test: bool = False,
                    ) -> None:
-    upload = create_codeocean_upload(str(session), recording_dirs=recording_dirs, force_cloud_sync=force)
+    codeocean_root = np_session.NPEXP_PATH / 'codeocean' if not test \
+        else np_session.NPEXP_PATH / 'codeocean-dev'
+    logger.debug(f'Codeocean root: {codeocean_root}')
+    upload = create_codeocean_upload(
+        str(session),
+        codeocean_root=codeocean_root,
+        recording_dirs=recording_dirs,
+        force_cloud_sync=force
+    )
     if dry_run:
         logger.info(f'Dry run. Not submitting {upload.session} to hpc upload queue. dry_run={dry_run}, upload={upload}')
         return
