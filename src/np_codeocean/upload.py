@@ -69,7 +69,8 @@ class CodeOceanUpload:
         if isinstance(self.session, np_session.PipelineSession):
             return "OpenScope"
         return "Dynamic Routing"
-    
+
+
 def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
 
@@ -94,6 +95,7 @@ def create_aind_metadata_symlinks(session: np_session.Session, dest: Path) -> bo
     else:
         logger.debug(f'No metadata files found in {session.npexp_path}; No symlinks for metadata were made')
     return has_metadata_files
+
 
 def create_ephys_symlinks(session: np_session.Session, dest: Path, 
                           recording_dirs: Iterable[str] | None = None) -> None:
@@ -123,7 +125,8 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
             np_tools.symlink(as_posix(abs_path), dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {root_path}')
     correct_structure(dest)
-    
+
+
 def correct_structure(dest: Path) -> None:
     """
     In case some probes are missing, remove device entries from structure.oebin
@@ -153,6 +156,7 @@ def correct_structure(dest: Path) -> None:
             oebin_path.unlink()
             oebin_path.write_text(json.dumps(oebin_obj, indent=4))
             logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
+
 
 def is_behavior_video_file(path: Path) -> bool:
     if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
@@ -185,6 +189,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> 
                 np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
         logger.debug(f'Finished creating symlinks to {name!r} files')
 
+
 def create_behavior_videos_symlinks(session: np_session.Session, dest: Path | None) -> None:
     """Create symlinks in `dest` pointing to MVR video files and info jsons in top-level of session
     folder on np-exp.
@@ -206,6 +211,7 @@ def is_surface_channel_recording(path_name: str) -> bool:
     """
     return 'surface_channels' in path_name.lower()
 
+
 def get_surface_channel_start_time(session: np_session.Session) -> datetime.datetime:
     """
     >>> session = np_session.Session("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels")
@@ -223,6 +229,7 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     timestamp_value = float(software_time_line[software_time_line.index(':')+2:].strip())
     timestamp = datetime.datetime.fromtimestamp(timestamp_value / 1e3)
     return timestamp
+
 
 def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) -> dict[str, str | int | bool]:
     """
@@ -340,8 +347,10 @@ def put_csv_for_hpc_upload(
     )
     _raise_for_status(post_csv_response)
 
+
 def is_ephys_session(session: np_session.Session) -> bool:
     return bool(next(session.npexp_path.rglob('settings.xml'), None))
+
 
 def create_upload_job(upload: CodeOceanUpload, include_metadata: bool) -> None:
     logger.info(f'Creating upload job file {upload.job} for session {upload.session}...')
