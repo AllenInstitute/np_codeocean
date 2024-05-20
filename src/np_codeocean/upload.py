@@ -26,6 +26,7 @@ logger = np_logging.get_logger(__name__)
 CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 DEV_SERVICE = "http://aind-data-transfer-service-dev"
+HPC_UPLOAD_JOB_EMAIL = "arjun.sridhar@alleninstitute.org"
 
 SessionModality = typing.Literal['ecephys', 'behavior']
 
@@ -288,8 +289,12 @@ def is_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIN
     jobs_response = requests.get(f"{upload_service_url}/jobs")
     jobs_response.raise_for_status()
     return partial_session_id in jobs_response.content.decode()
-    
-def put_csv_for_hpc_upload(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> None:
+
+def put_csv_for_hpc_upload(
+    csv_path: pathlib.Path,
+    upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,
+    hpc_upload_job_email: str =  HPC_UPLOAD_JOB_EMAIL,
+) -> None:
     """Submit a single job upload csv to the aind-data-transfer-service, for
     upload to S3 on the hpc.
     
@@ -326,7 +331,7 @@ def put_csv_for_hpc_upload(csv_path: pathlib.Path, upload_service_url: str = AIN
         json=dict(
             jobs=[
                     dict(
-                        hpc_settings=json.dumps({"time_limit": 60 * 15, "mail_user": "arjun.sridhar@alleninstitute.org"}),
+                        hpc_settings=json.dumps({"time_limit": 60 * 15, "mail_user": hpc_upload_job_email}),
                         upload_job_settings=validate_csv_response.json()["data"]["jobs"][0],
                         script="",
                     )
@@ -397,12 +402,14 @@ def create_codeocean_upload(
         modality=modality,
     )
 
-def upload_session(session: str | int | pathlib.Path | np_session.Session, 
-                   recording_dirs: Iterable[str] | None = None,
-                   force: bool = False,
-                   dry_run: bool = False,
-                   test: bool = False,
-                   ) -> None:
+def upload_session(
+    session: str | int | pathlib.Path | np_session.Session, 
+    recording_dirs: Iterable[str] | None = None,
+    force: bool = False,
+    dry_run: bool = False,
+    test: bool = False,
+    hpc_upload_job_email: str = HPC_UPLOAD_JOB_EMAIL,
+) -> None:
     codeocean_root = np_session.NPEXP_PATH / 'codeocean' if not test \
         else np_session.NPEXP_PATH / 'codeocean-dev'
     logger.debug(f'Codeocean root: {codeocean_root}')
@@ -424,7 +431,11 @@ def upload_session(session: str | int | pathlib.Path | np_session.Session,
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
     create_upload_job(upload, include_metadata)  
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
-    put_csv_for_hpc_upload(upload.job, DEV_SERVICE if test else AIND_DATA_TRANSFER_SERVICE)
+    put_csv_for_hpc_upload(
+        upload.job,
+        DEV_SERVICE if test else AIND_DATA_TRANSFER_SERVICE,
+        hpc_upload_job_email,
+    )
     logger.debug(f'Submitted {upload.session} to hpc upload queue')
     
     if (is_split_recording := 
