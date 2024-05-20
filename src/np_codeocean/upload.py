@@ -20,8 +20,6 @@ import polars as pl
 import requests
 import typing
 from pydantic import ValidationError # may be returned from aind-data-transfer-service
-from np_aind_metadata import update
-from np_aind_metadata.integrations import dynamic_routing_task
 
 logger = np_logging.get_logger(__name__)
 
@@ -353,9 +351,9 @@ def create_upload_job(upload: CodeOceanUpload, include_metadata: bool) -> None:
 
 def create_codeocean_upload(
     session: str | int | np_session.Session,
-    codeocean_root: Path = np_session.NPEXP_PATH / 'codeocean',
     recording_dirs: Iterable[str] | None = None,
     force_cloud_sync: bool = False,
+    codeocean_root: Path = np_session.NPEXP_PATH / 'codeocean',
 ) -> CodeOceanUpload:
     """Create directories of symlinks to np-exp files with correct structure
     for upload to CodeOcean.
@@ -388,7 +386,7 @@ def create_codeocean_upload(
 
     logger.debug(f'Created directory {root} for CodeOcean upload')
 
-    upload = CodeOceanUpload(
+    return CodeOceanUpload(
         session = session, 
         behavior = behavior,
         behavior_videos = behavior_videos,
@@ -398,57 +396,6 @@ def create_codeocean_upload(
         force_cloud_sync=force_cloud_sync,
         modality=modality,
     )
-
-    session_dir = np_config.normalize_path(root)
-    if modality in ('ecephys', ):
-        logger.debug(
-            "Adding rig metadata for ecephys session. modality=%s"
-            % modality)
-        try:
-            dynamic_routing_task.add_rig_to_session_dir(
-                session_dir,
-                session.date,
-                np_config.normalize_path(
-                    pathlib.Path(CONFIG["rig_metadata_dir"])
-                ),
-            )
-        except Exception:
-            logger.error(
-                "Failed to update session and rig metadata for Code Ocean upload.",
-                exc_info=True,
-            )
-    elif modality in ('behavior', ):
-        logger.debug("Adding rig metadata for behavior only session.")
-        try:
-            task_paths = list(
-                session_dir.glob("Dynamic*.hdf5")
-            )
-            logger.debug("Scraped task_paths: %s" % task_paths)
-            rig_model_path = dynamic_routing_task.copy_task_rig(
-                task_paths[0],
-                session_dir / "rig.json",
-                np_config.normalize_path(
-                    pathlib.Path(CONFIG["rig_metadata_dir"])
-                ),
-            )
-            logger.debug("Rig model path: %s" % rig_model_path)
-            session_model_path = dynamic_routing_task.scrape_session_model_path(
-                session_dir,
-            )
-            dynamic_routing_task.update_session_from_rig(
-                session_model_path,
-                rig_model_path,
-                session_model_path,
-            )
-        except Exception:
-            logger.error(
-                "Failed to update session and rig metadata for Code Ocean upload.",
-                exc_info=True,
-            )
-    else:
-        raise Exception("Unexpected modality: %s" % modality)
- 
-    return upload
 
 def upload_session(session: str | int | pathlib.Path | np_session.Session, 
                    recording_dirs: Iterable[str] | None = None,
