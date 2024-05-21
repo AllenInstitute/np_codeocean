@@ -110,7 +110,7 @@ def upload(
     behavior_modality_dir = session_dir / "behavior"
     behavior_modality_dir.mkdir(exist_ok=True)
 
-    rig_storage_directory = np_codeocean_upload.CONFIG['rig_storage_directory']
+    rig_storage_directory = np_codeocean_upload.CONFIG["rig_metadata_dir"]
     logger.debug(f"Rig storage directory: {rig_storage_directory}")
     add_metadata(
         task_source,
