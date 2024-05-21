@@ -9,7 +9,7 @@ import np_config
 import np_session
 import np_tools
 import npc_lims
-from npc_lims.exceptions import SessionNotFoundError
+from npc_lims.exceptions import NoSessionInfo
 import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 
 from np_aind_metadata.integrations import dynamic_routing_task
@@ -66,7 +66,8 @@ def aind_rig_id_patch(self) -> str:
     else:
         raise Exception(f"Unsupported rig: {self.rig}")
 
-    return f"{room}_{self.rig}_{last_updated}"
+    ret = f"{room}_{self.rig}_{last_updated}"
+    return ret
 
 
 def add_metadata(
@@ -101,6 +102,7 @@ def upload(
     task_source: Path,
     test: bool = False,
     force_cloud_sync: bool = False,
+    debug: bool = False,
 ) -> Path | None:
     """
     Notes
@@ -108,6 +110,8 @@ def upload(
     - task_source Path is expected to have the following naming convention:
         //allen/programs/mindscope/workgroups/dynamicrouting/DynamicRoutingTask/Data/<SUBJECT_ID>/<SESSION_ID>.hdf5
     """
+    if debug:
+        logger.setLevel(logging.DEBUG)
     extracted_subject_id = task_source.parent.name
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
@@ -124,13 +128,13 @@ def upload(
     try:
         spreadsheet_info = npc_lims \
             .get_session_info(task_source.name).training_info
-    except SessionNotFoundError:
+    except NoSessionInfo:
         logger.debug(
             f"Skipping {task_source} because session info not found in LIMS")
         return None
     
     ignore_prefix = "NP"
-    if spreadsheet_info["rig_id"].startswith(ignore_prefix):
+    if spreadsheet_info["rig_name"].startswith(ignore_prefix):
         logger.debug(
             f"Skipping {task_source} because rig_id starts with {ignore_prefix}")
         return None
@@ -202,6 +206,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('task_source', type=pathlib.Path)
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--force-cloud-sync', action="store_true")
+    parser.add_argument('--debug', action="store_true")
     return parser.parse_args()
 
 
