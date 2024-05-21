@@ -27,6 +27,7 @@ CONFIG = np_config.fetch('/projects/np_codeocean')
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 DEV_SERVICE = "http://aind-data-transfer-service-dev"
 HPC_UPLOAD_JOB_EMAIL = "arjun.sridhar@alleninstitute.org"
+ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 SessionModality = typing.Literal['ecephys', 'behavior']
 
@@ -266,9 +267,9 @@ def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) 
     if is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
         session_date_time = date.combine(upload.session.date, get_surface_channel_start_time(upload.session).time())
-        params['acq-datetime'] = f'{session_date_time.strftime("%Y-%m-%d %H:%M:%S")}'
+        params['acq-datetime'] = f'{session_date_time.strftime(ACQ_DATETIME_FORMAT)}'
     else:
-        params['acq-datetime'] = f'{upload.session.start.strftime("%Y-%m-%d %H:%M:%S")}'
+        params['acq-datetime'] = f'{upload.session.start.strftime(ACQ_DATETIME_FORMAT)}'
     
     return params
 

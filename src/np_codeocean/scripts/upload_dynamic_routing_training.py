@@ -28,7 +28,6 @@ SESSION_FOLDER_DIRS = (
 
 EXCLUDED_SUBJECT_IDS = ("366122", "555555", "000000", "598796", "603810", "599657")
 TASK_HDF5_GLOB = "DynamicRouting1*.hdf5"
-ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def write_upload_job(
@@ -120,12 +119,12 @@ def upload(
     extracted_subject_id = task_source.parent.name
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
-    if not extracted_subject_id .isdigit():
+    if not extracted_subject_id.isdigit():
         logger.debug(
             f"Skipping {task_source} because parent folder name is not a number")
         return None
     
-    if extracted_subject_id  in EXCLUDED_SUBJECT_IDS:
+    if extracted_subject_id in EXCLUDED_SUBJECT_IDS:
         logger.debug(
             f"Skipping {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS")
         return None
@@ -135,7 +134,7 @@ def upload(
             .get_session_info(task_source.name).training_info
     except NoSessionInfo:
         logger.debug(
-            f"Skipping {task_source} because session info not found in LIMS")
+            f"Skipping {task_source} because session info not Dynamic Routing Task")
         return None
     
     ignore_prefix = "NP"
@@ -147,9 +146,13 @@ def upload(
     # if session has been already been uploaded, skip it
     session_info = npc_lims.get_session_info(task_source.stem)
     if session_info.is_uploaded:
-        logger.info(
-            f"Session {task_source} has already been uploaded. Skipping.")
-        return None
+        if force_cloud_sync:
+            logger.info(
+                f"Session {task_source} has already been uploaded, but force_cloud_sync={force_cloud_sync}. Re-uploading.")
+        else:
+            logger.info(
+                f"Session {task_source} has already been uploaded. Skipping.")
+            return None
 
     upload_root = np_session.NPEXP_ROOT / "codeocean-dev" if test else "codeocean"
     session_dir = upload_root / session_info.id
@@ -178,7 +181,7 @@ def upload(
     upload_job_contents = {
         'subject-id': extracted_subject_id,
         'acq-datetime': dynamic_routing_task.extract_session_datetime(
-            task_source).strftime(ACQ_DATETIME_FORMAT),
+            task_source).strftime(np_codeocean_upload.ACQ_DATETIME_FORMAT),
         'project_name': 'Dynamic Routing',
         'platform': 'behavior',
         'modality0': 'behavior',
