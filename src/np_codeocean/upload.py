@@ -37,6 +37,9 @@ class CodeOceanUpload:
     session: np_session.Session
     """Session object that the paths belong to."""
 
+    modality: SessionModality
+    """Modality of the session."""
+
     behavior: Path | None
     """Directory of symlinks to files in top-level of session folder on np-exp,
     plus all files in `exp` and `qc` subfolders, if present. Excludes behavior video files
@@ -59,9 +62,6 @@ class CodeOceanUpload:
 
     force_cloud_sync: bool = False
     """If True, re-upload and re-make raw asset even if data exists on S3."""
-
-    modality: SessionModality
-    """Modality of the session."""
 
     @property
     def project_name(self) -> str:
