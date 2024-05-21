@@ -9,6 +9,7 @@ import np_config
 import np_session
 import np_tools
 import npc_lims
+from npc_lims.exceptions import SessionNotFoundError
 import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 
 from np_aind_metadata.integrations import dynamic_routing_task
@@ -91,8 +92,15 @@ def upload(
         logger.debug(
             f"Skipping {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS")
         return None
-
-    spreadsheet_info = npc_lims.get_session_info(task_source.name).training_info
+    
+    try:
+        spreadsheet_info = npc_lims \
+            .get_session_info(task_source.name).training_info
+    except SessionNotFoundError:
+        logger.debug(
+            f"Skipping {task_source} because session info not found in LIMS")
+        return None
+    
     ignore_prefix = "NP"
     if spreadsheet_info["rig_id"].startswith(ignore_prefix):
         logger.debug(
