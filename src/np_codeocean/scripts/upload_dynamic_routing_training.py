@@ -43,6 +43,32 @@ def write_upload_job(
     return output_path
 
 
+def aind_rig_id_patch(self) -> str:
+    sanitized = self.rig.replace(".", "")
+    cluster_to_room = {
+        "B": "342",
+        "F": "346",
+        "G": "346",
+        "D": "347",
+        "E": "347",
+    }
+    rig_to_room = {
+        "NP0": "325",
+        "NP1": "325",
+        "NP2": "327",
+        "NP3": "342",
+    }
+    last_updated = "240401"
+    if sanitized.startswith("NP"):
+        room = rig_to_room[sanitized]
+    elif sanitized.startswith(("NSB", "SAM", )):
+        room = cluster_to_room[sanitized[3]]
+    else:
+        raise Exception(f"Unsupported rig: {self.rig}")
+
+    return f"{room}_{self.rig}_{last_updated}"
+
+
 def add_metadata(
     task_source: pathlib.Path,
     dest: pathlib.Path,
@@ -50,6 +76,8 @@ def add_metadata(
 ):
     """Adds `aind-data-schema` rig and session metadata to a session directory.
     """
+    # we need to patch due to this bug not getting addressed: https://github.com/AllenInstitute/npc_sessions/pull/103
+    npc_sessions.Session._aind_rig_id = aind_rig_id_patch
     npc_sessions.Session(task_source) \
         ._aind_session_metadata.write_standard_file(dest)
     
