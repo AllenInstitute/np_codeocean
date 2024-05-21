@@ -130,7 +130,7 @@ def upload(
         'project_name': 'Dynamic Routing',
         'platform': 'behavior',
         'modality0': 'behavior',
-        'aind_metadata': np_config.normalize_path(metadata_dir).as_posix(),
+        'metadata_dir': np_config.normalize_path(metadata_dir).as_posix(),
         'modality0.source': np_config.normalize_path(
             behavior_modality_dir).as_posix(),
         'force_cloud_sync': force_cloud_sync,
