@@ -328,7 +328,7 @@ def put_csv_for_hpc_upload(
             files=dict(file=f),
             )
     _raise_for_status(validate_csv_response)
-    print(validate_csv_response.json())
+    logger.debug(f"Validated response: {validate_csv_response.json()}")
     if is_in_hpc_upload_queue(csv_path, upload_service_url):
         logger.warning(f"Job already submitted for {csv_path}")
         return
