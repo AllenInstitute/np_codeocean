@@ -92,6 +92,13 @@ def upload(
             f"Skipping {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS")
         return None
 
+    spreadsheet_info = npc_lims.get_session_info(task_source.name).training_info
+    ignore_prefix = "NP"
+    if spreadsheet_info["rig_id"].startswith(ignore_prefix):
+        logger.debug(
+            f"Skipping {task_source} because rig_id starts with {ignore_prefix}")
+        return None
+
     # if session has been already been uploaded, skip it
     session_info = npc_lims.get_session_info(task_source.stem)
     if session_info.is_uploaded:
@@ -135,7 +142,7 @@ def upload(
             behavior_modality_dir).as_posix(),
         'force_cloud_sync': force_cloud_sync,
     }
-    
+
     upload_job_path = write_upload_job(
         upload_job_contents,
         np_config.normalize_path(session_dir / 'upload.csv'),
