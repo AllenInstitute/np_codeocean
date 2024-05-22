@@ -155,6 +155,8 @@ def upload(
             return None
 
     upload_root = np_session.NPEXP_ROOT / "codeocean-dev" if test else "codeocean"
+    session_info_id = session_info.id
+    logger.debug(f"Session info id: {session_info_id}")
     session_dir = upload_root / session_info.id
     logger.debug(f"Session upload directory: {session_dir}")
 
