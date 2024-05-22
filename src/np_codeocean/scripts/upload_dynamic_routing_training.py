@@ -17,6 +17,8 @@ from np_aind_metadata.integrations import dynamic_routing_task
 from np_codeocean import upload as np_codeocean_upload
 
 
+logging.basicConfig(level=logging.INFO)  # TODO: move this to package __init__.py?
+
 logger = logging.getLogger(__name__)
 
 
@@ -116,6 +118,7 @@ def upload(
     """
     if debug:
         logger.setLevel(logging.DEBUG)
+
     extracted_subject_id = task_source.parent.name
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
