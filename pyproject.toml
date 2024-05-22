@@ -46,6 +46,11 @@ dev = [
     # "types-backports>=0.1.3",
     # "ruff>=0.0.260",
 ]
+dynamic-routing-metadata = [
+    "np-aind-metadata>=0.1.14",
+    "npc-lims>=0.1.154",
+    "npc-sessions>=0.0.222",
+]
 
 [tool.pdm.scripts]
 # usage: pdm run <script> [args]
