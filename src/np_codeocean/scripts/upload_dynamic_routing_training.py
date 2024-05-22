@@ -145,7 +145,7 @@ def upload(
 
     # if session has been already been uploaded, skip it
     session_info = npc_lims.get_session_info(task_source.stem)
-    if session_info.is_uploaded:
+    if not test and session_info.is_uploaded:  # session_info.is_uploaded doesnt work for uploads to dev service
         if force_cloud_sync:
             logger.info(
                 f"Session {task_source} has already been uploaded, but force_cloud_sync={force_cloud_sync}. Re-uploading.")
