@@ -9,9 +9,12 @@ import np_config
 import np_session
 import np_tools
 import npc_lims
+import datetime
 from npc_lims.exceptions import NoSessionInfo
+import npc_session
 import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 
+from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 
 from np_codeocean import upload as np_codeocean_upload
@@ -21,7 +24,7 @@ logging.basicConfig(level=logging.INFO)  # TODO: move this to package __init__.p
 
 logger = logging.getLogger(__name__)
 
-
+CONFIG = np_config.fetch('/rigs/room_numbers')
 HDF5_REPO = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/DynamicRoutingTask/Data')
 SESSION_FOLDER_DIRS = (
     pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot'),
@@ -76,6 +79,23 @@ def aind_rig_id_patch(self) -> str:
     return f"{room}_{self.rig}_{last_updated}"
 
 
+def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
+    rig_record = npc_session.RigRecord(rig_id)
+    room_number = CONFIG.get(
+        rig_record.behavior_cluster_id or rig_record, "UNKNOWN")
+    return rig_record.as_aind_data_schema_rig_id(str(room_number), modification_date)
+
+
+def extract_modification_date(rig: Rig) -> datetime.date:
+    _, _, date_str = rig.rig_id.split("_")
+    if len(date_str) == 6:
+        return datetime.datetime.strptime(date_str, "%y%m%d").date()
+    elif len(date_str) == 8:
+        return datetime.datetime.strptime(date_str, "%Y%m%d").date()
+    else:
+        raise Exception(f"Unsupported date format: {date_str}")
+
+
 def add_metadata(
     task_source: pathlib.Path,
     dest: pathlib.Path,
@@ -84,7 +104,7 @@ def add_metadata(
     """Adds `aind-data-schema` rig and session metadata to a session directory.
     """
     # we need to patch due to this bug not getting addressed: https://github.com/AllenInstitute/npc_sessions/pull/103
-    npc_sessions.Session._aind_rig_id = property(aind_rig_id_patch)
+    # npc_sessions.Session._aind_rig_id = property(aind_rig_id_patch)
     npc_sessions.Session(task_source) \
         ._aind_session_metadata.write_standard_file(dest)
     
@@ -96,6 +116,11 @@ def add_metadata(
     )
     if not rig_metadata_path:
         raise Exception("Failed to copy task rig.")
+    
+    rig_metadata = Rig.model_validate_json(rig_metadata_path.read_text())
+    modification_date = datetime.date(2024, 4, 1)  # keep cluster rigs static for now
+    rig_metadata.rig_id = reformat_rig_model_rig_id(rig_metadata.rig_id, modification_date)
+    rig_metadata.write_standard_file(dest)  # assumes this will work out to dest/rig.json
     
     dynamic_routing_task.update_session_from_rig(
         session_metadata_path,
@@ -109,6 +134,7 @@ def upload(
     test: bool = False,
     force_cloud_sync: bool = False,
     debug: bool = False,
+    dry_run: bool = False,
 ) -> Path | None:
     """
     Notes
@@ -203,12 +229,15 @@ def upload(
         if test else np_codeocean_upload.AIND_DATA_TRANSFER_SERVICE
     logger.debug(f"Uploading to: {upload_service_url}")
     
-    np_codeocean_upload.put_csv_for_hpc_upload(
-        upload_job_path,
-        upload_service_url,
-        "chrism@alleninstitute.org",
-    )
-    logger.info('Submitted to hpc upload queue')
+    if dry_run:
+        logger.info(f"DRY RUN: Would have uploaded to {upload_service_url}")
+    else:
+        np_codeocean_upload.put_csv_for_hpc_upload(
+            upload_job_path,
+            upload_service_url,
+            "chrism@alleninstitute.org",
+        )
+        logger.info('Submitted to hpc upload queue')
     return upload_job_path
 
 
@@ -218,6 +247,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--force-cloud-sync', action="store_true")
     parser.add_argument('--debug', action="store_true")
+    parser.add_argument('--dry-run', action="store_true")
     return parser.parse_args()
 
 

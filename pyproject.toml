@@ -47,9 +47,11 @@ dev = [
     # "ruff>=0.0.260",
 ]
 dynamic-routing-metadata = [
-    "np-aind-metadata>=0.1.14",
+    "np-aind-metadata==0.1.15",
     "npc-lims>=0.1.154",
-    "npc-sessions>=0.0.222",
+    "npc-sessions==0.0.224",
+    "git+https://github.com/AllenInstitute/npc_session.git@7f4a6d91711645daf9b9f0528bbd79ab4da128ef",
+    "npc-session @ git+https://github.com/AllenInstitute/npc_session.git@7f4a6d91711645daf9b9f0528bbd79ab4da128ef",
 ]
 
 [tool.pdm.scripts]
