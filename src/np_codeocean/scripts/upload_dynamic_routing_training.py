@@ -81,8 +81,10 @@ def aind_rig_id_patch(self) -> str:
 
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
     rig_record = npc_session.RigRecord(rig_id)
-    room_number = CONFIG.get(
-        rig_record.behavior_cluster_id or rig_record, "UNKNOWN")
+    if not rig_record.is_behavior_cluster_rig:
+        raise Exception(
+            f"Rig is not a behavior cluster rig. Only behavior cluster rigs are supported. rig_id={rig_id}")
+    room_number = CONFIG.get(rig_record.behavior_cluster_id, "UNKNOWN")
     return rig_record.as_aind_data_schema_rig_id(str(room_number), modification_date)
 
 
@@ -119,6 +121,7 @@ def add_metadata(
     
     rig_metadata = Rig.model_validate_json(rig_metadata_path.read_text())
     modification_date = datetime.date(2024, 4, 1)  # keep cluster rigs static for now
+    rig_metadata.modification_date = modification_date
     rig_metadata.rig_id = reformat_rig_model_rig_id(rig_metadata.rig_id, modification_date)
     rig_metadata.write_standard_file(dest)  # assumes this will work out to dest/rig.json
     
