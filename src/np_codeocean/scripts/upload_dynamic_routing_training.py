@@ -47,38 +47,6 @@ def write_upload_job(
     return output_path
 
 
-def aind_rig_id_patch(self) -> str:
-    sanitized = self.rig \
-        .replace(".", "") \
-        .replace("-", "") \
-        .replace("NSB", "") \
-        .replace("SAM", "") \
-        .replace("BEH", "")
-    logger.debug("Sanitized rig: %s" % sanitized)
-    cluster_to_room = {
-        "B": "342",
-        "F": "346",
-        "G": "346",
-        "D": "347",
-        "E": "347",
-    }
-    rig_to_room = {
-        "NP0": "325",
-        "NP1": "325",
-        "NP2": "327",
-        "NP3": "342",
-    }
-    last_updated = "240401"
-    if sanitized.startswith("NP"):
-        room = rig_to_room[sanitized]
-    elif sanitized.startswith(tuple(cluster_to_room.keys())):
-        room = cluster_to_room[sanitized[0]]
-    else:
-        raise Exception(f"Unsupported rig: {self.rig}")
-
-    return f"{room}_{self.rig}_{last_updated}"
-
-
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
     rig_record = npc_session.RigRecord(rig_id)
     if not rig_record.is_behavior_cluster_rig:
