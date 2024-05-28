@@ -97,14 +97,20 @@ def upload(
         modality,
         rig_storage_directory,
     )
-    return np_codeocean_upload.upload_session(
-        session,
-        recording_dirs=recording_dirs,
-        force=force,
-        dry_run=dry_run,
-        test=test,
-        hpc_upload_job_email=hpc_upload_job_email,
-    )
+    logger.debug(
+        f"Session metadata added. session_directory: {session.npexp_path}")
+    if dry_run:
+        logger.info("Dry run. Skipping upload.")
+        return None
+    else:
+        return np_codeocean_upload.upload_session(
+            session,
+            recording_dirs=recording_dirs,
+            force=force,
+            dry_run=dry_run,
+            test=test,
+            hpc_upload_job_email=hpc_upload_job_email,
+        )
 
 
 def main() -> None:
