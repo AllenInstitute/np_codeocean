@@ -4,7 +4,9 @@ from pathlib import Path
 
 import np_config
 import np_session
+import npc_session
 import datetime
+from aind_data_schema.core.rig import Rig
 
 from np_aind_metadata.integrations import dynamic_routing_task
 
@@ -12,6 +14,27 @@ from np_codeocean import upload as np_codeocean_upload
 
 
 logger = logging.getLogger(__name__)
+
+CONFIG = np_config.fetch('/rigs/room_numbers')
+
+
+def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
+    rig_record = npc_session.RigRecord(rig_id)
+    if not rig_record.is_neuro_pixels_rig:
+        raise Exception(
+            f"Rig is not a neuropixels rig. Only behavior cluster rigs are supported. rig_id={rig_id}")
+    room_number = CONFIG.get(rig_record, "UNKNOWN")
+    return rig_record.as_aind_data_schema_rig_id(str(room_number), modification_date)
+
+
+def extract_modification_date(rig: Rig) -> datetime.date:
+    _, _, date_str = rig.rig_id.split("_")
+    if len(date_str) == 6:
+        return datetime.datetime.strptime(date_str, "%y%m%d").date()
+    elif len(date_str) == 8:
+        return datetime.datetime.strptime(date_str, "%Y%m%d").date()
+    else:
+        raise Exception(f"Unsupported date format: {date_str}")
 
 
 def add_metadata(
@@ -33,6 +56,7 @@ def add_metadata(
             session_datetime,
             rig_storage_directory,
         )
+        rig_model_path = normalized / "rig.json"
     elif modality in ('behavior', ):
         task_paths = list(
             normalized.glob("Dynamic*.hdf5")
@@ -59,6 +83,22 @@ def add_metadata(
         )
     else:
         raise Exception("Unexpected modality: %s" % modality)
+    
+    assert rig_model_path.exists(), \
+            f"Rig metadata path does not exist: {rig_model_path}"
+
+    rig_metadata = Rig.model_validate_json(rig_model_path.read_text())
+    modification_date = extract_modification_date(rig_metadata)
+    rig_metadata.rig_id = reformat_rig_model_rig_id(rig_metadata.rig_id, modification_date)
+    rig_metadata.write_standard_file(normalized)  # assumes this will work out to dest/rig.json
+    session_model_path = dynamic_routing_task.scrape_session_model_path(
+        normalized,
+    )
+    dynamic_routing_task.update_session_from_rig(
+        session_model_path,
+        rig_model_path,
+        session_model_path,
+    )
 
     return None
 
