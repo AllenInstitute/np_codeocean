@@ -136,15 +136,6 @@ def upload(
     if debug:
         logger.setLevel(logging.DEBUG)
 
-    session_info = wrapped_get_session_info(task_source)
-    if not session_info:
-        return None
-
-    if session_info.training_info["rig_name"].startswith(IGNORE_PREFIX):
-        logger.debug(
-            f"Skipping {task_source} because rig_id starts with {IGNORE_PREFIX}")
-        return None
-
     extracted_subject_id = task_source.parent.name
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
@@ -156,6 +147,15 @@ def upload(
     if extracted_subject_id in EXCLUDED_SUBJECT_IDS:
         logger.debug(
             f"Skipping {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS")
+        return None
+    
+    session_info = wrapped_get_session_info(task_source)
+    if not session_info:
+        return None
+
+    if session_info.training_info["rig_name"].startswith(IGNORE_PREFIX):
+        logger.debug(
+            f"Skipping {task_source} because rig_id starts with {IGNORE_PREFIX}")
         return None
 
     # if session has been already been uploaded, skip it
