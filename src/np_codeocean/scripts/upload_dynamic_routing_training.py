@@ -33,6 +33,7 @@ SESSION_FOLDER_DIRS = (
 
 EXCLUDED_SUBJECT_IDS = ("366122", "555555", "000000", "598796", "603810", "599657")
 TASK_HDF5_GLOB = "DynamicRouting1*.hdf5"
+IGNORE_PREFIX = "NP"
 
 
 def write_upload_job(
@@ -64,6 +65,25 @@ def extract_modification_date(rig: Rig) -> datetime.date:
         return datetime.datetime.strptime(date_str, "%Y%m%d").date()
     else:
         raise Exception(f"Unsupported date format: {date_str}")
+
+
+def wrapped_get_session_info(
+    task_source: pathlib.Path,
+) -> npc_lims.SessionInfo | None:
+    try:
+        return npc_lims \
+            .get_session_info(task_source.stem)
+    except NoSessionInfo:
+        logger.debug(
+            f"Skipping {task_source} because session info not Dynamic Routing Task"
+        )
+    except Exception:
+        logger.debug(
+            f"Skipping {task_source} because of exception.",
+            exc_info=True,
+        )
+
+    return None
 
 
 def add_metadata(
@@ -116,6 +136,15 @@ def upload(
     if debug:
         logger.setLevel(logging.DEBUG)
 
+    session_info = wrapped_get_session_info(task_source)
+    if not session_info:
+        return None
+
+    if session_info.training_info["rig_name"].startswith(IGNORE_PREFIX):
+        logger.debug(
+            f"Skipping {task_source} because rig_id starts with {IGNORE_PREFIX}")
+        return None
+
     extracted_subject_id = task_source.parent.name
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
@@ -128,23 +157,8 @@ def upload(
         logger.debug(
             f"Skipping {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS")
         return None
-    
-    try:
-        spreadsheet_info = npc_lims \
-            .get_session_info(task_source.name).training_info
-    except NoSessionInfo:
-        logger.debug(
-            f"Skipping {task_source} because session info not Dynamic Routing Task")
-        return None
-    
-    ignore_prefix = "NP"
-    if spreadsheet_info["rig_name"].startswith(ignore_prefix):
-        logger.debug(
-            f"Skipping {task_source} because rig_id starts with {ignore_prefix}")
-        return None
 
     # if session has been already been uploaded, skip it
-    session_info = npc_lims.get_session_info(task_source.stem)
     if not test and session_info.is_uploaded:  # session_info.is_uploaded doesnt work for uploads to dev service
         if force_cloud_sync:
             logger.info(
@@ -212,18 +226,71 @@ def upload(
     return upload_job_path
 
 
+def upload_batch(
+    batch_dir: pathlib.Path,
+    test: bool = False,
+    force_cloud_sync: bool = False,
+    debug: bool = False,
+    dry_run: bool = False,
+) -> None:
+    if test:
+        batch_limit = 3
+    else:
+        batch_limit = None
+    upload_count = 0
+    for task_source in batch_dir.rglob(TASK_HDF5_GLOB):
+        logger.info("Uploading %s" % task_source)
+        upload_job_path = upload(
+            task_source,
+            test=test,
+            force_cloud_sync=force_cloud_sync,
+            debug=debug,
+            dry_run=dry_run,
+        )
+        if batch_limit is not None and upload_job_path is not None:
+            upload_count += 1
+            if upload_count >= batch_limit:
+                logger.info(f"Reached batch limit of {batch_limit}. Exiting.")
+                break
+
+
+MODES = ['singleton', 'batch']
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('task_source', type=pathlib.Path)
+    parser.add_argument('--task-source', type=pathlib.Path)
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--force-cloud-sync', action="store_true")
     parser.add_argument('--debug', action="store_true")
     parser.add_argument('--dry-run', action="store_true")
+    parser.add_argument('--mode', default=MODES[0], choices=MODES)
+    parser.add_argument('--batch-dir', type=pathlib.Path, default=HDF5_REPO)
     return parser.parse_args()
 
 
 def main() -> None:
-    upload(**vars(parse_args()))
+    args = parse_args()
+    if args.mode == MODES[0]:
+        logger.info(f"Uploading in singleton mode: {args.task_source}")
+        if not args.task_source:
+            raise Exception("Task source is required for singleton mode.")
+        upload(
+            args.task_source,
+            test=args.test,
+            force_cloud_sync=args.force_cloud_sync,
+            debug=args.debug,
+            dry_run=args.dry_run,
+        )
+    elif args.mode == MODES[1]:
+        logger.info(f"Uploading in match mode: {args.batch_dir}")
+        upload_batch(
+            batch_dir=args.batch_dir,
+            test=args.test,
+            force_cloud_sync=args.force_cloud_sync,
+            debug=args.debug,
+            dry_run=args.dry_run
+        )
+    else:
+        raise Exception(f"Unexpected mode: {args.mode}")
 
 
 if __name__ == '__main__':
