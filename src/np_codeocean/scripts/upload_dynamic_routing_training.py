@@ -1,25 +1,21 @@
-import csv
 import argparse
+import datetime
 import logging
 import pathlib
-import typing
 from pathlib import Path
 
 import np_config
 import np_session
 import np_tools
 import npc_lims
-import datetime
-from npc_lims.exceptions import NoSessionInfo
 import npc_session
 import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
-
 from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
+from npc_lims.exceptions import NoSessionInfo
 
-from np_codeocean import upload as np_codeocean_upload
-from np_codeocean import utils as np_codeocean_utils
-
+import np_codeocean
+import np_codeocean.utils
 
 logging.basicConfig(level=logging.INFO)  # TODO: move this to package __init__.py?
 
@@ -168,7 +164,7 @@ def upload(
     behavior_modality_dir = session_dir / "behavior"
     behavior_modality_dir.mkdir(exist_ok=True)
 
-    rig_storage_directory = np_codeocean_upload.CONFIG["rig_metadata_dir"]
+    rig_storage_directory = np_codeocean.get_project_config()["rig_metadata_dir"]
     logger.debug(f"Rig storage directory: {rig_storage_directory}")
     add_metadata(
         task_source,
@@ -177,14 +173,14 @@ def upload(
     )
 
     np_tools.symlink(
-        np_codeocean_upload.as_posix(task_source),
+        np_codeocean.utils.ensure_posix(task_source),
         behavior_modality_dir / task_source.name,
     )
 
     upload_job_contents = {
         'subject-id': extracted_subject_id,
         'acq-datetime': dynamic_routing_task.extract_session_datetime(
-            task_source).strftime(np_codeocean_upload.ACQ_DATETIME_FORMAT),
+            task_source).strftime(np_codeocean.utils.ACQ_DATETIME_FORMAT),
         'project_name': 'Dynamic Routing',
         'platform': 'behavior',
         'modality0': 'behavior',
@@ -194,19 +190,19 @@ def upload(
         'force_cloud_sync': force_cloud_sync,
     }
 
-    upload_job_path = np_codeocean_utils.write_upload_csv(
+    upload_job_path = np_codeocean.write_upload_csv(
         upload_job_contents,
         np_config.normalize_path(session_dir / 'upload.csv'),
     )
 
-    upload_service_url = np_codeocean_upload.DEV_SERVICE \
-        if test else np_codeocean_upload.AIND_DATA_TRANSFER_SERVICE
+    upload_service_url = np_codeocean.utils.DEV_SERVICE \
+        if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
     logger.debug(f"Uploading to: {upload_service_url}")
     
     if dry_run:
         logger.info(f"DRY RUN: Would have uploaded to {upload_service_url}")
     else:
-        np_codeocean_upload.put_csv_for_hpc_upload(
+        np_codeocean.utils.put_csv_for_hpc_upload(
             upload_job_path,
             upload_service_url,
             "chrism@alleninstitute.org",

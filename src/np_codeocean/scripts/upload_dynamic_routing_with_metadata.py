@@ -1,3 +1,4 @@
+import datetime
 import logging
 import typing
 from pathlib import Path
@@ -5,13 +6,11 @@ from pathlib import Path
 import np_config
 import np_session
 import npc_session
-import datetime
 from aind_data_schema.core.rig import Rig
-
 from np_aind_metadata.integrations import dynamic_routing_task
 
-from np_codeocean import upload as np_codeocean_upload
-
+import np_codeocean
+import np_codeocean.utils
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ def extract_modification_date(rig: Rig) -> datetime.date:
 def add_metadata(
     session_directory: Path,
     session_datetime: datetime.datetime,
-    modality: np_codeocean_upload.Modality,
+    platform: np_codeocean.utils.AINDPlatform,
     rig_storage_directory: Path,
 ) -> None:
     """Adds metadata to a session directory.
@@ -50,14 +49,14 @@ def add_metadata(
     """
     normalized = np_config.normalize_path(session_directory)
     logger.debug("Normalized session directory: %s" % normalized)
-    if modality in ('ecephys', ):
+    if platform in ('ecephys', ):
         dynamic_routing_task.add_np_rig_to_session_dir(
             normalized,
             session_datetime,
             rig_storage_directory,
         )
         rig_model_path = normalized / "rig.json"
-    elif modality in ('behavior', ):
+    elif platform in ('behavior', ):
         task_paths = list(
             normalized.glob("Dynamic*.hdf5")
         )
@@ -82,7 +81,7 @@ def add_metadata(
             session_model_path,
         )
     else:
-        raise Exception("Unexpected modality: %s" % modality)
+        raise Exception("Unexpected platform: %s" % platform)
     
     assert rig_model_path.exists(), \
             f"Rig metadata path does not exist: {rig_model_path}"
@@ -109,32 +108,24 @@ def upload(
     force: bool = False,
     dry_run: bool = False,
     test: bool = False,
-    hpc_upload_job_email: str = np_codeocean_upload.HPC_UPLOAD_JOB_EMAIL,
+    hpc_upload_job_email: str = np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL,
 ) -> None:
     """Writes and updates aind-data-schema to the session directory
      associated with the `session`. The aind-data-schema session model is
      updated to reflect the `rig_id` of the rig model added to the session
      directory.
     
-    Determining which rig model to add depends on modality.
-
-    If session modality is `ecephys`:
-        - scrape the session model from the session directory
-        - use the `rig_id` from the session model
-
-    If session modality is `behavior`:
-        - scrape the task output from the session directory
-        - infer the `rig_id` from task output
+    Only handles ecephys platform uploads (ie sessions with a folder of data; not 
+    behavior box sessions, which have a single hdf5 file only)
     """
-    modality = 'ecephys' \
-        if np_codeocean_upload.is_ephys_session(session) else 'behavior'
-    logger.debug(f"Modality: {modality}")
-    rig_storage_directory = np_codeocean_upload.CONFIG["rig_metadata_dir"]
+    platform: np_codeocean.utils.AINDPlatform = 'ecephys'
+    logger.debug(f"Platform: {platform}")
+    rig_storage_directory = np_codeocean.get_project_config()["rig_metadata_dir"]
     logger.debug(f"Rig storage directory: {rig_storage_directory}")
     add_metadata(
         session.npexp_path,
         session.date,
-        modality,
+        platform,
         rig_storage_directory,
     )
     logger.debug(
@@ -143,7 +134,7 @@ def upload(
         logger.info("Dry run. Skipping upload.")
         return None
     else:
-        return np_codeocean_upload.upload_session(
+        return np_codeocean.upload_session(
             session,
             recording_dirs=recording_dirs,
             force=force,
@@ -154,7 +145,7 @@ def upload(
 
 
 def main() -> None:
-    args = np_codeocean_upload.parse_args()
+    args = np_codeocean.parse_args()
     main(**vars(args))
 
 

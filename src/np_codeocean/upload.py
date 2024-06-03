@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import csv
 import dataclasses
 import datetime
 import doctest
 import json
 import pathlib
 from collections.abc import Iterable
-from typing import Any, Literal
 
 import np_config
 import np_logging
@@ -23,14 +21,6 @@ import np_codeocean.utils as utils
 
 logger = np_logging.get_logger(__name__)
 
-CONFIG = np_config.fetch('/projects/np_codeocean')
-AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
-DEV_SERVICE = "http://aind-data-transfer-service-dev"
-HPC_UPLOAD_JOB_EMAIL = "arjun.sridhar@alleninstitute.org"
-ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-AINDPlatform = Literal['ecephys', 'behavior']
-
 @dataclasses.dataclass
 class CodeOceanUpload:
     """Objects required for uploading a Mindscope Neuropixels session to CodeOcean.
@@ -39,7 +29,7 @@ class CodeOceanUpload:
     session: np_session.Session
     """Session object that the paths belong to."""
     
-    platform: AINDPlatform
+    platform: utils.AINDPlatform
     """The 'platform' in the Neural Dynamics data schema language (effectively the rig
     type, which determines the processing pipeline the data follows).
      
@@ -82,9 +72,6 @@ class CodeOceanUpload:
         return "Dynamic Routing"
 
 
-def as_posix(path: pathlib.Path) -> str:
-    return path.as_posix()[1:]
-
 
 def attempt_create_aind_metadata_symlinks(session: np_session.Session, dest: pathlib.Path) -> bool:
     """
@@ -96,7 +83,7 @@ def attempt_create_aind_metadata_symlinks(session: np_session.Session, dest: pat
     for src in session.npexp_path.glob('*'):
         for metadata_file_name in ('session', 'data_description', 'procedures', 'processing', 'rig', 'subject'):
             if src.stem + src.suffix == f'{metadata_file_name}.json':
-                np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))    
+                np_tools.symlink(utils.ensure_posix(src), dest / src.relative_to(session.npexp_path))    
                 has_metadata_files = True
     if has_metadata_files:
         logger.debug(f'Finished creating symlinks to aind metadata files in {session.npexp_path}')
@@ -130,49 +117,10 @@ def create_ephys_symlinks(session: np_session.Session, dest: pathlib.Path,
         root_path, specific_recording_dir_names=recording_dirs
         ):
         if not abs_path.is_dir():
-            np_tools.symlink(as_posix(abs_path), dest / rel_path)
+            np_tools.symlink(utils.ensure_posix(abs_path), dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {root_path}')
-    correct_structure(dest)
+    utils.cleanup_ephys_directories(dest)
 
-
-def correct_structure(dest: pathlib.Path) -> None:
-    """
-    In case some probes are missing, remove device entries from structure.oebin
-    files for devices with folders that have not been preserved.
-    """
-    logger.debug('Checking structure.oebin for missing folders...')
-    recording_dirs = dest.rglob('recording[0-9]*')
-    for recording_dir in recording_dirs:
-        if not recording_dir.is_dir():
-            continue
-        oebin_path = recording_dir / 'structure.oebin'
-        if not (oebin_path.is_symlink() or oebin_path.exists()):
-            logger.warning(f'No structure.oebin found in {recording_dir}')
-            continue
-        logger.debug(f'Examining oebin: {oebin_path} for correction')
-        oebin_obj = np_tools.read_oebin(np_config.normalize_path(oebin_path.readlink()))
-        any_removed = False
-        for subdir_name in ('events', 'continuous'):    
-            subdir = oebin_path.parent / subdir_name
-            # iterate over copy of list so as to not disrupt iteration when elements are removed
-            for device in [device for device in oebin_obj[subdir_name]]:
-                if not (subdir / device['folder_name']).exists():
-                    logger.info(f'{device["folder_name"]} not found in {subdir}, removing from structure.oebin')
-                    oebin_obj[subdir_name].remove(device)
-                    any_removed = True
-        if any_removed:
-            oebin_path.unlink()
-            oebin_path.write_text(json.dumps(oebin_obj, indent=4))
-            logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
-
-
-def is_behavior_video_file(path: pathlib.Path) -> bool:
-    if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
-        return False
-    with contextlib.suppress(ValueError):
-        _ = npc_session.extract_mvr_camera_name(path.as_posix())
-        return True
-    return False
 
 def create_behavior_symlinks(session: np_session.Session, dest: pathlib.Path | None) -> None:
     """Create symlinks in `dest` pointing to files in top-level of session
@@ -184,8 +132,8 @@ def create_behavior_symlinks(session: np_session.Session, dest: pathlib.Path | N
     subfolder_names = ('exp', 'qc')
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
-        if not src.is_dir() and not is_behavior_video_file(src):
-            np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
+        if not src.is_dir() and not utils.is_behavior_video_file(src):
+            np_tools.symlink(utils.ensure_posix(src), dest / src.relative_to(session.npexp_path))
     logger.debug(f'Finished creating symlinks to top-level files in {session.npexp_path}')
 
     for name in subfolder_names:
@@ -194,7 +142,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: pathlib.Path | N
             continue
         for src in subfolder.rglob('*'):
             if not src.is_dir():
-                np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
+                np_tools.symlink(utils.ensure_posix(src), dest / src.relative_to(session.npexp_path))
         logger.debug(f'Finished creating symlinks to {name!r} files')
 
 
@@ -207,17 +155,9 @@ def create_behavior_videos_symlinks(session: np_session.Session, dest: pathlib.P
         return
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
-        if is_behavior_video_file(src):
-            np_tools.symlink(as_posix(src), dest / src.relative_to(session.npexp_path))
+        if utils.is_behavior_video_file(src):
+            np_tools.symlink(utils.ensure_posix(src), dest / src.relative_to(session.npexp_path))
     logger.debug(f'Finished creating symlinks to behavior video files in {session.npexp_path}')
-    
-def is_surface_channel_recording(path_name: str) -> bool:
-    """
-    >>> session = np_session.Session("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels")
-    >>> is_surface_channel_recording(session.npexp_path.as_posix())
-    True
-    """
-    return 'surface_channels' in path_name.lower()
 
 
 def get_surface_channel_start_time(session: np_session.Session) -> datetime.datetime:
@@ -242,7 +182,7 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
 def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
-    >>> is_surface_channel_recording(path)
+    >>> utils.is_surface_channel_recording(path)
     True
     >>> upload = create_codeocean_upload(path)
     >>> ephys_upload_csv = get_upload_csv_for_session(upload)
@@ -271,93 +211,14 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
     if upload.aind_metadata:
         params['metadata_dir'] = upload.aind_metadata.as_posix()
             
-    if is_surface_channel_recording(upload.session.npexp_path.as_posix()):
+    if utils.is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
         session_date_time = date.combine(upload.session.date, get_surface_channel_start_time(upload.session).time())
-        params['acq-datetime'] = f'{session_date_time.strftime(ACQ_DATETIME_FORMAT)}'
+        params['acq-datetime'] = f'{session_date_time.strftime(utils.ACQ_DATETIME_FORMAT)}'
     else:
-        params['acq-datetime'] = f'{upload.session.start.strftime(ACQ_DATETIME_FORMAT)}'
+        params['acq-datetime'] = f'{upload.session.start.strftime(utils.ACQ_DATETIME_FORMAT)}'
     
     return params # type: ignore
-
-
-def is_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
-    """Check if an upload job has been submitted to the hpc upload queue.
-
-    - currently assumes one job per csv
-    - does not check status (job may be FINISHED rather than RUNNING)
-
-    >>> is_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
-    False
-    """
-    # get subject-id, acq-datetime from csv
-    df = pl.read_csv(csv_path, eol_char='\r')
-    for col in df.get_columns():
-        if col.name.startswith('subject') and col.name.endswith('id'):
-            subject = npc_session.SubjectRecord(col[0])
-            continue
-        if col.name.startswith('acq') and 'datetime' in col.name.lower():
-            dt = npc_session.DatetimeRecord(col[0])
-            continue
-    partial_session_id = f"{subject}_{dt.replace(' ', '_').replace(':', '-')}"
-    
-    jobs_response = requests.get(f"{upload_service_url}/jobs")
-    jobs_response.raise_for_status()
-    return partial_session_id in jobs_response.content.decode()
-
-def put_csv_for_hpc_upload(
-    csv_path: pathlib.Path,
-    upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,
-    hpc_upload_job_email: str =  HPC_UPLOAD_JOB_EMAIL,
-    dry_run: bool = False,
-) -> None:
-    """Submit a single job upload csv to the aind-data-transfer-service, for
-    upload to S3 on the hpc.
-    
-    - gets validated version of csv
-    - checks session is not already being uploaded
-    - submits csv via http request
-    """
-    def _raise_for_status(response: requests.Response) -> None:
-        """pydantic validation errors are returned as strings that can be eval'd
-        to get the real error class + message."""
-        if response.status_code != 200:
-            try:
-                response.json()['data']['errors']
-                import pdb; pdb.set_trace()
-            except (KeyError, IndexError, requests.exceptions.JSONDecodeError, SyntaxError) as exc1:
-                try:
-                    response.raise_for_status()
-                except requests.exceptions.HTTPError as exc2:
-                    raise exc2 from exc1
-                
-    with open(csv_path, 'rb') as f:
-        validate_csv_response = requests.post(
-            url=f"{upload_service_url}/api/validate_csv", 
-            files=dict(file=f),
-            )
-    _raise_for_status(validate_csv_response)
-    logger.debug(f"Validated response: {validate_csv_response.json()}")
-    if is_in_hpc_upload_queue(csv_path, upload_service_url):
-        logger.warning(f"Job already submitted for {csv_path}")
-        return
-    
-    if dry_run:
-        logger.info(f'Dry run: not submitting {csv_path} to hpc upload queue at {upload_service_url}.')
-        return
-    post_csv_response = requests.post(
-        url=f"{upload_service_url}/api/submit_hpc_jobs", 
-        json=dict(
-            jobs=[
-                    dict(
-                        hpc_settings=json.dumps({"time_limit": 60 * 15, "mail_user": hpc_upload_job_email}),
-                        upload_job_settings=validate_csv_response.json()["data"]["jobs"][0],
-                        script="",
-                    )
-                ]
-        ),
-    )
-    _raise_for_status(post_csv_response)
 
 
 def is_ephys_session(session: np_session.Session) -> bool:
@@ -382,11 +243,11 @@ def create_codeocean_upload(
     >>> upload.ephys.exists()
     True
     """
-    platform: AINDPlatform = 'ecephys' # all session-type uploads with a folder of data are ecephys platform; behavior platform is for behavior-box sessions
+    platform: utils.AINDPlatform = 'ecephys' # all session-type uploads with a folder of data are ecephys platform; behavior platform is for behavior-box sessions
 
-    if is_surface_channel_recording(str(session)):
+    if utils.is_surface_channel_recording(str(session)):
         session = np_session.Session(session)
-        if not is_surface_channel_recording(session.npexp_path.name):
+        if not utils.is_surface_channel_recording(session.npexp_path.name):
             # manually assign surface channel path 
             session = np_session.Session(session.npexp_path.parent / f'{session.folder}_surface_channels')
             assert session.npexp_path.exists(), f"Surface channel path {session.npexp_path} does not exist in same folder as main session recording"
@@ -422,7 +283,7 @@ def upload_session(
     force: bool = False,
     dry_run: bool = False,
     test: bool = False,
-    hpc_upload_job_email: str = HPC_UPLOAD_JOB_EMAIL,
+    hpc_upload_job_email: str = utils.HPC_UPLOAD_JOB_EMAIL,
 ) -> None:
     codeocean_root = np_session.NPEXP_PATH / 'codeocean' if not test \
         else np_session.NPEXP_PATH / 'codeocean-dev'
@@ -445,9 +306,9 @@ def upload_session(
     csv_content: dict = get_upload_csv_for_session(upload)
     utils.write_upload_csv(csv_content, upload.job)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
-    put_csv_for_hpc_upload(
+    utils.put_csv_for_hpc_upload(
         csv_path=upload.job,
-        upload_service_url=DEV_SERVICE if test else AIND_DATA_TRANSFER_SERVICE,
+        upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
         hpc_upload_job_email=hpc_upload_job_email,
         dry_run=dry_run,
     )
