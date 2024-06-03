@@ -84,7 +84,7 @@ def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
 
 
-def create_aind_metadata_symlinks(session: np_session.Session, dest: pathlib.Path) -> bool:
+def create_aind_metadata_symlinks(session: np_session.Session, dest: pathlib.Path | None) -> bool:
     """
     Create symlinks in `dest` pointing to aind metadata json files from the root directory
     on np-exp. Returns True if any metadata files are found in np-exp and the `aind_metadata`
