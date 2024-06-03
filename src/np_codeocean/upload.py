@@ -29,7 +29,7 @@ DEV_SERVICE = "http://aind-data-transfer-service-dev"
 HPC_UPLOAD_JOB_EMAIL = "arjun.sridhar@alleninstitute.org"
 ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-SessionModality = typing.Literal['ecephys', 'behavior']
+AINDPlatform = typing.Literal['ecephys', 'behavior']
 
 @dataclasses.dataclass
 class CodeOceanUpload:
@@ -39,11 +39,19 @@ class CodeOceanUpload:
     session: np_session.Session
     """Session object that the paths belong to."""
     
-    modality: SessionModality
-    """Modality of the session."""
+    platform: AINDPlatform
+    """The 'platform' in the Neural Dynamics data schema language (effectively the rig
+    type, which determines the processing pipeline the data follows).
+     
+    Our rules are:
+    - if it ran in a behavior box: `behavior`
+    - anything else: `ecephys`
+    
+    This means there will be behavior-only sessions that ran on NP-rigs
+    without ephys data (habs, opto experiments etc.), that will be uploaded as
+    `ecephys` platform data.
+    """
 
-    modality: SessionModality
-    """Modality of the session."""
 
     behavior: Path | None
     """Directory of symlinks to files in top-level of session folder on np-exp,
@@ -249,7 +257,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) 
     """
     params = {
         'project_name': upload.project_name,
-        'platform': upload.modality,
+        'platform': upload.platform,
         'subject-id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
     }
@@ -385,7 +393,7 @@ def create_codeocean_upload(
     >>> upload.ephys.exists()
     True
     """
-    modality: SessionModality = 'ecephys' if is_ephys_session(session) else 'behavior'
+    platform: AINDPlatform = 'ecephys' # all session-type uploads with a folder of data are ecephys platform; behavior platform is for behavior-box sessions
 
     if is_surface_channel_recording(str(session)):
         session = np_session.Session(session)
@@ -412,7 +420,7 @@ def create_codeocean_upload(
         aind_metadata = np_config.normalize_path(root / 'aind_metadata'),
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
-        modality=modality,
+        platform=platform,
     )
 
 def upload_session(
