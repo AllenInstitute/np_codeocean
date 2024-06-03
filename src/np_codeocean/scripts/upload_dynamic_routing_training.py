@@ -18,6 +18,7 @@ from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 
 from np_codeocean import upload as np_codeocean_upload
+from np_codeocean import utils as np_codeocean_utils
 
 
 logging.basicConfig(level=logging.INFO)  # TODO: move this to package __init__.py?
@@ -34,18 +35,6 @@ SESSION_FOLDER_DIRS = (
 EXCLUDED_SUBJECT_IDS = ("366122", "555555", "000000", "598796", "603810", "599657")
 TASK_HDF5_GLOB = "DynamicRouting1*.hdf5"
 IGNORE_PREFIX = "NP"
-
-
-def write_upload_job(
-    content: dict[str, typing.Any],
-    output_path: pathlib.Path,
-) -> pathlib.Path:
-    with open(output_path, 'w') as f:
-        w = csv.writer(f, lineterminator='')
-        w.writerow(content.keys())
-        w.writerow('\n')
-        w.writerow(content.values())
-    return output_path
 
 
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
@@ -205,7 +194,7 @@ def upload(
         'force_cloud_sync': force_cloud_sync,
     }
 
-    upload_job_path = write_upload_job(
+    upload_job_path = np_codeocean_utils.write_upload_csv(
         upload_job_contents,
         np_config.normalize_path(session_dir / 'upload.csv'),
     )

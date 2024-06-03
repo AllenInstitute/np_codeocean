@@ -9,7 +9,7 @@ import doctest
 import json
 import pathlib
 from collections.abc import Iterable
-from typing import Literal
+from typing import Any, Literal
 
 import np_config
 import np_logging
@@ -18,6 +18,8 @@ import np_tools
 import npc_session
 import polars as pl
 import requests
+
+import np_codeocean.utils as utils
 
 logger = np_logging.get_logger(__name__)
 
@@ -84,15 +86,12 @@ def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
 
 
-def create_aind_metadata_symlinks(session: np_session.Session, dest: pathlib.Path | None) -> bool:
+def attempt_create_aind_metadata_symlinks(session: np_session.Session, dest: pathlib.Path) -> bool:
     """
     Create symlinks in `dest` pointing to aind metadata json files from the root directory
     on np-exp. Returns True if any metadata files are found in np-exp and the `aind_metadata`
     folder is created.
     """
-    if dest is None: 
-        logger.debug(f"No metadata folder supplied for {session}")
-        return
     has_metadata_files = False
     for src in session.npexp_path.glob('*'):
         for metadata_file_name in ('session', 'data_description', 'procedures', 'processing', 'rig', 'subject'):
@@ -240,7 +239,7 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     return timestamp
 
 
-def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) -> dict[str, str | int | bool]:
+def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
     >>> is_surface_channel_recording(path)
@@ -269,8 +268,8 @@ def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) 
             params[f'modality{idx}.source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
             idx += 1
     
-    if include_metadata:
-        params['metadata_dir'] = np_config.normalize_path(getattr(upload, 'aind_metadata')).as_posix()
+    if upload.aind_metadata:
+        params['metadata_dir'] = upload.aind_metadata.as_posix()
             
     if is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
@@ -279,7 +278,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload, include_metadata: bool) 
     else:
         params['acq-datetime'] = f'{upload.session.start.strftime(ACQ_DATETIME_FORMAT)}'
     
-    return params
+    return params # type: ignore
 
 
 def is_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
@@ -365,17 +364,6 @@ def is_ephys_session(session: np_session.Session) -> bool:
     return bool(next(session.npexp_path.rglob('settings.xml'), None))
 
 
-def create_upload_job(upload: CodeOceanUpload, include_metadata: bool) -> None:
-    logger.info(f'Creating upload job file {upload.job} for session {upload.session}...')
-    job: dict = get_upload_csv_for_session(upload, include_metadata)
-    with open(upload.job, 'w') as f:
-        w = csv.writer(f, lineterminator='')
-        w.writerow(job.keys())
-        w.writerow('\n')
-
-        w.writerow(job.values()) 
-
-
 def create_codeocean_upload(
     session: str | int | np_session.Session,
     recording_dirs: Iterable[str] | None = None,
@@ -413,12 +401,16 @@ def create_codeocean_upload(
 
     logger.debug(f'Created directory {root} for CodeOcean upload')
 
+    logger.info('Attempting to create sub directory for AIND metadata jsons..')
+    metadata_path = np_config.normalize_path(root / 'aind_metadata')
+    has_metadata: bool = attempt_create_aind_metadata_symlinks(session, metadata_path)
+
     return CodeOceanUpload(
         session = session, 
         behavior = behavior,
         behavior_videos = behavior_videos,
         ephys = np_config.normalize_path(root / 'ephys') if is_ephys_session(session) else None,
-        aind_metadata = np_config.normalize_path(root / 'aind_metadata'),
+        aind_metadata = metadata_path if has_metadata else None,
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
         platform=platform,
@@ -444,14 +436,14 @@ def upload_session(
     if dry_run:
         logger.info(f'Dry run. Not submitting {upload.session} to hpc upload queue. dry_run={dry_run}, upload={upload}')
         return
-    include_metadata = create_aind_metadata_symlinks(upload.session, upload.aind_metadata)
     if upload.ephys:
         create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     if upload.behavior:
         create_behavior_symlinks(upload.session, upload.behavior)
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
-    create_upload_job(upload, include_metadata)  
+    csv_content: dict = get_upload_csv_for_session(upload)
+    utils.write_upload_csv(csv_content, upload.job)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     put_csv_for_hpc_upload(
         csv_path=upload.job,

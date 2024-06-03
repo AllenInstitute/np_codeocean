@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import configparser
+import csv
 import json
+import logging
 import os
 import pathlib
-from typing import Literal
+from typing import Any, Literal
 
 import np_config
 
@@ -19,6 +21,20 @@ AWS_CREDENTIALS: dict[Literal['domain', 'token'], str]  = np_config.fetch('/proj
 
 CODEOCEAN_CONFIG: dict[Literal['region'], str] = np_config.fetch('/projects/np_codeocean/codeocean')['credentials']
 """Config for connecting to CodeOcean via http API"""
+
+logger = logging.getLogger(__name__)
+
+def write_upload_csv(
+    content: dict[str, Any],
+    output_path: pathlib.Path,
+) -> pathlib.Path:
+    logger.info(f'Creating upload job file {output_path}')
+    with open(output_path, 'w') as f:
+        w = csv.writer(f, lineterminator='')
+        w.writerow(content.keys())
+        w.writerow('\n')
+        w.writerow(content.values())
+    return output_path
 
 
 def get_home() -> pathlib.Path:
