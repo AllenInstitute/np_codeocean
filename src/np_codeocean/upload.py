@@ -3,13 +3,13 @@ from __future__ import annotations
 import argparse
 import contextlib
 import csv
-import datetime
 import dataclasses
+import datetime
 import doctest
 import json
 import pathlib
 from collections.abc import Iterable
-from pathlib import Path
+from typing import Literal
 
 import np_config
 import np_logging
@@ -18,8 +18,6 @@ import np_tools
 import npc_session
 import polars as pl
 import requests
-import typing
-from pydantic import ValidationError # may be returned from aind-data-transfer-service
 
 logger = np_logging.get_logger(__name__)
 
@@ -29,7 +27,7 @@ DEV_SERVICE = "http://aind-data-transfer-service-dev"
 HPC_UPLOAD_JOB_EMAIL = "arjun.sridhar@alleninstitute.org"
 ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-AINDPlatform = typing.Literal['ecephys', 'behavior']
+AINDPlatform = Literal['ecephys', 'behavior']
 
 @dataclasses.dataclass
 class CodeOceanUpload:
@@ -52,25 +50,24 @@ class CodeOceanUpload:
     `ecephys` platform data.
     """
 
-
-    behavior: Path | None
+    behavior: pathlib.Path | None
     """Directory of symlinks to files in top-level of session folder on np-exp,
     plus all files in `exp` and `qc` subfolders, if present. Excludes behavior video files
     and video info jsons."""
     
-    behavior_videos: Path | None    
+    behavior_videos: pathlib.Path | None    
     """Directory of symlinks to behavior video files and video info jsons in
     top-level of session folder on np-exp."""
     
-    ephys: Path | None
+    ephys: pathlib.Path | None
     """Directory of symlinks to raw ephys data files on np-exp, with only one
     `recording` per `Record Node` folder."""
 
-    aind_metadata: Path | None
+    aind_metadata: pathlib.Path | None
     """Directory of symlinks to aind metadata json files in top-level of session folder 
     on np-exp."""
 
-    job: Path
+    job: pathlib.Path
     """File containing job parameters for `aind-data-transfer`"""
 
     force_cloud_sync: bool = False
@@ -87,7 +84,7 @@ def as_posix(path: pathlib.Path) -> str:
     return path.as_posix()[1:]
 
 
-def create_aind_metadata_symlinks(session: np_session.Session, dest: Path) -> bool:
+def create_aind_metadata_symlinks(session: np_session.Session, dest: pathlib.Path) -> bool:
     """
     Create symlinks in `dest` pointing to aind metadata json files from the root directory
     on np-exp. Returns True if any metadata files are found in np-exp and the `aind_metadata`
@@ -109,7 +106,7 @@ def create_aind_metadata_symlinks(session: np_session.Session, dest: Path) -> bo
     return has_metadata_files
 
 
-def create_ephys_symlinks(session: np_session.Session, dest: Path, 
+def create_ephys_symlinks(session: np_session.Session, dest: pathlib.Path, 
                           recording_dirs: Iterable[str] | None = None) -> None:
     """Create symlinks in `dest` pointing to raw ephys data files on np-exp, with only one
     `recording` per `Record Node` folder (the largest, if multiple found).
@@ -139,7 +136,7 @@ def create_ephys_symlinks(session: np_session.Session, dest: Path,
     correct_structure(dest)
 
 
-def correct_structure(dest: Path) -> None:
+def correct_structure(dest: pathlib.Path) -> None:
     """
     In case some probes are missing, remove device entries from structure.oebin
     files for devices with folders that have not been preserved.
@@ -170,7 +167,7 @@ def correct_structure(dest: Path) -> None:
             logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
 
 
-def is_behavior_video_file(path: Path) -> bool:
+def is_behavior_video_file(path: pathlib.Path) -> bool:
     if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
         return False
     with contextlib.suppress(ValueError):
@@ -178,7 +175,7 @@ def is_behavior_video_file(path: Path) -> bool:
         return True
     return False
 
-def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> None:
+def create_behavior_symlinks(session: np_session.Session, dest: pathlib.Path | None) -> None:
     """Create symlinks in `dest` pointing to files in top-level of session
     folder on np-exp, plus all files in `exp` subfolder, if present.
     """
@@ -202,7 +199,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: Path | None) -> 
         logger.debug(f'Finished creating symlinks to {name!r} files')
 
 
-def create_behavior_videos_symlinks(session: np_session.Session, dest: Path | None) -> None:
+def create_behavior_videos_symlinks(session: np_session.Session, dest: pathlib.Path | None) -> None:
     """Create symlinks in `dest` pointing to MVR video files and info jsons in top-level of session
     folder on np-exp.
     """
@@ -379,7 +376,7 @@ def create_codeocean_upload(
     session: str | int | np_session.Session,
     recording_dirs: Iterable[str] | None = None,
     force_cloud_sync: bool = False,
-    codeocean_root: Path = np_session.NPEXP_PATH / 'codeocean',
+    codeocean_root: pathlib.Path = np_session.NPEXP_PATH / 'codeocean',
 ) -> CodeOceanUpload:
     """Create directories of symlinks to np-exp files with correct structure
     for upload to CodeOcean.
