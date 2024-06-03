@@ -310,6 +310,7 @@ def put_csv_for_hpc_upload(
     csv_path: pathlib.Path,
     upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,
     hpc_upload_job_email: str =  HPC_UPLOAD_JOB_EMAIL,
+    dry_run: bool = False,
 ) -> None:
     """Submit a single job upload csv to the aind-data-transfer-service, for
     upload to S3 on the hpc.
@@ -342,6 +343,9 @@ def put_csv_for_hpc_upload(
         logger.warning(f"Job already submitted for {csv_path}")
         return
     
+    if dry_run:
+        logger.info(f'Dry run: not submitting {csv_path} to hpc upload queue at {upload_service_url}.')
+        return
     post_csv_response = requests.post(
         url=f"{upload_service_url}/api/submit_hpc_jobs", 
         json=dict(
@@ -450,9 +454,10 @@ def upload_session(
     create_upload_job(upload, include_metadata)  
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     put_csv_for_hpc_upload(
-        upload.job,
-        DEV_SERVICE if test else AIND_DATA_TRANSFER_SERVICE,
-        hpc_upload_job_email,
+        csv_path=upload.job,
+        upload_service_url=DEV_SERVICE if test else AIND_DATA_TRANSFER_SERVICE,
+        hpc_upload_job_email=hpc_upload_job_email,
+        dry_run=dry_run,
     )
     logger.debug(f'Submitted {upload.session} to hpc upload queue')
     
