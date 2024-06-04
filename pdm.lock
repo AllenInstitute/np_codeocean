@@ -5,7 +5,7 @@
 groups = ["default", "dynamic-routing-metadata"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:e3da310f47ef97192eb4106987888c627ad099cb5137343a0ce52c15e01f3bf9"
+content_hash = "sha256:72a9b18fcd0d4f6f100b3e1f551f78d9fbd257281ececc7b416a4117aaaf7495"
 
 [[package]]
 name = "aind-codeocean-api"
