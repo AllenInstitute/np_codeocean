@@ -52,16 +52,21 @@ def add_metadata(
     normalized = np_config.normalize_path(session_directory)
     logger.debug("Normalized session directory: %s" % normalized)
     
+    session_json = normalized / "session.json"
+    if not (session_json.is_symlink() or session_json.exists()):
     logger.debug("Attempting to create session.json")
     try:
         npc_sessions.DynamicRoutingSession(normalized)._aind_session_metadata.write_standard_file(normalized)
     except Exception as e:
-        logger.error(f"Failed to create session.json: {e!r}")
+            logger.exception(e)
     else:
-        if (normalized / "session.json").exists():
+            if session_json.exists():
             logger.debug("Created session.json")
         else:
-            logger.error("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
+                logger.warning("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
+    if not (session_json.is_symlink() or session_json.exists()):
+        logger.warning("session.json is currently required for the rig.json to be created, so we can't continue with metadata creation")
+        return None
 
     if platform in ('ecephys', ):
         dynamic_routing_task.add_np_rig_to_session_dir(
