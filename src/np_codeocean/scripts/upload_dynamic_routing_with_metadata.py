@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import logging
 import typing
@@ -6,6 +7,7 @@ from pathlib import Path
 import np_config
 import np_session
 import npc_session
+import npc_sessions
 from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 
@@ -42,13 +44,25 @@ def add_metadata(
     platform: np_codeocean.utils.AINDPlatform,
     rig_storage_directory: Path,
 ) -> None:
-    """Adds metadata to a session directory.
+    """Adds rig and sessions metadata to a session directory.
 
     TODO: Return created paths rather than None to better support a monadic
      pattern.
     """
     normalized = np_config.normalize_path(session_directory)
     logger.debug("Normalized session directory: %s" % normalized)
+    
+    logger.debug("Attempting to create session.json")
+    try:
+        npc_sessions.DynamicRoutingSession(normalized)._aind_session_metadata.write_standard_file(normalized)
+    except Exception as e:
+        logger.error(f"Failed to create session.json: {e!r}")
+    else:
+        if (normalized / "session.json").exists():
+            logger.debug("Created session.json")
+        else:
+            logger.error("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
+
     if platform in ('ecephys', ):
         dynamic_routing_task.add_np_rig_to_session_dir(
             normalized,
@@ -143,9 +157,17 @@ def upload(
             hpc_upload_job_email=hpc_upload_job_email,
         )
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
+    parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
+    parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
+    parser.add_argument('--test', action='store_true', help="use the test-upload service, uploading to the test CodeOcean server instead of the production server")
+    parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
+    parser.add_argument('--dry-run', action='store_true', help="Create upload job but do not submit to hpc upload queue.")
+    return parser.parse_args()
 
 def main() -> None:
-    args = np_codeocean.parse_args()
+    args = parse_args()
     main(**vars(args))
 
 
