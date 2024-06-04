@@ -121,7 +121,7 @@ def upload(
     if debug:
         logger.setLevel(logging.DEBUG)
 
-    extracted_subject_id = task_source.parent.name
+    extracted_subject_id = npc_session.extract_subject(task_source.stem)
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
     if not extracted_subject_id.isdigit():
@@ -179,8 +179,7 @@ def upload(
 
     upload_job_contents = {
         'subject-id': extracted_subject_id,
-        'acq-datetime': dynamic_routing_task.extract_session_datetime(
-            task_source).strftime(np_codeocean.utils.ACQ_DATETIME_FORMAT),
+        'acq-datetime': npc_session.extract_isoformat_datetime(task_source.stem),
         'project_name': 'Dynamic Routing',
         'platform': 'behavior',
         'modality0': 'behavior',
