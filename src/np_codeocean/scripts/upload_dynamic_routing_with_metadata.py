@@ -116,8 +116,8 @@ def add_metadata(
     return None
 
 
-def upload(
-    session: np_session.Session,
+def write_metadata_and_upload(
+    session: str | int | Path | np_session.Session, 
     recording_dirs: typing.Iterable[str] | None = None,
     force: bool = False,
     dry_run: bool = False,
@@ -132,22 +132,17 @@ def upload(
     Only handles ecephys platform uploads (ie sessions with a folder of data; not 
     behavior box sessions, which have a single hdf5 file only)
     """
+    session = np_session.Session(session)
     platform: np_codeocean.utils.AINDPlatform = 'ecephys'
     logger.debug(f"Platform: {platform}")
     rig_storage_directory = np_codeocean.get_project_config()["rig_metadata_dir"]
     logger.debug(f"Rig storage directory: {rig_storage_directory}")
     add_metadata(
-        session.npexp_path,
-        session.date,
-        platform,
-        rig_storage_directory,
+        session_directory=session.npexp_path,
+        session_datetime=session.start,
+        platform='ecephys',
+        rig_storage_directory=rig_storage_directory,
     )
-    logger.debug(
-        f"Session metadata added. session_directory: {session.npexp_path}")
-    if dry_run:
-        logger.info("Dry run. Skipping upload.")
-        return None
-    else:
         return np_codeocean.upload_session(
             session,
             recording_dirs=recording_dirs,
@@ -168,7 +163,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    main(**vars(args))
+    write_metadata_and_upload(**vars(args))
 
 
 if __name__ == '__main__':
