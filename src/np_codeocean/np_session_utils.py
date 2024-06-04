@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import argparse
-import contextlib
 import dataclasses
 import datetime
 import doctest
-import json
 import pathlib
 from collections.abc import Iterable
 
@@ -13,9 +11,6 @@ import np_config
 import np_logging
 import np_session
 import np_tools
-import npc_session
-import polars as pl
-import requests
 
 import np_codeocean.utils as utils
 
@@ -321,10 +316,6 @@ def upload_session(
     ):
         logger.warning(f"Split recording {upload.session} will need to be sorted manually with `CONCAT=True`")
 
-    
-def main() -> None:
-    upload_session(**vars(parse_args()))
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
     parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
@@ -340,5 +331,3 @@ if __name__ == '__main__':
     doctest.testmod(
         optionflags=(doctest.IGNORE_EXCEPTION_DETAIL | doctest.NORMALIZE_WHITESPACE),
     )
-
-    main()
