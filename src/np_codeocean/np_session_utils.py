@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import dataclasses
 import datetime
 import doctest
@@ -114,7 +113,7 @@ def create_ephys_symlinks(session: np_session.Session, dest: pathlib.Path,
         if not abs_path.is_dir():
             np_tools.symlink(utils.ensure_posix(abs_path), dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {root_path}')
-    utils.cleanup_ephys_directories(dest)
+    utils.cleanup_ephys_symlinks(dest)
 
 
 def create_behavior_symlinks(session: np_session.Session, dest: pathlib.Path | None) -> None:
@@ -289,9 +288,6 @@ def upload_session(
         recording_dirs=recording_dirs,
         force_cloud_sync=force
     )
-    if dry_run:
-        logger.info(f'Dry run. Not submitting {upload.session} to hpc upload queue. dry_run={dry_run}, upload={upload}')
-        return
     if upload.ephys:
         create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     if upload.behavior:

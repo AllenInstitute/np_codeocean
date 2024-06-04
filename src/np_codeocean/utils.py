@@ -8,11 +8,12 @@ import json
 import logging
 import os
 import pathlib
-from typing import Any, Literal
+from typing import Any, Generator, Literal
 
 import np_config
-import npc_session
 import np_tools
+import npc_session
+import numpy as np
 import polars as pl
 import requests
 
@@ -131,22 +132,121 @@ def is_surface_channel_recording(path_name: str) -> bool:
     """
     return 'surface_channels' in path_name.lower()
 
-def cleanup_ephys_directories(dest: pathlib.Path) -> None:
+def cleanup_ephys_symlinks(toplevel_dir: pathlib.Path) -> None:
+    """After creating symlinks to the ephys data, run this to make any necessary 
+    modifications prior to upload.
+    
+    Provided dir path should be a directory containing all ephys data in
+    subfolders (e.g. directory containing "Record Node 10x" folders)
+    
+    Only deletes symlinks or writes new files in place of symlinks - does not
+    modify original data.
+    
+    Rules:
+    - if any continuous.dat files are unreadable: remove them and their containing folders
+    - if any probes were recorded on multiple record nodes: just keep the first
+    - if continuous.dat files are missing (ie. excluded because probes weren't
+      inserted, or we removed symlinks in previous steps): update metadata files
     """
-    In case some probes are missing, remove device entries from structure.oebin
-    files for devices with folders that have not been preserved.
-    """
-    logger.debug('Checking structure.oebin for missing folders...')
-    recording_dirs = dest.rglob('recording[0-9]*')
-    for recording_dir in recording_dirs:
-        if not recording_dir.is_dir():
+    remove_unreadable_ephys_data(toplevel_dir)
+    remove_duplicate_ephys_data(toplevel_dir)
+    cleanup_ephys_metadata(toplevel_dir)
+
+def remove_unreadable_ephys_data(toplevel_dir: pathlib.Path) -> None:
+    
+    for continuous_dir in ephys_continuous_dir_generator(toplevel_dir):
+        device_folder_name = continuous_dir.name
+        events_dir = continuous_dir.parent.parent / 'events' / continuous_dir.name / 'TTL'
+        filenames = ('continuous.dat', 'timestamps.npy', 'sample_numbers.npy')    
+        dirs = (continuous_dir, ) + ((events_dir,) if events_dir.exists() else ())
+        mark_for_removal = False
+        for d in dirs:
+            if not d.exists():
+                continue
+            for filename in filenames:
+                if filename == 'continuous.dat' and d.name == 'TTL':
+                    continue # no continuous.dat expected in TTL events
+                file = d / filename
+                if not (file.is_symlink() or file.exists()):
+                    logger.warning(f'Critical file not found {file}, insufficient data for processing')
+                    mark_for_removal = True
+                    break
+                try:
+                    data = np.memmap(decode_symlink_path(file), dtype="int16" if 'timestamps' not in file.name else "float64", mode="r")
+                except Exception as exc:
+                    logger.warning(f'Failed to read {file}: {exc!r}')
+                    mark_for_removal = True
+                    break
+                if data.size == 0:
+                    logger.warning(f'Empty file {file}')
+                    mark_for_removal = True
+                    break
+                logger.debug(f'Found readable, non-empty data in {file}')
+            if mark_for_removal:
+                break
+        if mark_for_removal:
+            logger.warning(f'Removing {continuous_dir} and its contents')
+            remove_folder_of_symlinks(continuous_dir)
+            logger.warning(f'Removing {events_dir.parent} and its contents')
+            remove_folder_of_symlinks(events_dir.parent)
+            
+def remove_duplicate_ephys_data(toplevel_dir: pathlib.Path) -> None:
+    probes = []
+    for continuous_dir in ephys_continuous_dir_generator(toplevel_dir):
+        try:
+            probe = npc_session.ProbeRecord(continuous_dir.name)
+        except ValueError:
             continue
+        suffix = continuous_dir.name.split('-')[-1]
+        assert suffix in ('AP', 'LFP')
+        probe += suffix
+        if probe in probes:
+            logger.info(f'Duplicate probe {probe} found in {continuous_dir.parent.parent} - removing')
+            remove_folder_of_symlinks(continuous_dir)
+        else:
+            probes.append(probe)
+            
+def remove_folder_of_symlinks(folder: pathlib.Path) -> None:
+    """Recursive deletion of all files in dir tree, with a check that each is a
+    symlink."""
+    for path in folder.rglob('*'):
+        if path.is_dir():
+            remove_folder_of_symlinks(path)
+        else:
+            assert path.is_symlink(), f'Expected {path} to be a symlink'
+            path.unlink(missing_ok=True)
+    with contextlib.suppress(FileNotFoundError):
+        folder.rmdir()
+
+def ephys_recording_dir_generator(toplevel_dir: pathlib.Path) -> Generator[pathlib.Path, None, None]:
+    for recording_dir in toplevel_dir.rglob('recording[0-9]*'):
+        if recording_dir.is_dir():
+            yield recording_dir
+            
+def ephys_continuous_dir_generator(toplevel_dir: pathlib.Path) -> Generator[pathlib.Path, None, None]:
+    for recording_dir in ephys_recording_dir_generator(toplevel_dir):
+        parent = recording_dir / 'continuous'
+        if not parent.exists():
+            continue
+        for continuous_dir in parent.iterdir():
+            if continuous_dir.is_dir():
+                yield continuous_dir
+
+def ephys_structure_oebin_generator(toplevel_dir: pathlib.Path) -> Generator[pathlib.Path, None, None]:
+    for recording_dir in ephys_recording_dir_generator(toplevel_dir):
         oebin_path = recording_dir / 'structure.oebin'
-        if not (oebin_path.is_symlink() or oebin_path.exists()):
+        if not (oebin_path.is_symlink() or oebin_path.exists()): 
+            # symlinks that are created for the hpc use posix paths, and aren't
+            # readable on windows, so .exists() returns False: use .is_symlink() instead
             logger.warning(f'No structure.oebin found in {recording_dir}')
             continue
-        logger.debug(f'Examining oebin: {oebin_path} for correction')
-        oebin_obj = np_tools.read_oebin(np_config.normalize_path(oebin_path.readlink()))
+        yield oebin_path
+        
+def cleanup_ephys_metadata(toplevel_dir: pathlib.Path) -> None:
+    logger.debug('Checking structure.oebin for missing folders...')
+    for oebin_path in ephys_structure_oebin_generator(toplevel_dir):
+        oebin_obj = np_tools.read_oebin(decode_symlink_path(oebin_path))
+        logger.debug(f'Checking {oebin_path} against actual folders...')
         any_removed = False
         for subdir_name in ('events', 'continuous'):    
             subdir = oebin_path.parent / subdir_name
@@ -159,7 +259,12 @@ def cleanup_ephys_directories(dest: pathlib.Path) -> None:
         if any_removed:
             oebin_path.unlink()
             oebin_path.write_text(json.dumps(oebin_obj, indent=4))
-            logger.debug('Overwrote symlink to structure.oebin with corrected strcuture.oebin')
+            logger.debug('Overwrote symlink to structure.oebin with corrected structure.oebin')
+
+def decode_symlink_path(oebin_path: pathlib.Path) -> pathlib.Path:
+    if not oebin_path.is_symlink():
+        return oebin_path
+    return np_config.normalize_path(oebin_path.readlink())
 
 def is_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
     """Check if an upload job has been submitted to the hpc upload queue.
@@ -234,7 +339,6 @@ def put_csv_for_hpc_upload(
     if is_in_hpc_upload_queue(csv_path, upload_service_url):
         logger.warning(f"Job already submitted for {csv_path}")
         return
-    
     if dry_run:
         logger.info(f'Dry run: not submitting {csv_path} to hpc upload queue at {upload_service_url}.')
         return
@@ -261,4 +365,5 @@ def ensure_posix(path: pathlib.Path) -> str:
 
 
 if __name__ == '__main__':
-    ensure_credentials()
+    # ensure_credentials()
+    cleanup_ephys_symlinks(pathlib.Path(r'\\allen\programs\mindscope\workgroups\np-exp\codeocean\DRpilot_706401_20240423\ephys'))
