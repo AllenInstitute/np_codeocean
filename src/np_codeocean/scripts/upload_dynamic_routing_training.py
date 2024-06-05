@@ -32,6 +32,7 @@ EXCLUDED_SUBJECT_IDS = ("366122", "555555", "000000", "598796", "603810", "59965
 TASK_HDF5_GLOB = "DynamicRouting1*.hdf5"
 IGNORE_PREFIX = "NP"
 
+DEFAULT_HPC_UPLOAD_JOB_EMAIL = "chrism@alleninstitute.org"
 
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
     rig_record = npc_session.RigRecord(rig_id)
@@ -111,6 +112,7 @@ def upload(
     force_cloud_sync: bool = False,
     debug: bool = False,
     dry_run: bool = False,
+    hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
 ) -> Path | None:
     """
     Notes
@@ -202,9 +204,9 @@ def upload(
         logger.info(f"DRY RUN: Would have uploaded to {upload_service_url}")
     else:
         np_codeocean.utils.put_csv_for_hpc_upload(
-            upload_job_path,
-            upload_service_url,
-            "chrism@alleninstitute.org",
+            csv_path=upload_job_path,
+            upload_service_url=upload_service_url,
+            hpc_upload_job_email=hpc_upload_job_email,
         )
         logger.info('Submitted to hpc upload queue')
     return upload_job_path
@@ -216,6 +218,7 @@ def upload_batch(
     force_cloud_sync: bool = False,
     debug: bool = False,
     dry_run: bool = False,
+    hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
 ) -> None:
     if test:
         batch_limit = 3
@@ -230,6 +233,7 @@ def upload_batch(
             force_cloud_sync=force_cloud_sync,
             debug=debug,
             dry_run=dry_run,
+            hpc_upload_job_email=hpc_upload_job_email,
         )
         if batch_limit is not None and upload_job_path is not None:
             upload_count += 1
@@ -248,6 +252,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--dry-run', action="store_true")
     parser.add_argument('--mode', default=MODES[0], choices=MODES)
     parser.add_argument('--batch-dir', type=pathlib.Path, default=HDF5_REPO)
+    parser.add_argument('--email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL}")
     return parser.parse_args()
 
 
@@ -263,6 +268,7 @@ def main() -> None:
             force_cloud_sync=args.force_cloud_sync,
             debug=args.debug,
             dry_run=args.dry_run,
+            hpc_upload_job_email=args.email,
         )
     elif args.mode == MODES[1]:
         logger.info(f"Uploading in match mode: {args.batch_dir}")
@@ -271,7 +277,8 @@ def main() -> None:
             test=args.test,
             force_cloud_sync=args.force_cloud_sync,
             debug=args.debug,
-            dry_run=args.dry_run
+            dry_run=args.dry_run,
+            hpc_upload_job_email=args.email,
         )
     else:
         raise Exception(f"Unexpected mode: {args.mode}")
