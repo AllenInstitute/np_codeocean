@@ -23,7 +23,7 @@ AINDPlatform = Literal['ecephys', 'behavior']
 
 AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 DEV_SERVICE = "http://aind-data-transfer-service-dev"
-HPC_UPLOAD_JOB_EMAIL = "arjun.sridhar@alleninstitute.org"
+HPC_UPLOAD_JOB_EMAIL = "ben.hardcastle@alleninstitute.org"
 ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 @functools.cache
