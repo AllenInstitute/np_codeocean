@@ -200,15 +200,12 @@ def upload(
         if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
     logger.debug(f"Uploading to: {upload_service_url}")
     
-    if dry_run:
-        logger.info(f"DRY RUN: Would have uploaded to {upload_service_url}")
-    else:
-        np_codeocean.utils.put_csv_for_hpc_upload(
-            csv_path=upload_job_path,
-            upload_service_url=upload_service_url,
-            hpc_upload_job_email=hpc_upload_job_email,
-        )
-        logger.info('Submitted to hpc upload queue')
+    np_codeocean.utils.put_csv_for_hpc_upload(
+        csv_path=upload_job_path,
+        upload_service_url=upload_service_url,
+        hpc_upload_job_email=hpc_upload_job_email,
+        dry_run=dry_run,
+    )
     return upload_job_path
 
 
