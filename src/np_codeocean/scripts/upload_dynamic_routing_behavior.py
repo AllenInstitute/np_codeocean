@@ -52,26 +52,6 @@ def extract_modification_date(rig: Rig) -> datetime.date:
     else:
         raise Exception(f"Unsupported date format: {date_str}")
 
-
-def wrapped_get_session_info(
-    task_source: pathlib.Path,
-) -> npc_lims.SessionInfo | None:
-    try:
-        return npc_lims \
-            .get_session_info(task_source.stem)
-    except NoSessionInfo:
-        logger.debug(
-            f"Skipping {task_source} because session info not Dynamic Routing Task"
-        )
-    except Exception:
-        logger.debug(
-            f"Skipping {task_source} because of exception.",
-            exc_info=True,
-        )
-
-    return None
-
-
 def add_metadata(
     task_source: pathlib.Path,
     dest: pathlib.Path,
@@ -124,26 +104,26 @@ def upload(
         logger.setLevel(logging.DEBUG)
 
     extracted_subject_id = npc_session.extract_subject(task_source.stem)
+    if extracted_subject_id is None:
+        raise ValueError(f"Failed to extract subject ID from {task_source}")
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
     if not task_source.parent.name.isdigit():
         raise ValueError(
-            f"Skipping {task_source} because parent folder name is not a number")
-        return None
+            f"Not uploading {task_source} because parent folder name is not a number"
+        )
     
     if extracted_subject_id in EXCLUDED_SUBJECT_IDS:
-        logger.debug(
-            f"Skipping {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS")
-        return None
+        raise ValueError(
+            f"Not uploading {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS"
+        )
     
-    session_info = wrapped_get_session_info(task_source)
-    if not session_info:
-        return None
+    session_info = npc_lims.get_session_info(task_source.stem)
 
     if session_info.training_info["rig_name"].startswith(IGNORE_PREFIX):
-        logger.debug(
-            f"Skipping {task_source} because rig_id starts with {IGNORE_PREFIX}")
-        return None
+        raise ValueError(
+            f"Not uploading {task_source} because rig_id starts with {IGNORE_PREFIX}"
+        )
 
     # if session has been already been uploaded, skip it
     if not test and session_info.is_uploaded:  # session_info.is_uploaded doesnt work for uploads to dev service
@@ -151,9 +131,9 @@ def upload(
             logger.info(
                 f"Session {task_source} has already been uploaded, but force_cloud_sync={force_cloud_sync}. Re-uploading.")
         else:
-            logger.info(
-                f"Session {task_source} has already been uploaded. Skipping.")
-            return None
+            raise ValueError(
+                f"Not uploading {task_source} - already uploaded. Use --force-cloud-sync to override."
+            )
 
     upload_root = np_session.NPEXP_ROOT / "codeocean-dev" if test else "codeocean"
     session_dir = upload_root / session_info.id
@@ -224,14 +204,18 @@ def upload_batch(
     upload_count = 0
     for task_source in batch_dir.rglob(TASK_HDF5_GLOB):
         logger.info("Uploading %s" % task_source)
-        upload_job_path = upload(
-            task_source,
-            test=test,
-            force_cloud_sync=force_cloud_sync,
-            debug=debug,
-            dry_run=dry_run,
-            hpc_upload_job_email=hpc_upload_job_email,
-        )
+        try:
+            upload_job_path = upload(
+                task_source,
+                test=test,
+                force_cloud_sync=force_cloud_sync,
+                debug=debug,
+                dry_run=dry_run,
+                hpc_upload_job_email=hpc_upload_job_email,
+            )
+        except ValueError as exc:
+            logger.debug('Skipped upload of %s:%r' % (task_source, exc))
+            continue
         if batch_limit is not None and upload_job_path is not None:
             upload_count += 1
             if upload_count >= batch_limit:
