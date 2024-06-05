@@ -54,13 +54,13 @@ def add_metadata(
     
     session_json = normalized / "session.json"
     if not (session_json.is_symlink() or session_json.exists()):
-    logger.debug("Attempting to create session.json")
+        logger.debug("Attempting to create session.json")
     try:
         npc_sessions.DynamicRoutingSession(normalized)._aind_session_metadata.write_standard_file(normalized)
     except Exception as e:
             logger.exception(e)
     else:
-            if session_json.exists():
+        if session_json.exists():
             logger.debug("Created session.json")
         else:
                 logger.warning("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
@@ -148,14 +148,14 @@ def write_metadata_and_upload(
         platform='ecephys',
         rig_storage_directory=rig_storage_directory,
     )
-        return np_codeocean.upload_session(
-            session,
-            recording_dirs=recording_dirs,
-            force=force,
-            dry_run=dry_run,
-            test=test,
-            hpc_upload_job_email=hpc_upload_job_email,
-        )
+    return np_codeocean.upload_session(
+        session,
+        recording_dirs=recording_dirs,
+        force=force,
+        dry_run=dry_run,
+        test=test,
+        hpc_upload_job_email=hpc_upload_job_email,
+    )
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
