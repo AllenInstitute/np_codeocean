@@ -93,7 +93,7 @@ def upload(
     debug: bool = False,
     dry_run: bool = False,
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
-) -> Path | None:
+) -> Path:
     """
     Notes
     -----
@@ -205,7 +205,7 @@ def upload_batch(
     for task_source in batch_dir.rglob(TASK_HDF5_GLOB):
         logger.info("Uploading %s" % task_source)
         try:
-            upload_job_path = upload(
+            upload(
                 task_source,
                 test=test,
                 force_cloud_sync=force_cloud_sync,
@@ -216,7 +216,7 @@ def upload_batch(
         except ValueError as exc:
             logger.debug('Skipped upload of %s:%r' % (task_source, exc))
             continue
-        if batch_limit is not None and upload_job_path is not None:
+        if batch_limit is not None:
             upload_count += 1
             if upload_count >= batch_limit:
                 logger.info(f"Reached batch limit of {batch_limit}. Exiting.")
