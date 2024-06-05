@@ -32,7 +32,8 @@ Source = "https://github.com/AllenInstitute/np_codeocean"
 Issues = "https://github.com/AllenInstitute/np_codeocean/issues"
 
 [project.scripts]   
-"upload_dr_session" = "np_codeocean.scripts.upload_dynamic_routing_with_metadata:main"
+"upload_dr_behavior" = "np_codeocean.scripts.upload_dynamic_routing_behavior:main"
+"upload_dr_ecephys" = "np_codeocean.scripts.upload_dynamic_routing_ecephys:main"
 "upload_sessions" = "np_codeocean.scripts.upload_sessions:main"
 
 [project.optional-dependencies]
