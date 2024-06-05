@@ -126,8 +126,8 @@ def upload(
     extracted_subject_id = npc_session.extract_subject(task_source.stem)
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
-    if not extracted_subject_id.isdigit():
-        logger.debug(
+    if not task_source.parent.name.isdigit():
+        raise ValueError(
             f"Skipping {task_source} because parent folder name is not a number")
         return None
     
