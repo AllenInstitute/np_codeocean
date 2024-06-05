@@ -31,90 +31,10 @@ def get_project_config() -> dict[str, Any]:
     """Config for this project"""
     return np_config.fetch('/projects/np_codeocean')
 
-@functools.cache
-def get_aws_config() -> dict[Literal['aws_access_key_id', 'aws_secret_access_key'], str]:
-    """Config for connecting to AWS/S3 via awscli/boto3"""
-    return np_config.fetch('/projects/np_codeocean/aws')['config']
-
-@functools.cache
-def get_aws_credentials() -> dict[Literal['domain', 'token'], str]:
-    """Config for connecting to AWS/S3 via awscli/boto3"""
-    return np_config.fetch('/projects/np_codeocean/aws')['credentials']
-
-@functools.cache
-def get_codeocean_config() -> dict[Literal['region'], str]:
-    """Config for connecting to CodeOcean via http API"""
-    return np_config.fetch('/projects/np_codeocean/codeocean')['credentials']
-
 def get_home() -> pathlib.Path:
     if os.name == 'nt':
         return pathlib.Path(os.environ['USERPROFILE'])
     return pathlib.Path(os.environ['HOME'])
-
-def get_aws_files() -> dict[Literal['config', 'credentials'], pathlib.Path]:
-    return {
-        'config': get_home() / '.aws' / 'config',
-        'credentials': get_home() / '.aws' / 'credentials',
-    }
-
-def get_codeocean_files() -> dict[Literal['credentials'], pathlib.Path]:
-    return {
-        'credentials': get_home() / '.codeocean' / 'credentials.json',
-    }
-
-def verify_ini_config(path: pathlib.Path, contents: dict, profile: str = 'default') -> None:
-    config = configparser.ConfigParser()
-    if path.exists():
-        config.read(path)
-    if not all(k in config[profile] for k in contents):
-        raise ValueError(f'Profile {profile} in {path} exists but is missing some keys required for codeocean or s3 access.')
-    
-def write_or_verify_ini_config(path: pathlib.Path, contents: dict, profile: str = 'default') -> None:
-    config = configparser.ConfigParser()
-    if path.exists():
-        config.read(path)
-        try:    
-            verify_ini_config(path, contents, profile)
-        except ValueError:
-            pass
-        else:   
-            return
-    config[profile] = contents
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.touch(exist_ok=True)
-    with path.open('w') as f:
-        config.write(f)
-    verify_ini_config(path, contents, profile)
-
-def verify_json_config(path: pathlib.Path, contents: dict) -> None:
-    config = json.loads(path.read_text())
-    if not all(k in config for k in contents):
-        raise ValueError(f'{path} exists but is missing some keys required for codeocean or s3 access.')
-    
-def write_or_verify_json_config(path: pathlib.Path, contents: dict) -> None:
-    if path.exists():
-        try:
-            verify_json_config(path, contents)
-        except ValueError:
-            contents = np_config.merge(json.loads(path.read_text()), contents)
-        else:   
-            return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.touch(exist_ok=True)
-    path.write_text(json.dumps(contents, indent=4))
-    
-def ensure_credentials() -> None:
-    for file, contents in (
-        (get_aws_files()['config'], get_aws_config()),
-        (get_aws_files()['credentials'], get_aws_credentials()),
-    ):
-        write_or_verify_ini_config(file, contents, profile='default')
-    
-    for file, contents in (
-        (get_codeocean_files()['credentials'], get_codeocean_config()),
-    ):
-        write_or_verify_json_config(file, contents)
-
 
 def is_behavior_video_file(path: pathlib.Path) -> bool:
     if path.is_dir() or path.suffix not in ('.mp4', '.avi', '.json'):
@@ -322,7 +242,6 @@ def put_csv_for_hpc_upload(
         if response.status_code != 200:
             try:
                 response.json()['data']['errors']
-                import pdb; pdb.set_trace()
             except (KeyError, IndexError, requests.exceptions.JSONDecodeError, SyntaxError) as exc1:
                 try:
                     response.raise_for_status()
@@ -331,7 +250,7 @@ def put_csv_for_hpc_upload(
                 
     with open(csv_path, 'rb') as f:
         validate_csv_response = requests.post(
-            url=f"{upload_service_url}/api/validate_csv", 
+            url=f"{upload_service_url}/api/v1/validate_csv", 
             files=dict(file=f),
             )
     _raise_for_status(validate_csv_response)
@@ -343,7 +262,7 @@ def put_csv_for_hpc_upload(
         logger.info(f'Dry run: not submitting {csv_path} to hpc upload queue at {upload_service_url}.')
         return
     post_csv_response = requests.post(
-        url=f"{upload_service_url}/api/submit_hpc_jobs", 
+        url=f"{upload_service_url}/api/v1/submit_jobs", 
         json=dict(
             jobs=[
                     dict(
@@ -366,5 +285,5 @@ def ensure_posix(path: pathlib.Path) -> str:
 
 
 if __name__ == '__main__':
-    # ensure_credentials()
-    cleanup_ephys_symlinks(pathlib.Path(r'\\allen\programs\mindscope\workgroups\np-exp\codeocean\DRpilot_706401_20240423\ephys'))
+    import doctest
+    doctest.testmod(optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE | doctest.IGNORE_EXCEPTION_DETAIL)
