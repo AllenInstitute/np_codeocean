@@ -118,8 +118,11 @@ def upload(
             f"Not uploading {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS"
         )
     
-    session_info = npc_lims.get_session_info(task_source.stem)
-
+    try:
+        session_info = npc_lims.get_session_info(task_source.stem)
+    except NoSessionInfo:
+        raise ValueError(f"Not uploading {task_source} because it does not belong to a known Dynamic Routing subject (based on Sam's spreadsheets)") from None
+    
     if session_info.training_info["rig_name"].startswith(IGNORE_PREFIX):
         raise ValueError(
             f"Not uploading {task_source} because rig_id starts with {IGNORE_PREFIX}"
@@ -267,3 +270,10 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+    # upload(
+    #     task_source=Path("//allen/programs/mindscope/workgroups/dynamicrouting/DynamicRoutingTask/Data/659250/DynamicRouting1_659250_20230322_151236.hdf5"),
+    #     test=True,
+    #     force_cloud_sync=True,
+    #     debug=True,
+    #     dry_run=False,
+    # )
