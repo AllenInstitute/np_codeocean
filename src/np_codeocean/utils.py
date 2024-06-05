@@ -354,6 +354,7 @@ def put_csv_for_hpc_upload(
                 ]
         ),
     )
+    logger.info(f"Submitted {csv_path} to hpc upload queue at {upload_service_url}")
     _raise_for_status(post_csv_response)
 
 
