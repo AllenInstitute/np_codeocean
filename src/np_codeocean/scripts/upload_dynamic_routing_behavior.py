@@ -4,6 +4,8 @@ import logging
 import pathlib
 from pathlib import Path
 
+import np_codeocean
+import np_codeocean.utils
 import np_config
 import np_session
 import np_tools
@@ -13,9 +15,6 @@ import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 from npc_lims.exceptions import NoSessionInfo
-
-import np_codeocean
-import np_codeocean.utils
 
 logging.basicConfig(level=logging.INFO)  # TODO: move this to package __init__.py?
 
@@ -184,11 +183,12 @@ def upload(
         if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
     logger.debug(f"Uploading to: {upload_service_url}")
     
-    np_codeocean.utils.put_csv_for_hpc_upload(
-        csv_path=upload_job_path,
+    np_codeocean.utils.put_jobs_for_hpc_upload(
+        np_codeocean.utils.get_job_models_from_csv(upload_job_path),
         upload_service_url=upload_service_url,
-        hpc_upload_job_email=hpc_upload_job_email,
+        user_email=hpc_upload_job_email,
         dry_run=dry_run,
+        save_path=upload_job_path.with_suffix('.json'),
     )
     return upload_job_path
 

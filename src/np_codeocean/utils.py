@@ -7,8 +7,10 @@ import json
 import logging
 import os
 import pathlib
-from typing import Any, Generator, Literal
+from typing import Any, Generator, Iterable, Literal
+import typing_extensions
 
+import aind_data_transfer_models.core
 import np_config
 import np_tools
 import npc_session
@@ -225,7 +227,76 @@ def write_upload_csv(
         w.writerow(content.values())
     return output_path
 
+def get_job_models_from_csv(
+    path: pathlib.Path,
+) -> tuple[aind_data_transfer_models.core.BasicUploadJobConfigs, ...]:
+    jobs = pl.read_csv(path, eol_char='\r').to_dicts()
+    models = []
+    for job in jobs.copy():
+        modalities = []
+        for m in (k for k in job.keys() if k.startswith('modality') and ".source" not in k):
+            modalities.append(
+                aind_data_transfer_models.core.ModalityConfigs(
+                    modality=job[m],
+                    source=job[f"{m}.source"],
+                    #TODO add slurm_settings to increase time limit for ephys modality
+                    )
+                )
+        for k in (k for k in job.copy().keys() if k.startswith('modality')):
+            del job[k]
+        for k, v in job.items():
+            if isinstance(v, str) and '\n' in v:
+                job[k] = v.replace('\n', '')
+        models.append(
+            aind_data_transfer_models.core.BasicUploadJobConfigs(
+                **{k.replace('-', '_'): v for k,v in job.items()},
+                modalities=modalities,
+            )
+        )
+    return tuple(models)
 
+def put_jobs_for_hpc_upload(
+    upload_jobs: aind_data_transfer_models.core.BasicUploadJobConfigs | Iterable[aind_data_transfer_models.core.BasicUploadJobConfigs],
+    upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,
+    user_email: str = HPC_UPLOAD_JOB_EMAIL,
+    email_notification_types: Iterable[str | aind_data_transfer_models.core.EmailNotificationType] = ('fail',),
+    dry_run: bool = False,
+    save_path: pathlib.Path | None = None,
+    **extra_model_kwargs: Any,
+) -> None:
+    """Submit one or more jobs to the aind-data-transfer-service, for
+    upload to S3 on the hpc.
+    
+    - accepts one or more aind_data_schema BasicUploadJobConfigs models
+    - assembles a SubmitJobRequest model
+    - accepts additional parameters for SubmitHpcJobRequest as kwargs
+    - submits json via http request
+    - optionally saves the json file as a record
+    """
+    if not isinstance(upload_jobs, Iterable):
+        upload_jobs = (upload_jobs, )
+    submit_request = aind_data_transfer_models.core.SubmitJobRequest(
+        upload_jobs=upload_jobs,
+        user_email=user_email,
+        email_notification_types=email_notification_types,
+        **extra_model_kwargs,
+    )
+    post_request_content = json.loads(
+        submit_request.model_dump_json(round_trip=True)
+    ) #! round_trip required for s3 bucket suffix to work correctly
+    if save_path:
+        save_path.write_text(submit_request.model_dump_json(round_trip=True), errors='ignore')
+    if dry_run:
+        logger.warning(f'Dry run: not submitting {len(upload_jobs)} upload job(s) to {upload_service_url}')
+        return
+    post_json_response: requests.Response = requests.post(
+        url=f"{upload_service_url}/api/v1/submit_jobs",
+        json=post_request_content,
+    )
+    logger.info(f"Submitted {len(upload_jobs)} upload job(s) to {upload_service_url}")
+    post_json_response.raise_for_status()
+
+@typing_extensions.deprecated("Uses old, pre-v1 endpoints: use put_jobs_for_hpc_upload in combination with get_job_models_from_csv")
 def put_csv_for_hpc_upload(
     csv_path: pathlib.Path,
     upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,

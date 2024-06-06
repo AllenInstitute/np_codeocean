@@ -297,11 +297,12 @@ def upload_session(
     csv_content: dict = get_upload_csv_for_session(upload)
     utils.write_upload_csv(csv_content, upload.job)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
-    utils.put_csv_for_hpc_upload(
-        csv_path=upload.job,
+    utils.put_jobs_for_hpc_upload(
+        utils.get_job_models_from_csv(upload.job),
         upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
-        hpc_upload_job_email=hpc_upload_job_email,
+        user_email=hpc_upload_job_email,
         dry_run=dry_run,
+        save_path=upload.job.with_suffix('.json'),
     )
     logger.debug(f'Submitted {upload.session} to hpc upload queue')
     
