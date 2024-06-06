@@ -255,7 +255,7 @@ def put_csv_for_hpc_upload(
                 
     with open(csv_path, 'rb') as f:
         validate_csv_response = requests.post(
-            url=f"{upload_service_url}/api/v1/validate_csv", 
+            url=f"{upload_service_url}/api/validate_csv", 
             files=dict(file=f),
             )
     _raise_for_status(validate_csv_response)
@@ -267,7 +267,7 @@ def put_csv_for_hpc_upload(
         logger.info(f'Dry run: not submitting {csv_path} to hpc upload queue at {upload_service_url}.')
         return
     post_csv_response = requests.post(
-        url=f"{upload_service_url}/api/v1/submit_jobs", 
+        url=f"{upload_service_url}/api/submit_hpc_jobs", 
         json=dict(
             jobs=[
                     dict(
