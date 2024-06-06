@@ -138,7 +138,7 @@ def upload(
                 f"Not uploading {task_source} - already uploaded. Use --force-cloud-sync to override."
             )
 
-    upload_root = np_session.NPEXP_ROOT / "codeocean-dev" if test else "codeocean"
+    upload_root = np_session.NPEXP_ROOT / ("codeocean-dev" if test else "codeocean")
     session_dir = upload_root / session_info.id
     logger.debug(f"Session upload directory: {session_dir}")
 
