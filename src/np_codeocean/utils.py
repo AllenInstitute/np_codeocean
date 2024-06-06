@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import configparser
 import contextlib
 import csv
 import functools
@@ -80,7 +79,6 @@ def cleanup_ephys_symlinks(toplevel_dir: pathlib.Path) -> None:
 def remove_unreadable_ephys_data(toplevel_dir: pathlib.Path) -> None:
     
     for continuous_dir in ephys_continuous_dir_generator(toplevel_dir):
-        device_folder_name = continuous_dir.name
         events_dir = continuous_dir.parent.parent / 'events' / continuous_dir.name / 'TTL'
         filenames = ('continuous.dat', 'timestamps.npy', 'sample_numbers.npy')    
         dirs = (continuous_dir, ) + ((events_dir,) if events_dir.exists() else ())
