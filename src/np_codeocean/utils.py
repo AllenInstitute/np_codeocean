@@ -31,6 +31,11 @@ def get_project_config() -> dict[str, Any]:
     """Config for this project"""
     return np_config.fetch('/projects/np_codeocean')
 
+def set_npc_lims_credentials() -> None:
+    creds = np_config.fetch('/projects/np_codeocean/npc_lims')
+    for k, v in creds.items():
+        os.environ.setdefault(k, v)
+        
 def get_home() -> pathlib.Path:
     if os.name == 'nt':
         return pathlib.Path(os.environ['USERPROFILE'])

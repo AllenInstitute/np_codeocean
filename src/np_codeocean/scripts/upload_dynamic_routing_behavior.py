@@ -117,7 +117,8 @@ def upload(
         raise ValueError(
             f"Not uploading {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS"
         )
-    
+        
+    np_codeocean.utils.set_npc_lims_credentials()
     try:
         session_info = npc_lims.get_session_info(task_source.stem)
     except NoSessionInfo:
