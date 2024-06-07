@@ -140,7 +140,7 @@ def write_metadata_and_upload(
     session = np_session.Session(session)
     platform: np_codeocean.utils.AINDPlatform = 'ecephys'
     logger.debug(f"Platform: {platform}")
-    rig_storage_directory = np_codeocean.get_project_config()["rig_metadata_dir"]
+    rig_storage_directory = Path(np_codeocean.get_project_config()["rig_metadata_dir"])
     logger.debug(f"Rig storage directory: {rig_storage_directory}")
     add_metadata(
         session_directory=session.npexp_path,
