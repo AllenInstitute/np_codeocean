@@ -230,7 +230,10 @@ def write_upload_csv(
 def get_job_models_from_csv(
     path: pathlib.Path,
 ) -> tuple[aind_data_transfer_models.core.BasicUploadJobConfigs, ...]:
-    jobs = pl.read_csv(path, eol_char='\r').to_dicts()
+    jobs = pl.read_csv(path, eol_char='\r').with_columns(
+        pl.col('subject-id').cast(str),
+    ).to_dicts()
+    jobs = jobs
     models = []
     for job in jobs.copy():
         modalities = []
