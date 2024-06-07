@@ -41,8 +41,8 @@ def extract_modification_date(rig: Rig) -> datetime.date:
 def add_metadata(
     session_directory: Path,
     session_datetime: datetime.datetime,
-    platform: np_codeocean.utils.AINDPlatform,
     rig_storage_directory: Path,
+    ignore_errors: bool = True,
 ) -> None:
     """Adds rig and sessions metadata to a session directory.
     """
@@ -55,6 +55,9 @@ def add_metadata(
         try:
             npc_sessions.DynamicRoutingSession(normalized)._aind_session_metadata.write_standard_file(normalized)
         except Exception as e:
+            if not ignore_errors:
+                raise e from None
+            else:
                 logger.exception(e)
         else:
             if session_json.exists():
@@ -65,42 +68,26 @@ def add_metadata(
         logger.warning("session.json is currently required for the rig.json to be created, so we can't continue with metadata creation")
         return None
 
-    if platform in ('ecephys', ):
-        dynamic_routing_task.add_np_rig_to_session_dir(
-            normalized,
-            session_datetime,
-            rig_storage_directory,
-        )
-        rig_model_path = normalized / "rig.json"
-    elif platform in ('behavior', ):
-        task_paths = list(
-            normalized.glob("Dynamic*.hdf5")
-        )
-        logger.debug("Scraped task_paths: %s" % task_paths)
-        task_path = task_paths[0]
-        logger.debug("Using task path: %s" % task_path)
-        rig_model_path = dynamic_routing_task.copy_task_rig(
-            task_path,
-            normalized / "rig.json",
-            rig_storage_directory,
-        )
-        if not rig_model_path:
-            raise Exception("Failed to copy task rig.")
-        logger.debug("Rig model path: %s" % rig_model_path)
-        session_model_path = dynamic_routing_task.scrape_session_model_path(
-            normalized,
-        )
-        logger.debug("Session model path: %s" % session_model_path)
-        dynamic_routing_task.update_session_from_rig(
-            session_model_path,
-            rig_model_path,
-            session_model_path,
-        )
-    else:
-        raise Exception("Unexpected platform: %s" % platform)
-    
-    assert rig_model_path.exists(), \
-            f"Rig metadata path does not exist: {rig_model_path}"
+    rig_model_path = normalized / "rig.json"
+    if not (rig_model_path.is_symlink() or rig_model_path.exists()):
+        try:
+            dynamic_routing_task.add_np_rig_to_session_dir(
+                normalized,
+                session_datetime,
+                rig_storage_directory,
+            )
+        except Exception as e:
+            if not ignore_errors:
+                raise e from None
+            else:
+                logger.exception(e)
+        else:
+            if rig_model_path.exists():
+                logger.debug("Created rig.json")
+            else:
+                logger.warning("Failed to find created rig.json, but no error occurred during creation: may be in unexpected location")
+    if not (rig_model_path.is_symlink() or rig_model_path.exists()):
+        return None
 
     rig_metadata = Rig.model_validate_json(rig_model_path.read_text())
     modification_date = extract_modification_date(rig_metadata)
@@ -142,8 +129,8 @@ def write_metadata_and_upload(
     add_metadata(
         session_directory=session.npexp_path,
         session_datetime=session.start,
-        platform='ecephys',
         rig_storage_directory=rig_storage_directory,
+        ignore_errors=True,
     )
     return np_codeocean.upload_session(
         session,
