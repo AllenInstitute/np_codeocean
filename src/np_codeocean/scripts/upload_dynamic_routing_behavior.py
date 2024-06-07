@@ -4,8 +4,6 @@ import logging
 import pathlib
 from pathlib import Path
 
-import np_codeocean
-import np_codeocean.utils
 import np_config
 import np_session
 import np_tools
@@ -15,6 +13,9 @@ import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 from npc_lims.exceptions import NoSessionInfo
+
+import np_codeocean
+import np_codeocean.utils
 
 logging.basicConfig(level=logging.INFO)  # TODO: move this to package __init__.py?
 
