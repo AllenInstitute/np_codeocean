@@ -1748,7 +1748,7 @@ files = [
 
 [[package]]
 name = "np-tools"
-version = "0.1.23"
+version = "0.1.24"
 requires_python = "<4,>=3.7"
 summary = "General-purpose tools for common tasks encountered in Mindscope Neuropixels workflows."
 dependencies = [
@@ -1761,8 +1761,8 @@ dependencies = [
     "rich>=13.3.5",
 ]
 files = [
-    {file = "np_tools-0.1.23-py3-none-any.whl", hash = "sha256:bde90d71bb5a94404942273a1cd7961f72c1e8b673f61a9940c76730a9e60cc8"},
-    {file = "np_tools-0.1.23.tar.gz", hash = "sha256:cf0a64a1c08d493f463b3f7280d0d4d741ec418ddfa65f92305e5aeaa48d4265"},
+    {file = "np_tools-0.1.24-py3-none-any.whl", hash = "sha256:d1ff0a1672fb1448987d6d51fdd792c709c6d43654b37f340fb43758450c7627"},
+    {file = "np_tools-0.1.24.tar.gz", hash = "sha256:300252463f4c4b191b8b1d8e18cefc4f38db66d44d5a4561740642f02e2c10dc"},
 ]
 
 [[package]]
