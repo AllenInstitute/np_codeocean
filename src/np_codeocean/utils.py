@@ -282,7 +282,7 @@ def put_jobs_for_hpc_upload(
         **extra_model_kwargs,
     )
     post_request_content = json.loads(
-        submit_request.model_dump_json(round_trip=True)
+        submit_request.model_dump_json(round_trip=True, exclude_none=True)
     ) #! round_trip required for s3 bucket suffix to work correctly
     if save_path:
         save_path.write_text(submit_request.model_dump_json(round_trip=True), errors='ignore')
