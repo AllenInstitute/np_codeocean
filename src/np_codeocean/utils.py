@@ -285,7 +285,7 @@ def put_jobs_for_hpc_upload(
         submit_request.model_dump_json(round_trip=True, exclude_none=True)
     ) #! round_trip required for s3 bucket suffix to work correctly
     if save_path:
-        save_path.write_text(submit_request.model_dump_json(round_trip=True), errors='ignore')
+        save_path.write_text(submit_request.model_dump_json(round_trip=True, indent=4), errors='ignore')
     if dry_run:
         logger.warning(f'Dry run: not submitting {len(upload_jobs)} upload job(s) to {upload_service_url}')
         return
