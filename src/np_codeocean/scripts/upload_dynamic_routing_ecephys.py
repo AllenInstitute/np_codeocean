@@ -45,9 +45,6 @@ def add_metadata(
     rig_storage_directory: Path,
 ) -> None:
     """Adds rig and sessions metadata to a session directory.
-
-    TODO: Return created paths rather than None to better support a monadic
-     pattern.
     """
     normalized = np_config.normalize_path(session_directory)
     logger.debug("Normalized session directory: %s" % normalized)
