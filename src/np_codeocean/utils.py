@@ -351,8 +351,8 @@ def put_csv_for_hpc_upload(
     _raise_for_status(post_csv_response)
 
 
-def ensure_posix(path: pathlib.Path) -> str:
-    posix = path.as_posix()
+def ensure_posix(path: str | pathlib.Path) -> str:
+    posix = pathlib.Path(path).as_posix()
     if posix.startswith('//'):
         posix = posix[1:]
     return posix
