@@ -5,7 +5,7 @@
 groups = ["default", "dynamic-routing-metadata"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:3b0412bb3c0214ccffc3a4c62c031b15a1be4b971b9d86458bf866155f764738"
+content_hash = "sha256:a74d547f776067b5ac96ae7c55e5c5b8a435bda26acd32b4a94a5b17264cfd33"
 
 [[package]]
 name = "aind-codeocean-api"
@@ -55,7 +55,7 @@ files = [
 
 [[package]]
 name = "aind-data-transfer-models"
-version = "0.5.0"
+version = "0.5.1"
 requires_python = ">=3.8"
 summary = "Generated from aind-library-template"
 dependencies = [
@@ -66,8 +66,8 @@ dependencies = [
     "pydantic>=2.0",
 ]
 files = [
-    {file = "aind_data_transfer_models-0.5.0-py3-none-any.whl", hash = "sha256:6019bf090ebda2b1365d438abe9cfa91fb99c376c5c11b13a8bfc3451905da2d"},
-    {file = "aind_data_transfer_models-0.5.0.tar.gz", hash = "sha256:40329cad16f11d2f9a153400a207a2fe06b6ae9df362a5d82c6aeacdc9c6e9c7"},
+    {file = "aind_data_transfer_models-0.5.1-py3-none-any.whl", hash = "sha256:fe5e2bca13c51b08a1837bdfb279633093ac315e354ab31f129b1772a8026f6c"},
+    {file = "aind_data_transfer_models-0.5.1.tar.gz", hash = "sha256:120f60e38f92358b95bf47f5a7646c12382699b461f2c181f624aa7c34937e49"},
 ]
 
 [[package]]
