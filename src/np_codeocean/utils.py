@@ -11,6 +11,7 @@ from typing import Any, Generator, Iterable, Literal
 import typing_extensions
 
 import aind_data_transfer_models.core
+import aind_slurm_rest.models
 import np_config
 import np_tools
 import npc_session
@@ -26,6 +27,13 @@ AIND_DATA_TRANSFER_SERVICE = "http://aind-data-transfer-service"
 DEV_SERVICE = "http://aind-data-transfer-service-dev"
 HPC_UPLOAD_JOB_EMAIL = "ben.hardcastle@alleninstitute.org"
 ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+DEFAULT_EPHYS_SLURM_SETTINGS = aind_slurm_rest.models.V0036JobProperties(
+    environment=dict(),  # JonY: set this to an empty dictionary
+    time_limit = 15 * 60,
+    minimum_cpus_per_node=12, # 6 probes * (lfp + ap)
+)
+"""Increased timelimit and cpus for running ephys compression on the hpc"""
 
 @functools.cache
 def get_project_config() -> dict[str, Any]:
@@ -229,6 +237,7 @@ def write_upload_csv(
 
 def get_job_models_from_csv(
     path: pathlib.Path,
+    ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
 ) -> tuple[aind_data_transfer_models.core.BasicUploadJobConfigs, ...]:
     jobs = pl.read_csv(path, eol_char='\r').with_columns(
         pl.col('subject-id').cast(str),
@@ -237,12 +246,13 @@ def get_job_models_from_csv(
     models = []
     for job in jobs.copy():
         modalities = []
-        for m in (k for k in job.keys() if k.startswith('modality') and ".source" not in k):
+        for modality_column in (k for k in job.keys() if k.startswith('modality') and ".source" not in k):
+            modality_name = job[modality_column]
             modalities.append(
                 aind_data_transfer_models.core.ModalityConfigs(
-                    modality=job[m],
-                    source=job[f"{m}.source"],
-                    #TODO add slurm_settings to increase time limit for ephys modality
+                    modality=modality_name,
+                    source=job[f"{modality_column}.source"],
+                    slurm_settings = ephys_slurm_settings if modality_name == 'ecephys' else None,
                     )
                 )
         for k in (k for k in job.copy().keys() if k.startswith('modality')):
