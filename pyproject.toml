@@ -34,7 +34,7 @@ classifiers = [
 Source = "https://github.com/AllenInstitute/np_codeocean"
 Issues = "https://github.com/AllenInstitute/np_codeocean/issues"
 
-[project.scripts]   
+[project.scripts]
 "upload_dr_behavior" = "np_codeocean.scripts.upload_dynamic_routing_behavior:main"
 "upload_dr_ecephys" = "np_codeocean.scripts.upload_dynamic_routing_ecephys:main"
 "upload_sessions" = "np_codeocean.scripts.upload_sessions:main"
@@ -52,10 +52,9 @@ dev = [
     # "ruff>=0.0.260",
 ]
 dynamic-routing-metadata = [
-    "np-aind-metadata==0.1.15",
+    "np-aind-metadata==0.1.16",
     "npc-lims>=0.1.154",
     "npc-sessions>=0.0.225",
-    "npc-session @ git+https://github.com/AllenInstitute/npc_session.git@7f4a6d91711645daf9b9f0528bbd79ab4da128ef",
 ]
 
 [tool.pdm.scripts]
