@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import csv
+import datetime
 import functools
 import json
 import logging
@@ -60,6 +61,7 @@ def is_behavior_video_file(path: pathlib.Path) -> bool:
     
 def is_surface_channel_recording(path_name: str) -> bool:
     """
+    >>> import np_session
     >>> session = np_session.Session("//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels")
     >>> is_surface_channel_recording(session.npexp_path.as_posix())
     True
@@ -199,13 +201,13 @@ def decode_symlink_path(oebin_path: pathlib.Path) -> pathlib.Path:
         return oebin_path
     return np_config.normalize_path(oebin_path.readlink())
 
-def is_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
+def is_csv_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
     """Check if an upload job has been submitted to the hpc upload queue.
 
     - currently assumes one job per csv
     - does not check status (job may be FINISHED rather than RUNNING)
 
-    >>> is_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
+    >>> is_csv_in_hpc_upload_queue("//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_664851_20231114/upload.csv")
     False
     """
     # get subject-id, acq-datetime from csv
@@ -217,11 +219,30 @@ def is_in_hpc_upload_queue(csv_path: pathlib.Path, upload_service_url: str = AIN
         if col.name.startswith('acq') and 'datetime' in col.name.lower():
             dt = npc_session.DatetimeRecord(col[0])
             continue
-    partial_session_id = f"{subject}_{dt.replace(' ', '_').replace(':', '-')}"
-    
+        if col.name == 'platform':
+            platform = col[0]
+            continue
+    return is_session_in_hpc_queue(subject=subject, acq_datetime=dt.dt, platform=platform, upload_service_url=upload_service_url)
+
+def is_session_in_hpc_queue(subject: int | str, acq_datetime: str | datetime.datetime, platform: str | None = None, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
+    """
+    >>> is_session_in_hpc_queue(366122, datetime.datetime(2023, 11, 14, 0, 0, 0))
+    False
+    >>> is_session_in_hpc_queue(702136, datetime.datetime(2024, 3, 4, 13, 21, 35))
+    True
+    """
+    if not isinstance(acq_datetime, datetime.datetime):
+        acq_datetime = datetime.datetime.strptime(acq_datetime, ACQ_DATETIME_FORMAT)
+    partial_session_id = f"{subject}_{acq_datetime.strftime(ACQ_DATETIME_FORMAT).replace(' ', '_').replace(':', '-')}"
+    if platform:
+        partial_session_id = f"{platform}_{partial_session_id}"
+        
     jobs_response = requests.get(f"{upload_service_url}/jobs")
     jobs_response.raise_for_status()
     return partial_session_id in jobs_response.content.decode()
+
+def is_job_in_hpc_upload_queue(job: aind_data_transfer_models.core.BasicUploadJobConfigs, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
+    return is_session_in_hpc_queue(job.subject_id, job.acq_datetime, job.platform, upload_service_url)
 
 def write_upload_csv(
     content: dict[str, Any],
@@ -282,6 +303,7 @@ def put_jobs_for_hpc_upload(
     
     - accepts one or more aind_data_schema BasicUploadJobConfigs models
     - assembles a SubmitJobRequest model
+    - excludes jobs for sessions that are already in the upload queue
     - accepts additional parameters for SubmitHpcJobRequest as kwargs
     - submits json via http request
     - optionally saves the json file as a record
@@ -289,7 +311,7 @@ def put_jobs_for_hpc_upload(
     if not isinstance(upload_jobs, Iterable):
         upload_jobs = (upload_jobs, )
     submit_request = aind_data_transfer_models.core.SubmitJobRequest(
-        upload_jobs=upload_jobs,
+        upload_jobs=[job for job in upload_jobs if not is_job_in_hpc_upload_queue(job)],
         user_email=user_email,
         email_notification_types=email_notification_types,
         **extra_model_kwargs,
@@ -342,7 +364,7 @@ def put_csv_for_hpc_upload(
             )
     _raise_for_status(validate_csv_response)
     logger.debug(f"Validated response: {validate_csv_response.json()}")
-    if is_in_hpc_upload_queue(csv_path, upload_service_url):
+    if is_csv_in_hpc_upload_queue(csv_path, upload_service_url):
         logger.warning(f"Job already submitted for {csv_path}")
         return
     if dry_run:
