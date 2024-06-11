@@ -43,6 +43,7 @@ def add_metadata(
     session_datetime: datetime.datetime,
     rig_storage_directory: Path,
     ignore_errors: bool = True,
+    skip_existing: bool = True,
 ) -> None:
     """Adds rig and sessions metadata to a session directory.
     """
@@ -50,7 +51,7 @@ def add_metadata(
     logger.debug("Normalized session directory: %s" % normalized)
     
     session_json = normalized / "session.json"
-    if not (session_json.is_symlink() or session_json.exists()):
+    if not (skip_existing or session_json.is_symlink() or session_json.exists()):
         logger.debug("Attempting to create session.json")
         try:
             npc_sessions.DynamicRoutingSession(normalized)._aind_session_metadata.write_standard_file(normalized)
@@ -64,12 +65,12 @@ def add_metadata(
                 logger.debug("Created session.json")
             else:
                 logger.warning("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
-    if not (session_json.is_symlink() or session_json.exists()):
-        logger.warning("session.json is currently required for the rig.json to be created, so we can't continue with metadata creation")
-        return None
 
     rig_model_path = normalized / "rig.json"
-    if not (rig_model_path.is_symlink() or rig_model_path.exists()):
+    if not (skip_existing or rig_model_path.is_symlink() or rig_model_path.exists()):
+        if not (session_json.is_symlink() or session_json.exists()):
+            logger.warning("session.json is currently required for the rig.json to be created, so we can't continue with metadata creation")
+            return None
         try:
             dynamic_routing_task.add_np_rig_to_session_dir(
                 normalized,
@@ -112,6 +113,7 @@ def write_metadata_and_upload(
     dry_run: bool = False,
     test: bool = False,
     hpc_upload_job_email: str = np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL,
+    regenerate_metadata: bool = False,
 ) -> None:
     """Writes and updates aind-data-schema to the session directory
      associated with the `session`. The aind-data-schema session model is
@@ -131,6 +133,7 @@ def write_metadata_and_upload(
         session_datetime=session.start,
         rig_storage_directory=rig_storage_directory,
         ignore_errors=True,
+        skip_existing=not regenerate_metadata,
     )
     return np_codeocean.upload_session(
         session,
@@ -149,6 +152,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('--test', action='store_true', help="use the test-upload service, uploading to the test CodeOcean server instead of the production server")
     parser.add_argument('--dry-run', action='store_true', help="Create upload job but do not submit to hpc upload queue.")
+    parser.add_argument('--regenerate-metadata', action='store_true', help="Regenerate metadata files (session.json and rig.json) even if they already exist")
     return parser.parse_args()
 
 def main() -> None:
