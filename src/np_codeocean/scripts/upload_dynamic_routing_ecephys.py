@@ -51,7 +51,7 @@ def add_metadata(
     logger.debug("Normalized session directory: %s" % normalized)
     
     session_json = normalized / "session.json"
-    if not (skip_existing or session_json.is_symlink() or session_json.exists()):
+    if not skip_existing or not (session_json.is_symlink() or session_json.exists()):
         logger.debug("Attempting to create session.json")
         try:
             npc_sessions.DynamicRoutingSession(normalized)._aind_session_metadata.write_standard_file(normalized)
@@ -67,7 +67,7 @@ def add_metadata(
                 logger.warning("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
 
     rig_model_path = normalized / "rig.json"
-    if not (skip_existing or rig_model_path.is_symlink() or rig_model_path.exists()):
+    if not skip_existing or not (rig_model_path.is_symlink() or rig_model_path.exists()):
         if not (session_json.is_symlink() or session_json.exists()):
             logger.warning("session.json is currently required for the rig.json to be created, so we can't continue with metadata creation")
             return None
