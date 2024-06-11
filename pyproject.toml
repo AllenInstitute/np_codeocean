@@ -5,7 +5,9 @@ name = "np_codeocean"
 version = "0.1.8"
 description = "Tools for uploading and interacting with Mindscope Neuropixels experiments on Code Ocean"
 authors = [
-    {name = "Ben Hardcastle", email = "ben.hardcastle@alleninstitute.org"},
+    { name = "Ben Hardcastle", email = "ben.hardcastle@alleninstitute.org" },
+    { name = "Chris Mochizuki", email = "chrism@alleninstitute.org" },
+    { name = "Arjun Sridhar", email = "arjun.sridhar@alleninstitute.org" },
 ]
 dependencies = [
     "np_session>=0.6.4",
