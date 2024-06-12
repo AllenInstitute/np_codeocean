@@ -107,7 +107,7 @@ def add_metadata(
 
 
 def write_metadata_and_upload(
-    session: str | int | Path | np_session.Session, 
+    session_path_or_folder_name: str, 
     recording_dirs: typing.Iterable[str] | None = None,
     force: bool = False,
     dry_run: bool = False,
@@ -123,7 +123,8 @@ def write_metadata_and_upload(
     Only handles ecephys platform uploads (ie sessions with a folder of data; not 
     behavior box sessions, which have a single hdf5 file only)
     """
-    session = np_session.Session(session)
+    # session = np_session.Session(session) #! this doesn't work for surface_channels
+    session = np_codeocean.get_np_session(session_path_or_folder_name)
     platform: np_codeocean.utils.AINDPlatform = 'ecephys'
     logger.debug(f"Platform: {platform}")
     rig_storage_directory = Path(np_codeocean.get_project_config()["rig_metadata_dir"])
@@ -136,7 +137,7 @@ def write_metadata_and_upload(
         skip_existing=not regenerate_metadata,
     )
     return np_codeocean.upload_session(
-        session,
+        session_path_or_folder_name,
         recording_dirs=recording_dirs,
         force=force,
         dry_run=dry_run,
@@ -146,8 +147,8 @@ def write_metadata_and_upload(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
-    parser.add_argument('session', help="session ID (lims or np-exp foldername) or path to session folder")
-    parser.add_argument('recording_dirs', nargs='*', type=list, help="[optional] specific recording directories to upload - for use with split recordings only.")
+    parser.add_argument('session_path_or_folder_name', help="session ID (lims or np-exp foldername) or path to session folder")
+    parser.add_argument('recording_dirs', nargs='*', help="[optional] specific names of recording directories to upload - for use with split recordings only.")
     parser.add_argument('--email', dest='hpc_upload_job_email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL}")
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('--test', action='store_true', help="use the test-upload service, uploading to the test CodeOcean server instead of the production server")

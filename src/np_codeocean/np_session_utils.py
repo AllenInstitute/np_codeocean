@@ -218,9 +218,19 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
 def is_ephys_session(session: np_session.Session) -> bool:
     return bool(next(session.npexp_path.rglob('settings.xml'), None))
 
+def get_np_session(session_path_or_folder_name: str) -> np_session.Session:
+    """Accommodates surface channel folders, and updates the returned instance's
+    npexp_path accordingly"""
+    is_surface_channel_recording = utils.is_surface_channel_recording(session_path_or_folder_name)
+    session = np_session.Session(session_path_or_folder_name)
+    if not utils.is_surface_channel_recording(session.npexp_path.name):
+        # manually assign surface channel path 
+        session = np_session.Session(session.npexp_path.parent / f'{session.folder}_surface_channels')
+        assert session.npexp_path.exists(), f"Surface channel path {session.npexp_path} does not exist in same folder as main session recording"
+    return session
 
 def create_codeocean_upload(
-    session: str | int | np_session.Session,
+    session_path_or_folder_name: str,
     recording_dirs: Iterable[str] | None = None,
     force_cloud_sync: bool = False,
     codeocean_root: pathlib.Path = np_session.NPEXP_PATH / 'codeocean',
@@ -239,17 +249,12 @@ def create_codeocean_upload(
     """
     platform: utils.AINDPlatform = 'ecephys' # all session-type uploads with a folder of data are ecephys platform; behavior platform is for behavior-box sessions
 
-    if utils.is_surface_channel_recording(str(session)):
-        session = np_session.Session(session)
-        if not utils.is_surface_channel_recording(session.npexp_path.name):
-            # manually assign surface channel path 
-            session = np_session.Session(session.npexp_path.parent / f'{session.folder}_surface_channels')
-            assert session.npexp_path.exists(), f"Surface channel path {session.npexp_path} does not exist in same folder as main session recording"
+    session = get_np_session(str(session_path_or_folder_name))
+    if utils.is_surface_channel_recording(str(session_path_or_folder_name)):
         root = codeocean_root / f'{session.folder}_surface_channels'
         behavior = None
         behavior_videos = None
     else:
-        session = np_session.Session(session)
         root = codeocean_root / session.folder
         behavior = np_config.normalize_path(root / 'behavior')
         behavior_videos = behavior.with_name('behavior-videos')
@@ -272,7 +277,7 @@ def create_codeocean_upload(
     )
 
 def upload_session(
-    session: str | int | pathlib.Path | np_session.Session, 
+    session_path_or_folder_name: str, 
     recording_dirs: Iterable[str] | None = None,
     force: bool = False,
     dry_run: bool = False,
@@ -283,7 +288,7 @@ def upload_session(
         else np_session.NPEXP_PATH / 'codeocean-dev'
     logger.debug(f'Codeocean root: {codeocean_root}')
     upload = create_codeocean_upload(
-        str(session),
+        str(session_path_or_folder_name),
         codeocean_root=codeocean_root,
         recording_dirs=recording_dirs,
         force_cloud_sync=force
