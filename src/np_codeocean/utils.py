@@ -259,6 +259,7 @@ def write_upload_csv(
 def get_job_models_from_csv(
     path: pathlib.Path,
     ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
+    user_email: str = HPC_UPLOAD_JOB_EMAIL,
 ) -> tuple[aind_data_transfer_models.core.BasicUploadJobConfigs, ...]:
     jobs = pl.read_csv(path, eol_char='\r').with_columns(
         pl.col('subject-id').cast(str),
@@ -274,7 +275,7 @@ def get_job_models_from_csv(
                     modality=modality_name,
                     source=job[f"{modality_column}.source"],
                     slurm_settings = ephys_slurm_settings if modality_name == 'ecephys' else None,
-                    )
+                    ),
                 )
         for k in (k for k in job.copy().keys() if k.startswith('modality')):
             del job[k]
@@ -285,6 +286,7 @@ def get_job_models_from_csv(
             aind_data_transfer_models.core.BasicUploadJobConfigs(
                 **{k.replace('-', '_'): v for k,v in job.items()},
                 modalities=modalities,
+                user_email=user_email,
             )
         )
     return tuple(models)
