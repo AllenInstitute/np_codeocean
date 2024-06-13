@@ -223,10 +223,12 @@ def get_np_session(session_path_or_folder_name: str) -> np_session.Session:
     npexp_path accordingly"""
     is_surface_channel_recording = utils.is_surface_channel_recording(session_path_or_folder_name)
     session = np_session.Session(session_path_or_folder_name)
-    if not utils.is_surface_channel_recording(session.npexp_path.name):
-        # manually assign surface channel path 
+    if is_surface_channel_recording and not utils.is_surface_channel_recording(session.npexp_path.name):
+        # manually assign surface channel path which was lost when creating
+        # session object
         session = np_session.Session(session.npexp_path.parent / f'{session.folder}_surface_channels')
-        assert session.npexp_path.exists(), f"Surface channel path {session.npexp_path} does not exist in same folder as main session recording"
+        if not session.npexp_path.exists():
+            raise FileNotFoundError(f"Surface channel path {session.npexp_path} does not exist in same folder as main session recording")
     return session
 
 def create_codeocean_upload(
