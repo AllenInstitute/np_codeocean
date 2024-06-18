@@ -1,11 +1,10 @@
 import argparse
 import datetime
 import logging
+import pathlib
 import typing
-from pathlib import Path
 
 import np_config
-import np_session
 import npc_session
 import npc_sessions
 from aind_data_schema.core.rig import Rig
@@ -44,9 +43,9 @@ def extract_modification_date(rig: Rig) -> datetime.date:
 
 
 def add_metadata(
-    session_directory: Path,
+    session_directory: str | pathlib.Path,
     session_datetime: datetime.datetime,
-    rig_storage_directory: Path,
+    rig_storage_directory: pathlib.Path,
     ignore_errors: bool = True,
     skip_existing: bool = True,
 ) -> None:
@@ -156,7 +155,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Upload a session to CodeOcean")
     parser.add_argument('session_path_or_folder_name', help="session ID (lims or np-exp foldername) or path to session folder")
     parser.add_argument('recording_dirs', nargs='*', help="[optional] specific names of recording directories to upload - for use with split recordings only.")
-    parser.add_argument('--email', dest='hpc_upload_job_email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL}")
+    parser.add_argument('--email', dest='hpc_upload_job_email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.HPC_UPLOAD_JOB_EMAIL}")
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('--test', action='store_true', help="use the test-upload service, uploading to the test CodeOcean server instead of the production server")
     parser.add_argument('--dry-run', action='store_true', help="Create upload job but do not submit to hpc upload queue.")
