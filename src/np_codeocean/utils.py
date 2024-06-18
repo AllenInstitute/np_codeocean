@@ -136,12 +136,12 @@ def remove_duplicate_ephys_data(toplevel_dir: pathlib.Path) -> None:
             continue
         suffix = continuous_dir.name.split('-')[-1]
         assert suffix in ('AP', 'LFP')
-        probe += suffix
-        if probe in probes:
-            logger.info(f'Duplicate probe {probe} found in {continuous_dir.parent.parent} - removing')
+        recording_name = f"{probe}-{suffix}"
+        if recording_name in probes:
+            logger.info(f'Duplicate {recording_name = } found in {continuous_dir.parent.parent} - removing')
             remove_folder_of_symlinks(continuous_dir)
         else:
-            probes.append(probe)
+            probes.append(recording_name)
             
 def remove_folder_of_symlinks(folder: pathlib.Path) -> None:
     """Recursive deletion of all files in dir tree, with a check that each is a
