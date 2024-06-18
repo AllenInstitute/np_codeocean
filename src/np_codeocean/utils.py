@@ -29,6 +29,8 @@ DEV_SERVICE = "http://aind-data-transfer-service-dev"
 HPC_UPLOAD_JOB_EMAIL = "ben.hardcastle@alleninstitute.org"
 ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+AIND_METADATA_NAMES: tuple[str, ...] = ('session', 'data_description', 'procedures', 'processing', 'rig', 'subject')
+
 DEFAULT_EPHYS_SLURM_SETTINGS = aind_slurm_rest.models.V0036JobProperties(
     environment=dict(),  # JonY: set this to an empty dictionary
     time_limit = 15 * 60,

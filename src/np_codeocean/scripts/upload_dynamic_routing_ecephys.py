@@ -119,6 +119,7 @@ def write_metadata_and_upload(
     test: bool = False,
     hpc_upload_job_email: str = np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL,
     regenerate_metadata: bool = False,
+    regenerate_symlinks: bool = True,
 ) -> None:
     """Writes and updates aind-data-schema to the session directory
      associated with the `session`. The aind-data-schema session model is
@@ -130,14 +131,14 @@ def write_metadata_and_upload(
     """
     # session = np_session.Session(session) #! this doesn't work for surface_channels
     session = np_codeocean.get_np_session(session_path_or_folder_name)
-    platform: np_codeocean.utils.AINDPlatform = 'ecephys'
-    logger.debug(f"Platform: {platform}")
-    rig_storage_directory = Path(np_codeocean.get_project_config()["rig_metadata_dir"])
-    logger.debug(f"Rig storage directory: {rig_storage_directory}")
     add_metadata(
         session_directory=session.npexp_path,
-        session_datetime=session.start,
-        rig_storage_directory=rig_storage_directory,
+        session_datetime=(
+            session.start 
+            if not np_codeocean.is_surface_channel_recording(session.npexp_path.name)
+            else np_codeocean.get_surface_channel_start_time(session)
+        ),
+        rig_storage_directory=pathlib.Path(np_codeocean.get_project_config()["rig_metadata_dir"]),
         ignore_errors=True,
         skip_existing=not regenerate_metadata,
     )
@@ -148,6 +149,7 @@ def write_metadata_and_upload(
         dry_run=dry_run,
         test=test,
         hpc_upload_job_email=hpc_upload_job_email,
+        regenerate_symlinks=regenerate_symlinks,
     )
 
 def parse_args() -> argparse.Namespace:
@@ -158,6 +160,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--force', action='store_true', help="enable `force_cloud_sync` option, re-uploading and re-making raw asset even if data exists on S3")
     parser.add_argument('--test', action='store_true', help="use the test-upload service, uploading to the test CodeOcean server instead of the production server")
     parser.add_argument('--dry-run', action='store_true', help="Create upload job but do not submit to hpc upload queue.")
+    parser.add_argument('--preserve-symlinks', dest='regenerate_symlinks', action='store_false', help="Existing symlink folders will not be deleted and regenerated - may result in additional data being uploaded")
     parser.add_argument('--regenerate-metadata', action='store_true', help="Regenerate metadata files (session.json and rig.json) even if they already exist")
     return parser.parse_args()
 

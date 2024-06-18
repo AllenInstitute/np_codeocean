@@ -5,6 +5,7 @@ import datetime
 import doctest
 import pathlib
 from collections.abc import Iterable
+import shutil
 
 import np_config
 import np_logging
@@ -65,24 +66,28 @@ class CodeOceanUpload:
             return "OpenScope"
         return "Dynamic Routing"
 
+    @property
+    def root(self) -> pathlib.Path:
+        for attr in (self.behavior, self.behavior_videos, self.ephys, self.aind_metadata):
+            if attr is not None:
+                return attr.parent
+        raise ValueError(f"No upload directories assigned to {self!r}")
 
-
-def attempt_create_aind_metadata_symlinks(session: np_session.Session, dest: pathlib.Path) -> bool:
+def create_aind_metadata_symlinks(upload: CodeOceanUpload) -> bool:
     """
     Create symlinks in `dest` pointing to aind metadata json files from the root directory
     on np-exp. Returns True if any metadata files are found in np-exp and the `aind_metadata`
     folder is created.
     """
     has_metadata_files = False
-    for src in session.npexp_path.glob('*'):
-        for metadata_file_name in ('session', 'data_description', 'procedures', 'processing', 'rig', 'subject'):
-            if src.stem + src.suffix == f'{metadata_file_name}.json':
-                np_tools.symlink(utils.ensure_posix(src), dest / src.relative_to(session.npexp_path))    
-                has_metadata_files = True
+    for src in upload.session.npexp_path.glob('*'):
+        if src.stem in utils.AIND_METADATA_NAMES:
+            np_tools.symlink(utils.ensure_posix(src), upload.aind_metadata / src.name)
+            has_metadata_files = True
     if has_metadata_files:
-        logger.debug(f'Finished creating symlinks to aind metadata files in {session.npexp_path}')
+        logger.debug(f'Finished creating symlinks to aind metadata files in {upload.session.npexp_path}')
     else:
-        logger.debug(f'No metadata files found in {session.npexp_path}; No symlinks for metadata were made')
+        logger.debug(f'No metadata files found in {upload.session.npexp_path}; No symlinks for metadata were made')
     return has_metadata_files
 
 
@@ -264,19 +269,27 @@ def create_codeocean_upload(
     logger.debug(f'Created directory {root} for CodeOcean upload')
 
     logger.info('Attempting to create sub directory for AIND metadata jsons..')
-    metadata_path = np_config.normalize_path(root / 'aind_metadata')
-    has_metadata: bool = attempt_create_aind_metadata_symlinks(session, metadata_path)
-
+    metadata_path = get_aind_metadata_path(root)
+    
     return CodeOceanUpload(
         session = session, 
         behavior = behavior,
         behavior_videos = behavior_videos,
         ephys = np_config.normalize_path(root / 'ephys') if is_ephys_session(session) else None,
-        aind_metadata = metadata_path if has_metadata else None,
+        aind_metadata = metadata_path if has_metadata(session) else None,
         job = np_config.normalize_path(root / 'upload.csv'),
         force_cloud_sync=force_cloud_sync,
         platform=platform,
     )
+
+def has_metadata(session: np_session.Session) -> bool:
+    return any(
+        (session.npexp_path / name).exists()
+        for name in utils.AIND_METADATA_NAMES
+    )
+    
+def get_aind_metadata_path(upload_root: pathlib.Path) -> pathlib.Path:
+    return np_config.normalize_path(upload_root / 'aind_metadata')
 
 def upload_session(
     session_path_or_folder_name: str, 
@@ -285,16 +298,21 @@ def upload_session(
     dry_run: bool = False,
     test: bool = False,
     hpc_upload_job_email: str = utils.HPC_UPLOAD_JOB_EMAIL,
+    regenerate_symlinks: bool = True,
 ) -> None:
-    codeocean_root = np_session.NPEXP_PATH / 'codeocean' if not test \
-        else np_session.NPEXP_PATH / 'codeocean-dev'
-    logger.debug(f'Codeocean root: {codeocean_root}')
+    codeocean_root = np_session.NPEXP_PATH / ('codeocean-dev' if test else 'codeocean')
+    logger.debug(f'{codeocean_root = }')
     upload = create_codeocean_upload(
         str(session_path_or_folder_name),
         codeocean_root=codeocean_root,
         recording_dirs=recording_dirs,
         force_cloud_sync=force
     )
+    if regenerate_symlinks and upload.root.exists():
+        logger.debug(f'Removing existing {upload.root = }')
+        shutil.rmtree(upload.root.as_posix())
+    if upload.aind_metadata:
+        create_aind_metadata_symlinks(upload)
     if upload.ephys:
         create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
     if upload.behavior:
@@ -311,7 +329,8 @@ def upload_session(
         dry_run=dry_run,
         save_path=upload.job.with_suffix('.json'),
     )
-    logger.debug(f'Submitted {upload.session} to hpc upload queue')
+    if not dry_run:
+        logger.info(f'Finished submitting {upload.session} - check progress at {utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE}')
     
     if (is_split_recording := 
         recording_dirs is not None 
