@@ -12,8 +12,13 @@ from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 
 import np_codeocean
-import np_codeocean.utils
 
+logging.basicConfig(
+    filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%d-%m_%H-%M-%S')}.log",
+    level=logging.DEBUG, 
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s", 
+    datefmt="%Y-%m-%d %H:%M:%S",
+    )
 logger = logging.getLogger(__name__)
 
 CONFIG = np_config.fetch('/rigs/room_numbers')
