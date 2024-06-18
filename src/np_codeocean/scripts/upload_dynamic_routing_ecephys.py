@@ -51,14 +51,14 @@ def add_metadata(
 ) -> None:
     """Adds rig and sessions metadata to a session directory.
     """
-    normalized = np_config.normalize_path(session_directory)
-    logger.debug("Normalized session directory: %s" % normalized)
-    
-    session_json = normalized / "session.json"
+    normalized_session_dir = np_config.normalize_path(session_directory)
+    logger.debug(f"{normalized_session_dir = }")
+    logger.debug(f"{rig_storage_directory = }")
+    session_json = normalized_session_dir / "session.json"
     if not skip_existing or not (session_json.is_symlink() or session_json.exists()):
         logger.debug("Attempting to create session.json")
         try:
-            npc_sessions.DynamicRoutingSession(normalized)._aind_session_metadata.write_standard_file(normalized)
+            npc_sessions.DynamicRoutingSession(normalized_session_dir)._aind_session_metadata.write_standard_file(normalized_session_dir)
         except Exception as e:
             if not ignore_errors:
                 raise e from None
@@ -70,14 +70,14 @@ def add_metadata(
             else:
                 logger.warning("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
 
-    rig_model_path = normalized / "rig.json"
+    rig_model_path = normalized_session_dir / "rig.json"
     if not skip_existing or not (rig_model_path.is_symlink() or rig_model_path.exists()):
         if not (session_json.is_symlink() or session_json.exists()):
             logger.warning("session.json is currently required for the rig.json to be created, so we can't continue with metadata creation")
             return None
         try:
             dynamic_routing_task.add_np_rig_to_session_dir(
-                normalized,
+                normalized_session_dir,
                 session_datetime,
                 rig_storage_directory,
             )
@@ -97,9 +97,9 @@ def add_metadata(
     rig_metadata = Rig.model_validate_json(rig_model_path.read_text())
     modification_date = extract_modification_date(rig_metadata)
     rig_metadata.rig_id = reformat_rig_model_rig_id(rig_metadata.rig_id, modification_date)
-    rig_metadata.write_standard_file(normalized)  # assumes this will work out to dest/rig.json
+    rig_metadata.write_standard_file(normalized_session_dir)  # assumes this will work out to dest/rig.json
     session_model_path = dynamic_routing_task.scrape_session_model_path(
-        normalized,
+        normalized_session_dir,
     )
     dynamic_routing_task.update_session_from_rig(
         session_model_path,
@@ -116,7 +116,7 @@ def write_metadata_and_upload(
     force: bool = False,
     dry_run: bool = False,
     test: bool = False,
-    hpc_upload_job_email: str = np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL,
+    hpc_upload_job_email: str = np_codeocean.HPC_UPLOAD_JOB_EMAIL,
     regenerate_metadata: bool = False,
     regenerate_symlinks: bool = True,
 ) -> None:
@@ -169,4 +169,12 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    write_metadata_and_upload(
+        'DRpilot_708016_20240429_surface_channels',
+        force=True,
+        regenerate_metadata=False,
+        regenerate_symlinks=False,
+    )
+    # upload_dr_ecephys DRpilot_712141_20240606 --regenerate-metadata
+    # upload_dr_ecephys DRpilot_712141_20240611 recording1 recording2 --regenerate-metadata --force 
+    # upload_dr_ecephys DRpilot_712141_20240605 --regenerate-metadata
