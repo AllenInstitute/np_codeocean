@@ -10,9 +10,9 @@ authors = [
     { name = "Arjun Sridhar", email = "arjun.sridhar@alleninstitute.org" },
 ]
 dependencies = [
-    "np_session>=0.6.4",
+    "np_session>=0.6.44",
     "np-tools>=0.1.23",
-    "np-config>=0.4.32",
+    "np-config>=0.4.33",
     "requests>=2.31.0",
     "npc-session>=0.1.34",
     "polars>=0.20.16",
@@ -54,7 +54,7 @@ dev = [
 dynamic-routing-metadata = [
     "np-aind-metadata==0.1.16",
     "npc-lims>=0.1.154",
-    "npc-sessions>=0.0.225",
+    "npc-sessions>=0.0.226",
 ]
 
 [tool.pdm.scripts]

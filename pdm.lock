@@ -5,7 +5,7 @@
 groups = ["default", "dynamic-routing-metadata"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:c8f92669eee70e7cca0e51eb65758bda7b0fc31c189084087ff2b29c6da8c6da"
+content_hash = "sha256:1da5f5b155f858fd18af15e41ac074e40eb25f75a1b01d8e2b648133ce3370ca"
 
 [[package]]
 name = "aind-codeocean-api"
@@ -1692,7 +1692,7 @@ files = [
 
 [[package]]
 name = "np-config"
-version = "0.4.32"
+version = "0.4.33"
 requires_python = "<4.0,>=3.7"
 summary = "Config fetching from file or Zookeeper - with local backup - repackaging code from AIBS mpeconfig."
 dependencies = [
@@ -1706,8 +1706,8 @@ dependencies = [
     "typing-extensions>=4",
 ]
 files = [
-    {file = "np_config-0.4.32-py3-none-any.whl", hash = "sha256:3d95858ecd9910c85faa0b14ef023f5b23fca5cba60a6f9991cb56cd05c2ddd6"},
-    {file = "np_config-0.4.32.tar.gz", hash = "sha256:cc3382fbab997345eef4fe62cd504ff66fcb7cf96ec76f9aa54300040927db2f"},
+    {file = "np_config-0.4.33-py3-none-any.whl", hash = "sha256:e71a35c4e6423b75153790078338d8e3f1812641079842a38eaa1cf84882cf30"},
+    {file = "np_config-0.4.33.tar.gz", hash = "sha256:524cc5fae089db28433d883ed23089a0e89b2b808370891e1293cb583e2dbbbb"},
 ]
 
 [[package]]
@@ -1873,7 +1873,7 @@ files = [
 
 [[package]]
 name = "npc-sessions"
-version = "0.0.225"
+version = "0.0.226"
 requires_python = ">=3.9"
 summary = "NWB-conversion for behavior and epyhys sessions from the Mindscope Neuropixels team, in the cloud."
 dependencies = [
@@ -1892,7 +1892,7 @@ dependencies = [
     "npc-samstim>=0.1.4",
     "npc-session>=0.1.34",
     "npc-stim>=0.1.8",
-    "npc-sync>=0.1.12",
+    "npc-sync>=0.1.14",
     "numba>=0.57.1",
     "opencv-python-headless>=4.8.0.76",
     "pandas>=2.0",
@@ -1908,8 +1908,8 @@ dependencies = [
     "zarr<2.18.1",
 ]
 files = [
-    {file = "npc_sessions-0.0.225-py3-none-any.whl", hash = "sha256:59e8a813c124a04b7f3af5a2d37a73d1fd3cfe06133af2f8c1ecab8f7114b54e"},
-    {file = "npc_sessions-0.0.225.tar.gz", hash = "sha256:12ee9d0e99305f48ce1b0c1c57869de2398db7fcf14ac426286b136b2361601b"},
+    {file = "npc_sessions-0.0.226-py3-none-any.whl", hash = "sha256:fd0d1858dfca68e983d77a0baa16d7d87f63dbc9ff0f786387c1ddaf1083b5e2"},
+    {file = "npc_sessions-0.0.226.tar.gz", hash = "sha256:5da218612d8e470d875473d221aa520f9cd6f50f23dbea6568af602855028266"},
 ]
 
 [[package]]
@@ -1930,7 +1930,7 @@ files = [
 
 [[package]]
 name = "npc-sync"
-version = "0.1.12"
+version = "0.1.14"
 requires_python = ">=3.9"
 summary = "Repackaging of AllenSDK.SyncDataset with extra functionality, compatible with data in the cloud."
 dependencies = [
@@ -1942,8 +1942,8 @@ dependencies = [
     "typing-extensions>=4.9.0",
 ]
 files = [
-    {file = "npc_sync-0.1.12-py3-none-any.whl", hash = "sha256:591bf48e31656dc61bf146a6ec3c97c6fceca89160fb36e1d61bceaaaba177df"},
-    {file = "npc_sync-0.1.12.tar.gz", hash = "sha256:880e17fdb06b6a164359f8996378f1341eaca6e6a9e0c11f8a9563debcf0b065"},
+    {file = "npc_sync-0.1.14-py3-none-any.whl", hash = "sha256:335f8ba4543b003d80bf1ddb50ae27d397ba8750881de1b80c9c052a9d1cef28"},
+    {file = "npc_sync-0.1.14.tar.gz", hash = "sha256:ba3f5ab872f738d93eb738d9c7314c9e45c538d1a02683474b646125ecf67a31"},
 ]
 
 [[package]]
