@@ -232,8 +232,8 @@ def get_np_session(session_path_or_folder_name: str) -> np_session.Session:
         # manually assign surface channel path which was lost when creating
         # session object
         session = np_session.Session(session.npexp_path.parent / f'{session.folder}_surface_channels')
-        if not session.npexp_path.exists():
-            raise FileNotFoundError(f"Surface channel path {session.npexp_path} does not exist in same folder as main session recording")
+        if 'surface_channels' not in session.npexp_path.name or not session.npexp_path.exists():
+            raise FileNotFoundError(f"Surface channel path {session.npexp_path} does not exist, or does not exist in expected folder (ie np-exp)")
     return session
 
 def create_codeocean_upload(
