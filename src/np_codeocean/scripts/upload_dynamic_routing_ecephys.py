@@ -13,10 +13,10 @@ from np_aind_metadata.integrations import dynamic_routing_task
 import np_codeocean
 
 logging.basicConfig(
-    filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%d-%m_%H-%M-%S')}.log",
+    filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
     level=logging.DEBUG, 
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s", 
-    datefmt="%Y-%m-%d %H:%M:%S",
+    datefmt="%Y-%d-%m %H:%M:%S",
     )
 logger = logging.getLogger(__name__)
 
