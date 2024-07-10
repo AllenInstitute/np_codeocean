@@ -42,7 +42,7 @@ def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> 
     if not rig_record.is_behavior_cluster_rig:
         raise ValueError(
             f"Only behavior boxes are supported: {rig_id=}")
-    room_number = CONFIG.get(rig_record.behavior_cluster_id, "UNKNOWN")
+    room_number = RIG_ROOM_MAPPING.get(rig_record.behavior_cluster_id, "UNKNOWN")
     return rig_record.as_aind_data_schema_rig_id(str(room_number), modification_date)
 
 
