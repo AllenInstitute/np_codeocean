@@ -40,8 +40,8 @@ DEFAULT_DELAY_BETWEEN_UPLOADS = 30
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
     rig_record = npc_session.RigRecord(rig_id)
     if not rig_record.is_behavior_cluster_rig:
-        raise Exception(
-            f"Rig is not a behavior cluster rig. Only behavior cluster rigs are supported. rig_id={rig_id}")
+        raise ValueError(
+            f"Only behavior boxes are supported: {rig_id=}")
     room_number = CONFIG.get(rig_record.behavior_cluster_id, "UNKNOWN")
     return rig_record.as_aind_data_schema_rig_id(str(room_number), modification_date)
 
