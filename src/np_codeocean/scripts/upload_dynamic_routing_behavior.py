@@ -149,7 +149,7 @@ def upload(
     def is_uploaded(session_info: npc_lims.SessionInfo) -> bool:
         if (session_dir / "upload.json").exists(): 
             logger.info(f"Found upload.json for {task_source} - assuming it has been uploaded. Use --force-cloud-sync to override.")
-            return False
+            return True
         return session_info.is_uploaded # beware: session_info.is_uploaded doesnt work for uploads to dev service 
 
     # if session has been already been uploaded, skip it
@@ -302,6 +302,10 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+    # upload(
+    #     task_source=pathlib.Path("//allen/programs/mindscope/workgroups/dynamicrouting/DynamicRoutingTask/Data/714753/DynamicRouting1_714753_20240703_114241.hdf5"),
+    #     test=True,
+    # )
     # upload(
     #     task_source=Path("//allen/programs/mindscope/workgroups/dynamicrouting/DynamicRoutingTask/Data/659250/DynamicRouting1_659250_20230322_151236.hdf5"),
     #     test=True,
