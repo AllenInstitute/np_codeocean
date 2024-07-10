@@ -128,8 +128,12 @@ def remove_unreadable_ephys_data(toplevel_dir: pathlib.Path) -> None:
             remove_folder_of_symlinks(events_dir.parent)
             
 def remove_duplicate_ephys_data(toplevel_dir: pathlib.Path) -> None:
-    probes = []
+    previous_recording_name = ''
     for continuous_dir in ephys_continuous_dir_generator(toplevel_dir):
+        recording_name = continuous_dir.parent.parent.name
+        if recording_name != previous_recording_name:
+            # reset probes list for each new recording
+            probes = []
         try:
             probe = npc_session.ProbeRecord(continuous_dir.name)
         except ValueError:
