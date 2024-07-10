@@ -33,7 +33,7 @@ EXCLUDED_SUBJECT_IDS = ("366122", "555555", "000000", "598796", "603810", "59965
 TASK_HDF5_GLOB = "DynamicRouting1*.hdf5"
 IGNORE_PREFIX = "NP"
 
-DEFAULT_HPC_UPLOAD_JOB_EMAIL = "chrism@alleninstitute.org"
+DEFAULT_DELAY_BETWEEN_UPLOADS = 30
 
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
     rig_record = npc_session.RigRecord(rig_id)
@@ -218,6 +218,7 @@ def upload_batch(
     debug: bool = False,
     dry_run: bool = False,
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
+    delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
 ) -> None:
     if test:
         batch_limit = 3
@@ -243,7 +244,9 @@ def upload_batch(
             if upload_count >= batch_limit:
                 logger.info(f"Reached batch limit of {batch_limit}. Exiting.")
                 break
-
+        if delay > 0:
+            logger.info(f"Pausing for {delay} seconds before next upload")
+            time.sleep(delay)
 
 MODES = ['singleton', 'batch']
 def parse_args() -> argparse.Namespace:
@@ -256,6 +259,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--mode', default=MODES[0], choices=MODES)
     parser.add_argument('--batch-dir', type=pathlib.Path, default=HDF5_REPO)
     parser.add_argument('--email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL}")
+    parser.add_argument('--delay', type=str, help=f"wait time (sec) between job submissions in batch mode, to avoid overloadig upload service. Default is {DEFAULT_DELAY_BETWEEN_UPLOADS}", default=DEFAULT_DELAY_BETWEEN_UPLOADS)
     return parser.parse_args()
 
 
@@ -283,6 +287,7 @@ def main() -> None:
             debug=args.debug,
             dry_run=args.dry_run,
             hpc_upload_job_email=args.email,
+            delay=args.delay,
         )
     else:
         raise Exception(f"Unexpected mode: {args.mode}")
