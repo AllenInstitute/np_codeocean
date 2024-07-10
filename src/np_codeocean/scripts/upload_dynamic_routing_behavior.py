@@ -22,16 +22,18 @@ logging.basicConfig(
     )
 logger = logging.getLogger(__name__)
 
-CONFIG = np_config.fetch('/rigs/room_numbers')
+RIG_ROOM_MAPPING = np_config.fetch('/rigs/room_numbers')
 HDF5_REPO = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/DynamicRoutingTask/Data')
 SESSION_FOLDER_DIRS = (
     pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot'),
     pathlib.Path('//allen/programs/mindscope/workgroups/templeton/TTOC/pilot recordings'),
 )
 
-EXCLUDED_SUBJECT_IDS = ("366122", "555555", "000000", "598796", "603810", "599657")
+EXCLUDED_SUBJECT_IDS = (0, 366122, 555555, 000000, 598796, 603810, 599657)
 TASK_HDF5_GLOB = "DynamicRouting1*.hdf5"
-IGNORE_PREFIX = "NP"
+RIG_IGNORE_PREFIXES = ("NP", "OG")
+
+DEFAULT_HPC_UPLOAD_JOB_EMAIL = "ben.hardcastle@alleninstitute.org"
 
 DEFAULT_DELAY_BETWEEN_UPLOADS = 30
 
@@ -256,7 +258,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--force-cloud-sync', action="store_true")
     parser.add_argument('--debug', action="store_true")
     parser.add_argument('--dry-run', action="store_true")
-    parser.add_argument('--mode', default=MODES[0], choices=MODES)
+    parser.add_argument('--mode', default=MODES[1], choices=MODES)
     parser.add_argument('--batch-dir', type=pathlib.Path, default=HDF5_REPO)
     parser.add_argument('--email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL}")
     parser.add_argument('--delay', type=str, help=f"wait time (sec) between job submissions in batch mode, to avoid overloadig upload service. Default is {DEFAULT_DELAY_BETWEEN_UPLOADS}", default=DEFAULT_DELAY_BETWEEN_UPLOADS)
