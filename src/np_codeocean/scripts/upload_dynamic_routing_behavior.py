@@ -125,13 +125,28 @@ def upload(
     except NoSessionInfo:
         raise ValueError(f"Not uploading {task_source} because it does not belong to a known Dynamic Routing subject (based on Sam's spreadsheets)") from None
     
-    if session_info.training_info["rig_name"].startswith(IGNORE_PREFIX):
+    rig_name = ""
+    rig_name: str = session_info.training_info.get("rig_name", "")
+    if not rig_name:
+        with h5py.File(task_source, 'r') as file, contextlib.suppress(KeyError):
+            rig_name: str = file['rigName'][()].decode('utf-8')
+            
+    if any(rig_name.startswith(i) for i in RIG_IGNORE_PREFIXES):
         raise ValueError(
-            f"Not uploading {task_source} because rig_id starts with {IGNORE_PREFIX}"
+            f"Not uploading {task_source} because rig_id starts with one of {RIG_IGNORE_PREFIXES!r}"
         )
 
+    upload_root = np_session.NPEXP_ROOT / ("codeocean-dev" if test else "codeocean")
+    session_dir = upload_root / session_info.id
+    
+    def is_uploaded(session_info: npc_lims.SessionInfo) -> bool:
+        if (session_dir / "upload.json").exists(): 
+            logger.info(f"Found upload.json for {task_source} - assuming it has been uploaded. Use --force-cloud-sync to override.")
+            return False
+        return session_info.is_uploaded # beware: session_info.is_uploaded doesnt work for uploads to dev service 
+
     # if session has been already been uploaded, skip it
-    if not test and session_info.is_uploaded:  # session_info.is_uploaded doesnt work for uploads to dev service
+    if not test and is_uploaded(session_info): # if testing, we always want to upload
         if force_cloud_sync:
             logger.info(
                 f"Session {task_source} has already been uploaded, but {force_cloud_sync=}: re-uploading.")
