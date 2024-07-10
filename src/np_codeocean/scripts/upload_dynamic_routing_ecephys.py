@@ -169,12 +169,13 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    write_metadata_and_upload(
-        'DRpilot_708016_20240429_surface_channels',
-        force=True,
-        regenerate_metadata=False,
-        regenerate_symlinks=False,
-    )
+    main()
+    # write_metadata_and_upload(
+    #     'DRpilot_708016_20240429_surface_channels',
+    #     force=True,
+    #     regenerate_metadata=False,
+    #     regenerate_symlinks=False,
+    # )
     # upload_dr_ecephys DRpilot_712141_20240606 --regenerate-metadata
     # upload_dr_ecephys DRpilot_712141_20240611 recording1 recording2 --regenerate-metadata --force 
     # upload_dr_ecephys DRpilot_712141_20240605 --regenerate-metadata
