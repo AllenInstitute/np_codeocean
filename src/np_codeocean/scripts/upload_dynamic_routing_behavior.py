@@ -201,7 +201,7 @@ def upload(
     logger.info(f"Uploading to: {upload_service_url}")
     
     np_codeocean.utils.put_jobs_for_hpc_upload(
-        np_codeocean.utils.get_job_models_from_csv(
+        upload_jobs=np_codeocean.utils.get_job_models_from_csv(
             upload_job_path,
             user_email=hpc_upload_job_email,
         ),
