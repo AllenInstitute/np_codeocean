@@ -125,6 +125,12 @@ def upload(
         raise ValueError(
             f"Not uploading {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS"
         )
+
+    upload_root = np_session.NPEXP_ROOT / ("codeocean-dev" if test else "codeocean")
+    session_dir = upload_root / f"{extracted_subject_id}_{npc_session.extract_isoformat_date(task_source.stem)}"
+
+    if (not force_cloud_sync) and (session_dir / "upload.json").exists():
+        raise ValueError(f"Found upload.json for {task_source} - assuming it has already been uploaded. Use --force-cloud-sync to override.")
         
     np_codeocean.utils.set_npc_lims_credentials()
     try:
@@ -143,17 +149,8 @@ def upload(
             f"Not uploading {task_source} because rig_id starts with one of {RIG_IGNORE_PREFIXES!r}"
         )
 
-    upload_root = np_session.NPEXP_ROOT / ("codeocean-dev" if test else "codeocean")
-    session_dir = upload_root / session_info.id
-    
-    def is_uploaded(session_info: npc_lims.SessionInfo) -> bool:
-        if (session_dir / "upload.json").exists(): 
-            logger.info(f"Found upload.json for {task_source} - assuming it has been uploaded. Use --force-cloud-sync to override.")
-            return True
-        return session_info.is_uploaded # beware: session_info.is_uploaded doesnt work for uploads to dev service 
-
     # if session has been already been uploaded, skip it
-    if not test and is_uploaded(session_info): # if testing, we always want to upload
+    if not test and session_info.is_uploaded: # if testing, we always want to upload (note: session_info.is_uploaded doesnt work for uploads to dev service)
         if force_cloud_sync:
             logger.info(
                 f"Session {task_source} has already been uploaded, but {force_cloud_sync=}: re-uploading.")
