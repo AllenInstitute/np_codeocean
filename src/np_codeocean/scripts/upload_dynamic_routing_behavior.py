@@ -14,11 +14,12 @@ from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 from npc_lims.exceptions import NoSessionInfo
 
-import np_codeocean
-import np_codeocean.utils
-
-logging.basicConfig(level=logging.INFO)  # TODO: move this to package __init__.py?
-
+logging.basicConfig(
+    filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
+    level=logging.INFO, 
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s", 
+    datefmt="%Y-%d-%m %H:%M:%S",
+    )
 logger = logging.getLogger(__name__)
 
 CONFIG = np_config.fetch('/rigs/room_numbers')
@@ -106,7 +107,7 @@ def upload(
     extracted_subject_id = npc_session.extract_subject(task_source.stem)
     if extracted_subject_id is None:
         raise ValueError(f"Failed to extract subject ID from {task_source}")
-    logger.debug(f"Extracted subject id: {extracted_subject_id}")
+    logger.info(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
     if not task_source.parent.name.isdigit():
         raise ValueError(
@@ -133,15 +134,13 @@ def upload(
     if not test and session_info.is_uploaded:  # session_info.is_uploaded doesnt work for uploads to dev service
         if force_cloud_sync:
             logger.info(
-                f"Session {task_source} has already been uploaded, but force_cloud_sync={force_cloud_sync}. Re-uploading.")
+                f"Session {task_source} has already been uploaded, but {force_cloud_sync=}: re-uploading.")
         else:
             raise ValueError(
-                f"Not uploading {task_source} - already uploaded. Use --force-cloud-sync to override."
+                f"Session {task_source} has already been uploaded. Use --force-cloud-sync to override."
             )
 
-    upload_root = np_session.NPEXP_ROOT / ("codeocean-dev" if test else "codeocean")
-    session_dir = upload_root / session_info.id
-    logger.debug(f"Session upload directory: {session_dir}")
+    logger.info(f"Session upload directory: {session_dir}")
 
     # external systems start getting modified here.
     session_dir.mkdir(exist_ok=True)
@@ -151,7 +150,7 @@ def upload(
     behavior_modality_dir.mkdir(exist_ok=True)
 
     rig_storage_directory = np_codeocean.get_project_config()["rig_metadata_dir"]
-    logger.debug(f"Rig storage directory: {rig_storage_directory}")
+    logger.info(f"Rig storage directory: {rig_storage_directory}")
     add_metadata(
         task_source,
         metadata_dir,
@@ -182,7 +181,7 @@ def upload(
 
     upload_service_url = np_codeocean.utils.DEV_SERVICE \
         if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
-    logger.debug(f"Uploading to: {upload_service_url}")
+    logger.info(f"Uploading to: {upload_service_url}")
     
     np_codeocean.utils.put_jobs_for_hpc_upload(
         np_codeocean.utils.get_job_models_from_csv(
@@ -211,7 +210,7 @@ def upload_batch(
         batch_limit = None
     upload_count = 0
     for task_source in batch_dir.rglob(TASK_HDF5_GLOB):
-        logger.info("Uploading %s" % task_source)
+        logger.info("Attempting upload of %s" % task_source)
         try:
             upload(
                 task_source,
@@ -222,7 +221,7 @@ def upload_batch(
                 hpc_upload_job_email=hpc_upload_job_email,
             )
         except ValueError as exc:
-            logger.debug('Skipped upload of %s:%r' % (task_source, exc))
+            logger.info('Skipping upload of %s: %r' % (task_source, exc))
             continue
         if batch_limit is not None:
             upload_count += 1
@@ -247,6 +246,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    logger.info(f"Parsed args: {args!r}")
     if args.mode == MODES[0]:
         logger.info(f"Uploading in singleton mode: {args.task_source}")
         if not args.task_source:
