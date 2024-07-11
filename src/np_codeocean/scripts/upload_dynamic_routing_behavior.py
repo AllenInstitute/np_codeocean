@@ -245,6 +245,7 @@ def upload_batch(
     dry_run: bool = False,
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
+    chronological_order: bool = False,
 ) -> None:
     if test:
         batch_limit = 3
@@ -254,7 +255,7 @@ def upload_batch(
     future_to_task_source = {}
     all_files = tuple(batch_dir.rglob(TASK_HDF5_GLOB)) # to fix tqdm we need the length of files (len(futures_dict) doesn't work for some reason)
     with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
-        for task_source in all_files[::-1]:
+        for task_source in all_files if chronological_order else all_files[::-1]:
             future = executor.submit(upload, task_source, test, force_cloud_sync, debug, dry_run, hpc_upload_job_email, delay)
             future_to_task_source[future] = task_source
         with tqdm.tqdm(total=len(all_files), desc="Checking status and uploading new sessions") as pbar: 
@@ -281,6 +282,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--dry-run', action="store_true")
     parser.add_argument('--email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL}")
     parser.add_argument('--delay', type=str, help=f"wait time (sec) between job submissions in batch mode, to avoid overloadig upload service. Default is {DEFAULT_DELAY_BETWEEN_UPLOADS}", default=DEFAULT_DELAY_BETWEEN_UPLOADS)
+    parser.add_argument('--chronological', action="store_true", help="[batch mode only] Upload files in chronological order (oldest first) - default is newest first")
     return parser.parse_args()
 
 
@@ -307,6 +309,7 @@ def main() -> None:
             dry_run=args.dry_run,
             hpc_upload_job_email=args.email,
             delay=args.delay,
+            chronological_order=args.chronological,
         )
 
 
