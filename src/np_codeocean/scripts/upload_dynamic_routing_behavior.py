@@ -124,7 +124,7 @@ def upload(
     extracted_subject_id = npc_session.extract_subject(task_source.stem)
     if extracted_subject_id is None:
         raise ValueError(f"Failed to extract subject ID from {task_source}")
-    logger.info(f"Extracted subject id: {extracted_subject_id}")
+    logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
     if not task_source.parent.name.isdigit():
         raise ValueError(
@@ -182,7 +182,7 @@ def upload(
     behavior_modality_dir.mkdir(exist_ok=True)
 
     rig_storage_directory = np_codeocean.get_project_config()["rig_metadata_dir"]
-    logger.info(f"Rig storage directory: {rig_storage_directory}")
+    logger.debug(f"Rig storage directory: {rig_storage_directory}")
     add_metadata(
         task_source,
         metadata_dir,
