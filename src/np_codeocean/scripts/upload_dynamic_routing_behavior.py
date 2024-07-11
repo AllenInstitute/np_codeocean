@@ -274,6 +274,7 @@ def upload_batch(
                     logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
                 except Exception as e:
                     logger.exception(e)
+                    pbar.close()
                     raise e
                 else:
                     upload_count += 1
