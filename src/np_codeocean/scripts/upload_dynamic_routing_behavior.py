@@ -149,7 +149,7 @@ def upload(
     try:
         session_info = npc_lims.get_session_info(task_source.stem)
     except NoSessionInfo:
-        raise SessionNotUploadedError(f"{task_source.name} does not belong to a known Dynamic Routing subject (based on Sam's spreadsheets)") from None
+        raise SessionNotUploadedError(f"{task_source.name} not in Sam's spreadsheets (yet) - cannot deduce project etc.") from None
     
     # if session has been already been uploaded, skip it
     if not (force_cloud_sync or test) and session_info.is_uploaded:  # note: session_info.is_uploaded doesnt work for uploads to dev service
