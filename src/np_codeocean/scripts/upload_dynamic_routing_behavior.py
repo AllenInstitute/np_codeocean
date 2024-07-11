@@ -271,13 +271,11 @@ def upload_batch(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task-source', type=pathlib.Path)
+    parser.add_argument('--task-source', type=pathlib.Path, default=HDF5_REPO, help="Path to a single DynamicRouting1*.hdf5 file or a directory containing them (rglob will be used to find files in all subfolder levels)")
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--force-cloud-sync', action="store_true")
     parser.add_argument('--debug', action="store_true")
     parser.add_argument('--dry-run', action="store_true")
-    parser.add_argument('--mode', default=MODES[1], choices=MODES)
-    parser.add_argument('--batch-dir', type=pathlib.Path, default=HDF5_REPO)
     parser.add_argument('--email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL}")
     parser.add_argument('--delay', type=str, help=f"wait time (sec) between job submissions in batch mode, to avoid overloadig upload service. Default is {DEFAULT_DELAY_BETWEEN_UPLOADS}", default=DEFAULT_DELAY_BETWEEN_UPLOADS)
     return parser.parse_args()
@@ -286,10 +284,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     logger.info(f"Parsed args: {args!r}")
-    if args.mode == MODES[0]:
-        logger.info(f"Uploading in singleton mode: {args.task_source}")
-        if not args.task_source:
-            raise Exception("Task source is required for singleton mode.")
+    if not args.task_source.is_dir():
+        logger.info(f"Uploading in single file mode: {args.task_source}")
         upload(
             args.task_source,
             test=args.test,
@@ -298,8 +294,8 @@ def main() -> None:
             dry_run=args.dry_run,
             hpc_upload_job_email=args.email,
         )
-    elif args.mode == MODES[1]:
-        logger.info(f"Uploading in match mode: {args.batch_dir}")
+    else:
+        logger.info(f"Uploading in batch mode: {args.batch_dir}")
         upload_batch(
             batch_dir=args.batch_dir,
             test=args.test,
@@ -309,8 +305,6 @@ def main() -> None:
             hpc_upload_job_email=args.email,
             delay=args.delay,
         )
-    else:
-        raise Exception(f"Unexpected mode: {args.mode}")
 
 
 if __name__ == '__main__':
