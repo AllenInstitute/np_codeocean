@@ -133,15 +133,28 @@ def upload(
     upload_root = np_session.NPEXP_ROOT / ("codeocean-dev" if test else "codeocean")
     session_dir = upload_root / f"{extracted_subject_id}_{npc_session.extract_isoformat_date(task_source.stem)}"
 
-    if (not force_cloud_sync) and (session_dir / "upload.json").exists():
-        raise ValueError(f"Found upload.json for {task_source} - assuming it has already been uploaded. Use --force-cloud-sync to override.")
-        
     np_codeocean.utils.set_npc_lims_credentials()
     try:
         session_info = npc_lims.get_session_info(task_source.stem)
     except NoSessionInfo:
         raise ValueError(f"Not uploading {task_source} because it does not belong to a known Dynamic Routing subject (based on Sam's spreadsheets)") from None
     
+    # if session has been already been uploaded, skip it
+    if not (force_cloud_sync or test) and session_info.is_uploaded:  # note: session_info.is_uploaded doesnt work for uploads to dev service
+        raise ValueError(
+            f" {task_source} is already uploaded. Use --force-cloud-sync to re-upload."
+        )
+    
+    # in the transfer-service airflow dag, jobs have failed after creating a folder
+    # on S3, but before a data asset is created in codeocean (likely due to codeocean
+    # being down): 
+    # in that case, our `is_uploaded` check would return False, but in airflow,
+    # there's a `check_s3_folder_exists` task, which will fail since the folder
+    # already exists.
+    # To avoid this second failure, we can force a re-upload, regardless of
+    # whether the folder exists on S3 or not
+    force_cloud_sync = True 
+        
     rig_name = ""
     rig_name: str = session_info.training_info.get("rig_name", "")
     if not rig_name:
@@ -153,17 +166,7 @@ def upload(
             f"Not uploading {task_source} because rig_id starts with one of {RIG_IGNORE_PREFIXES!r}"
         )
 
-    # if session has been already been uploaded, skip it
-    if not test and session_info.is_uploaded: # if testing, we always want to upload (note: session_info.is_uploaded doesnt work for uploads to dev service)
-        if force_cloud_sync:
-            logger.info(
-                f"Session {task_source} has already been uploaded, but {force_cloud_sync=}: re-uploading.")
-        else:
-            raise ValueError(
-                f"Session {task_source} has already been uploaded. Use --force-cloud-sync to override."
-            )
-
-    logger.info(f"Session upload directory: {session_dir}")
+    logger.debug(f"Session upload directory: {session_dir}")
 
     # external systems start getting modified here.
     session_dir.mkdir(exist_ok=True)
