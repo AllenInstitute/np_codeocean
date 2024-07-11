@@ -5,9 +5,12 @@ import logging
 import pathlib
 import time
 from pathlib import Path
+import concurrent.futures
+import threading
 import warnings
 
 import h5py
+import tqdm
 import np_codeocean
 import np_codeocean.utils
 import np_config
@@ -44,7 +47,9 @@ RIG_IGNORE_PREFIXES = ("NP", "OG")
 
 DEFAULT_HPC_UPLOAD_JOB_EMAIL = "ben.hardcastle@alleninstitute.org"
 
-DEFAULT_DELAY_BETWEEN_UPLOADS = 30
+DEFAULT_DELAY_BETWEEN_UPLOADS = 20
+
+DELAY_LOCK = threading.Lock()
 
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
     rig_record = npc_session.RigRecord(rig_id)
@@ -105,6 +110,7 @@ def upload(
     debug: bool = False,
     dry_run: bool = False,
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
+    delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
 ) -> Path:
     """
     Notes
@@ -207,7 +213,13 @@ def upload(
 
     upload_service_url = np_codeocean.utils.DEV_SERVICE \
         if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
-    logger.info(f"Uploading to: {upload_service_url}")
+    
+    if delay > 0:
+        with DELAY_LOCK:
+            logger.debug(f"Pausing {delay} seconds before upload")
+            time.sleep(delay)
+    
+    logger.info(f"Submitting {session_dir.name} to {upload_service_url}")
     
     np_codeocean.utils.put_jobs_for_hpc_upload(
         upload_jobs=np_codeocean.utils.get_job_models_from_csv(
@@ -236,30 +248,27 @@ def upload_batch(
     else:
         batch_limit = None
     upload_count = 0
-    for task_source in batch_dir.rglob(TASK_HDF5_GLOB):
-        logger.info("Attempting upload of %s" % task_source)
-        try:
-            upload(
-                task_source,
-                test=test,
-                force_cloud_sync=force_cloud_sync,
-                debug=debug,
-                dry_run=dry_run,
-                hpc_upload_job_email=hpc_upload_job_email,
-            )
-        except ValueError as exc:
-            logger.info('Skipping upload of %s: %r' % (task_source, exc))
-            continue
-        if batch_limit is not None:
-            upload_count += 1
-            if upload_count >= batch_limit:
-                logger.info(f"Reached batch limit of {batch_limit}. Exiting.")
-                break
-        if delay > 0:
-            logger.info(f"Pausing for {delay} seconds before next upload")
-            time.sleep(delay)
+    future_to_task_source = {}
+    all_files = tuple(batch_dir.rglob(TASK_HDF5_GLOB)) # to fix tqdm we need the length of files (len(futures_dict) doesn't work for some reason)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
+        for task_source in all_files[::-1]:
+            future = executor.submit(upload, task_source, test, force_cloud_sync, debug, dry_run, hpc_upload_job_email, delay)
+            future_to_task_source[future] = task_source
+        with tqdm.tqdm(total=len(all_files), desc="Checking status and uploading new sessions") as pbar: 
+            for future in concurrent.futures.as_completed(future_to_task_source):
+                pbar.update(1) # as_completed will iterate out of order, so update tqdm progress manually
+                try:
+                    _ = future.result()
+                except Exception as exc:
+                    logger.debug('Skipping upload of %s: %r' % (future_to_task_source[future], exc))
+                    continue
+                upload_count += 1
+                if batch_limit is not None and upload_count >= batch_limit:
+                    executor.shutdown(wait=False)
+                    logger.info(f"Reached batch limit of {batch_limit}. Exiting.")
+                    break
+    logger.info(f"Batch upload complete: {upload_count} session(s) uploaded")
 
-MODES = ['singleton', 'batch']
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--task-source', type=pathlib.Path)
