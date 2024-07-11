@@ -275,6 +275,7 @@ def upload_batch(
                 except Exception as e:
                     logger.exception(e)
                     pbar.close()
+                    executor.shutdown(wait=False)
                     raise e
                 else:
                     upload_count += 1
