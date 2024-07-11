@@ -273,8 +273,9 @@ def upload_batch(
                 except SessionNotUploadedError as exc: # any other errors will be raised: prefer to fail fast when we have 12k files to process
                     logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
                 except Exception as e:
-                    logger.exception(e)
                     pbar.close()
+                    logger.exception(e) 
+                    logging.exception(e) 
                     executor.shutdown(wait=False)
                     raise e
                 else:
