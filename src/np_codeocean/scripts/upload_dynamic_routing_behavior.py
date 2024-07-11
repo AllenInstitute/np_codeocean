@@ -5,6 +5,7 @@ import logging
 import pathlib
 import time
 from pathlib import Path
+import warnings
 
 import h5py
 import np_codeocean
@@ -18,6 +19,9 @@ import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 from npc_lims.exceptions import NoSessionInfo
+
+# Disable divide by zero or NaN warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 logging.basicConfig(
     filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",

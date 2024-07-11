@@ -3,6 +3,7 @@ import datetime
 import logging
 import pathlib
 import typing
+import warnings
 
 import np_config
 import npc_session
@@ -11,6 +12,9 @@ from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 
 import np_codeocean
+
+# Disable divide by zero or NaN warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 logging.basicConfig(
     filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
