@@ -1,13 +1,13 @@
 import argparse
+import concurrent.futures
 import contextlib
 import datetime
 import logging
 import pathlib
-import time
-from pathlib import Path
-import concurrent.futures
 import threading
+import time
 import warnings
+from pathlib import Path
 
 import h5py
 import tqdm
@@ -22,6 +22,9 @@ import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
 from npc_lims.exceptions import NoSessionInfo
+
+import np_codeocean
+import np_codeocean.utils
 
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
