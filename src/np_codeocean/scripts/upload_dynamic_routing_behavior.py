@@ -246,11 +246,10 @@ def upload_batch(
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
     chronological_order: bool = False,
+    batch_limit: int | None = None,
 ) -> None:
     if test:
         batch_limit = 3
-    else:
-        batch_limit = None
     upload_count = 0
     future_to_task_source = {}
     all_files = tuple(batch_dir.rglob(TASK_HDF5_GLOB)) # to fix tqdm we need the length of files (len(futures_dict) doesn't work for some reason)
@@ -283,6 +282,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--email', type=str, help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.utils.HPC_UPLOAD_JOB_EMAIL}")
     parser.add_argument('--delay', type=str, help=f"wait time (sec) between job submissions in batch mode, to avoid overloadig upload service. Default is {DEFAULT_DELAY_BETWEEN_UPLOADS}", default=DEFAULT_DELAY_BETWEEN_UPLOADS)
     parser.add_argument('--chronological', action="store_true", help="[batch mode only] Upload files in chronological order (oldest first) - default is newest first")
+    parser.add_argument('--batch-limit', type=int, help="[batch mode only] Limit the number of files to upload in batch mode")
     return parser.parse_args()
 
 
@@ -310,6 +310,7 @@ def main() -> None:
             hpc_upload_job_email=args.email,
             delay=args.delay,
             chronological_order=args.chronological,
+            batch_limit=args.batch_limit,
         )
 
 
