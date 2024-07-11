@@ -3,8 +3,9 @@ import concurrent.futures
 import contextlib
 import datetime
 import logging
+import logging.handlers
 import pathlib
-import threading
+import multiprocessing
 import time
 import warnings
 from pathlib import Path
@@ -30,9 +31,9 @@ import np_codeocean.utils
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 logging.basicConfig(
-    filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
+    filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d')}.log",
     level=logging.INFO, 
-    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s", 
+    format="%(asctime)s | %(name)s | %(levelname)s | PID: %(process)d | TID: %(thread)d | %(message)s", 
     datefmt="%Y-%d-%m %H:%M:%S",
     )
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ DEFAULT_HPC_UPLOAD_JOB_EMAIL = "ben.hardcastle@alleninstitute.org"
 
 DEFAULT_DELAY_BETWEEN_UPLOADS = 20
 
-DELAY_LOCK = threading.Lock()
+DELAY_LOCK = multiprocessing.Lock()
 
 class SessionNotUploadedError(ValueError):
     pass
@@ -254,7 +255,9 @@ def upload_batch(
     if test:
         batch_limit = 3
     upload_count = 0
-    future_to_task_source = {}
+    logger.addHandler(qh := logging.handlers.QueueHandler(queue := multiprocessing.Queue()))
+    listener = logging.handlers.QueueListener(queue, qh)
+    listener.start()
     sorted_files = tuple(
         sorted(
             batch_dir.rglob(TASK_HDF5_GLOB), 
@@ -262,7 +265,8 @@ def upload_batch(
             reverse=not chronological_order,
         )
     ) # to fix tqdm we need the length of files: len(futures_dict) doesn't work for some reason
-    with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
+    future_to_task_source = {}
+    with concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor:
         for task_source in sorted_files:
             future = executor.submit(upload, task_source, test, force_cloud_sync, debug, dry_run, hpc_upload_job_email, delay)
             future_to_task_source[future] = task_source
@@ -274,7 +278,6 @@ def upload_batch(
                     logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
                 except Exception as e:
                     pbar.close()
-                    logger.exception(e) 
                     logging.exception(e) 
                     executor.shutdown(wait=False)
                     raise e
@@ -291,7 +294,8 @@ def upload_batch(
             pbar.close()
             
     logger.info(f"Batch upload complete: {upload_count} session(s) uploaded")
-
+    listener.stop()
+    
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--task-source', type=pathlib.Path, default=HDF5_REPO, help="Path to a single DynamicRouting1*.hdf5 file or a directory containing them (rglob will be used to find files in all subfolder levels)")
