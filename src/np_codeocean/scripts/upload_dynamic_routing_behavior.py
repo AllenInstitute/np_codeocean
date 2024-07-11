@@ -168,10 +168,10 @@ def upload(
     force_cloud_sync = True 
         
     rig_name = ""
-    rig_name: str = session_info.training_info.get("rig_name", "")
+    rig_name = session_info.training_info.get("rig_name", "")
     if not rig_name:
         with h5py.File(task_source, 'r') as file, contextlib.suppress(KeyError):
-            rig_name: str = file['rigName'][()].decode('utf-8')
+            rig_name = file['rigName'][()].decode('utf-8')
             
     if any(rig_name.startswith(i) for i in RIG_IGNORE_PREFIXES):
         raise SessionNotUploadedError(
