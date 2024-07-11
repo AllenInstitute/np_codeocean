@@ -51,6 +51,9 @@ DEFAULT_DELAY_BETWEEN_UPLOADS = 20
 
 DELAY_LOCK = threading.Lock()
 
+class SessionNotUploadedError(ValueError):
+    pass
+
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
     rig_record = npc_session.RigRecord(rig_id)
     if not rig_record.is_behavior_cluster_rig:
@@ -67,7 +70,7 @@ def extract_modification_date(rig: Rig) -> datetime.date:
     elif len(date_str) == 8:
         return datetime.datetime.strptime(date_str, "%Y%m%d").date()
     else:
-        raise Exception(f"Unsupported date format: {date_str}")
+        raise ValueError(f"Unsupported date format: {date_str}")
 
 def add_metadata(
     task_source: pathlib.Path,
@@ -88,7 +91,7 @@ def add_metadata(
         rig_storage_directory,
     )
     if not rig_metadata_path:
-        raise Exception("Failed to copy task rig.")
+        raise FileNotFoundError("Failed to copy task rig.")
     
     rig_metadata = Rig.model_validate_json(rig_metadata_path.read_text())
     modification_date = datetime.date(2024, 4, 1)  # keep cluster rigs static for now
@@ -123,16 +126,16 @@ def upload(
 
     extracted_subject_id = npc_session.extract_subject(task_source.stem)
     if extracted_subject_id is None:
-        raise ValueError(f"Failed to extract subject ID from {task_source}")
+        raise SessionNotUploadedError(f"Failed to extract subject ID from {task_source}")
     logger.debug(f"Extracted subject id: {extracted_subject_id}")
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
     if not task_source.parent.name.isdigit():
-        raise ValueError(
+        raise SessionNotUploadedError(
             f"Not uploading {task_source} because parent folder name is not a number"
         )
     
     if extracted_subject_id in EXCLUDED_SUBJECT_IDS:
-        raise ValueError(
+        raise SessionNotUploadedError(
             f"Not uploading {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS"
         )
 
@@ -143,11 +146,11 @@ def upload(
     try:
         session_info = npc_lims.get_session_info(task_source.stem)
     except NoSessionInfo:
-        raise ValueError(f"Not uploading {task_source} because it does not belong to a known Dynamic Routing subject (based on Sam's spreadsheets)") from None
+        raise SessionNotUploadedError(f"Not uploading {task_source} because it does not belong to a known Dynamic Routing subject (based on Sam's spreadsheets)") from None
     
     # if session has been already been uploaded, skip it
     if not (force_cloud_sync or test) and session_info.is_uploaded:  # note: session_info.is_uploaded doesnt work for uploads to dev service
-        raise ValueError(
+        raise SessionNotUploadedError(
             f" {task_source} is already uploaded. Use --force-cloud-sync to re-upload."
         )
     
@@ -168,7 +171,7 @@ def upload(
             rig_name: str = file['rigName'][()].decode('utf-8')
             
     if any(rig_name.startswith(i) for i in RIG_IGNORE_PREFIXES):
-        raise ValueError(
+        raise SessionNotUploadedError(
             f"Not uploading {task_source} because rig_id starts with one of {RIG_IGNORE_PREFIXES!r}"
         )
 
@@ -259,7 +262,7 @@ def upload_batch(
                 pbar.update(1) # as_completed will iterate out of order, so update tqdm progress manually
                 try:
                     _ = future.result()
-                except Exception as exc:
+                except SessionNotUploadedError as exc: # any other errors will be raised: prefer to fail fast when we have 12k files to process
                     logger.debug('Skipping upload of %s: %r' % (future_to_task_source[future], exc))
                     continue
                 upload_count += 1
