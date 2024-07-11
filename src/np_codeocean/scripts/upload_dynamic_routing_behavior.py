@@ -131,12 +131,12 @@ def upload(
     # we don't want to upload files from folders that don't correspond to labtracks IDs, like `sound`, or `*_test`
     if not task_source.parent.name.isdigit():
         raise SessionNotUploadedError(
-            f"Not uploading {task_source} because parent folder name is not a number"
+            f"{task_source.parent.name=} is not a labtracks MID"
         )
     
     if extracted_subject_id in EXCLUDED_SUBJECT_IDS:
         raise SessionNotUploadedError(
-            f"Not uploading {task_source} because subject ID is in EXCLUDED_SUBJECT_IDS"
+            f"{extracted_subject_id=} is in {EXCLUDED_SUBJECT_IDS=}"
         )
 
     upload_root = np_session.NPEXP_ROOT / ("codeocean-dev" if test else "codeocean")
@@ -146,12 +146,12 @@ def upload(
     try:
         session_info = npc_lims.get_session_info(task_source.stem)
     except NoSessionInfo:
-        raise SessionNotUploadedError(f"Not uploading {task_source} because it does not belong to a known Dynamic Routing subject (based on Sam's spreadsheets)") from None
+        raise SessionNotUploadedError(f"{task_source.name} does not belong to a known Dynamic Routing subject (based on Sam's spreadsheets)") from None
     
     # if session has been already been uploaded, skip it
     if not (force_cloud_sync or test) and session_info.is_uploaded:  # note: session_info.is_uploaded doesnt work for uploads to dev service
         raise SessionNotUploadedError(
-            f" {task_source} is already uploaded. Use --force-cloud-sync to re-upload."
+            f" {task_source.name} is already uploaded. Use --force-cloud-sync to re-upload."
         )
     
     # in the transfer-service airflow dag, jobs have failed after creating a folder
