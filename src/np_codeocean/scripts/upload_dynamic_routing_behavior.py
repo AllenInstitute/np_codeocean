@@ -272,6 +272,9 @@ def upload_batch(
                     _ = future.result()
                 except SessionNotUploadedError as exc: # any other errors will be raised: prefer to fail fast when we have 12k files to process
                     logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
+                except Exception as e:
+                    logger.exception(e)
+                    raise e
                 else:
                     upload_count += 1
                     logger.debug(f"{upload_count = } sessions")
