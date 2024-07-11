@@ -5,7 +5,7 @@
 groups = ["default", "dynamic-routing-metadata"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:8e09f55b8c7a9ef94aa918ed10485e16e02796fb88e36ada31c264ef0dfeb171"
+content_hash = "sha256:041f7570273c46f3df4614b94d2fa63727c70efc4a46d989e649ce434cc05efb"
 
 [[package]]
 name = "aind-codeocean-api"
@@ -1804,13 +1804,13 @@ files = [
 
 [[package]]
 name = "npc-lims"
-version = "0.1.160"
+version = "0.1.166"
 requires_python = ">=3.9"
 summary = "Tools to fetch and update paths, metadata and state for Mindscope Neuropixels sessions, in the cloud."
 dependencies = [
     "aind-codeocean-api>=0.4.0",
     "npc-io>=0.1.24",
-    "npc-session>=0.1.30",
+    "npc-session>=0.1.36",
     "openpyxl>=3.1.2",
     "packaging>=23.2",
     "pydbhub-bjh>=0.0.8",
@@ -1821,8 +1821,8 @@ dependencies = [
     "types-requests>=2.31.0.6",
 ]
 files = [
-    {file = "npc_lims-0.1.160-py3-none-any.whl", hash = "sha256:1d2532fcc9a933b1014a15a5bfa73d146066a796b14beed96cd00fd1800ace9c"},
-    {file = "npc_lims-0.1.160.tar.gz", hash = "sha256:81ac14d11b5db66e3b09a3aa09fbd9cfd1aef089f733b6e755a6c4a4a36266a7"},
+    {file = "npc_lims-0.1.166-py3-none-any.whl", hash = "sha256:c15438763b92e97745dd73026fd0a0076c6e472ecb7cc64a1fb153c84153387a"},
+    {file = "npc_lims-0.1.166.tar.gz", hash = "sha256:0d606ffa8f89d2352e25cfae4f01ecf3aec2c03a5fad87e5b33a3061e5064ddb"},
 ]
 
 [[package]]
@@ -1860,15 +1860,15 @@ files = [
 
 [[package]]
 name = "npc-session"
-version = "0.1.35"
+version = "0.1.36"
 requires_python = ">=3.9"
 summary = "Basic tools for parsing subject, session, date and time associated with data from the Mindscope Neuropixels team, in the cloud."
 dependencies = [
     "typing-extensions>=4.7.1",
 ]
 files = [
-    {file = "npc_session-0.1.35-py3-none-any.whl", hash = "sha256:0e923a4fbdd2eb96425ebc7204e63f652a9398480f71332c8b561eaee29ccbf3"},
-    {file = "npc_session-0.1.35.tar.gz", hash = "sha256:5e49582eb8388f6c298b81f5d9f25dd613d7c2f6dda29bf4cc19492b19dd66b9"},
+    {file = "npc_session-0.1.36-py3-none-any.whl", hash = "sha256:9897c155b19550171804eafb7158eee6cb2466249c33ec3577ea5ede33dacb2f"},
+    {file = "npc_session-0.1.36.tar.gz", hash = "sha256:039da368643abb99a94d2acf1c991948fe72e0151025ac368520dc6db9221771"},
 ]
 
 [[package]]
