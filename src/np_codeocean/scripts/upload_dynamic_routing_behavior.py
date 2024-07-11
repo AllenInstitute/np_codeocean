@@ -252,24 +252,35 @@ def upload_batch(
         batch_limit = 3
     upload_count = 0
     future_to_task_source = {}
-    all_files = tuple(batch_dir.rglob(TASK_HDF5_GLOB)) # to fix tqdm we need the length of files (len(futures_dict) doesn't work for some reason)
+    sorted_files = tuple(
+        sorted(
+            batch_dir.rglob(TASK_HDF5_GLOB), 
+            key=lambda p: npc_session.extract_isoformat_date(p.name),
+            reverse=not chronological_order,
+        )
+    ) # to fix tqdm we need the length of files: len(futures_dict) doesn't work for some reason
     with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
-        for task_source in all_files if chronological_order else all_files[::-1]:
+        for task_source in sorted_files:
             future = executor.submit(upload, task_source, test, force_cloud_sync, debug, dry_run, hpc_upload_job_email, delay)
             future_to_task_source[future] = task_source
-        with tqdm.tqdm(total=len(all_files), desc="Checking status and uploading new sessions") as pbar: 
+        with tqdm.tqdm(total=len(sorted_files), desc="Checking status and uploading new sessions") as pbar: 
             for future in concurrent.futures.as_completed(future_to_task_source):
-                pbar.update(1) # as_completed will iterate out of order, so update tqdm progress manually
                 try:
                     _ = future.result()
                 except SessionNotUploadedError as exc: # any other errors will be raised: prefer to fail fast when we have 12k files to process
-                    logger.debug('Skipping upload of %s: %r' % (future_to_task_source[future], exc))
-                    continue
-                upload_count += 1
-                if batch_limit is not None and upload_count >= batch_limit:
-                    executor.shutdown(wait=False)
-                    logger.info(f"Reached batch limit of {batch_limit}. Exiting.")
-                    break
+                    logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
+                else:
+                    upload_count += 1
+                    logger.debug(f"{upload_count = } sessions")
+                    if batch_limit is not None and upload_count >= batch_limit:
+                        executor.shutdown(wait=False)
+                        logger.info(f"Reached batch limit of {batch_limit}. Exiting.")
+                        break
+                finally:
+                    logger.debug(f"Updating progress bar")
+                    pbar.update(1) # as_completed will iterate out of order, so update tqdm progress manually
+            pbar.close()
+            
     logger.info(f"Batch upload complete: {upload_count} session(s) uploaded")
 
 def parse_args() -> argparse.Namespace:
