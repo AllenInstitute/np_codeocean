@@ -258,7 +258,7 @@ def upload_batch(
     sorted_files = tuple(
         sorted(
             batch_dir.rglob(TASK_HDF5_GLOB), 
-            key=lambda p: npc_session.extract_isoformat_date(p.name),
+            key=lambda p: npc_session.extract_isoformat_date(p.name), # type: ignore[return-value]
             reverse=not chronological_order,
         )
     ) # to fix tqdm we need the length of files: len(futures_dict) doesn't work for some reason
