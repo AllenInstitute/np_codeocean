@@ -300,9 +300,9 @@ def main() -> None:
             hpc_upload_job_email=args.email,
         )
     else:
-        logger.info(f"Uploading in batch mode: {args.batch_dir}")
+        logger.info(f"Uploading in batch mode: {args.task_source}")
         upload_batch(
-            batch_dir=args.batch_dir,
+            batch_dir=args.task_source,
             test=args.test,
             force_cloud_sync=args.force_cloud_sync,
             debug=args.debug,
