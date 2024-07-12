@@ -277,7 +277,8 @@ def upload_batch(
 ) -> None:
     if test:
         batch_limit = 3
-    upload_count = 0
+    uploads_remaining = multiprocessing.Value('i', batch_limit or -1)
+    """Counts down and stops at zero. Set to -1 for no limit"""
     logger.addHandler(qh := logging.handlers.QueueHandler(queue := multiprocessing.Queue()))
     listener = logging.handlers.QueueListener(queue, qh)
     listener.start()
@@ -288,6 +289,7 @@ def upload_batch(
             reverse=not chronological_order,
         )
     ) # to fix tqdm we need the length of files: len(futures_dict) doesn't work for some reason
+    upload_count = 0
     future_to_task_source = {}
     with (
         multiprocessing.Manager() as manager, 
@@ -314,18 +316,17 @@ def upload_batch(
                     _ = future.result()
                 except SessionNotUploadedError as exc: # any other errors will be raised: prefer to fail fast when we have 12k files to process
                     logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
+                except UploadLimitReachedError:
+                    logger.info(f"Upload limit of {batch_limit} reached: stopping batch upload")
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    break
                 except Exception as e:
                     pbar.close()
                     logging.exception(e) 
-                    executor.shutdown(wait=False)
+                    executor.shutdown(wait=False, cancel_futures=True)
                     raise e
                 else:
                     upload_count += 1
-                    logger.debug(f"{upload_count = } sessions")
-                    if batch_limit is not None and upload_count >= batch_limit:
-                        executor.shutdown(wait=False)
-                        logger.info(f"Reached batch limit of {batch_limit}. Exiting.")
-                        break
                 finally:
                     logger.debug(f"Updating progress bar")
                     pbar.update(1) # as_completed will iterate out of order, so update tqdm progress manually
