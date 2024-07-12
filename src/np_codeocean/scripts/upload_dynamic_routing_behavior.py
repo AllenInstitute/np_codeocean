@@ -137,7 +137,6 @@ def upload(
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
     lock: threading.Lock | None = None,
-    uploads_remaining: multiprocessing.managers.ValueProxy[int] | None = None,
     stop_event: threading.Event | None = None,
 ) -> None:
     """
@@ -150,9 +149,9 @@ def upload(
         logger.setLevel(logging.DEBUG)
     
     if stop_event and stop_event.is_set():
-        logger.info("Stopping due to stop event")
+        logger.debug("Stopping due to stop event")
         return
-        
+
     extracted_subject_id = npc_session.extract_subject(task_source.stem)
     if extracted_subject_id is None:
         raise SessionNotUploadedError(f"Failed to extract subject ID from {task_source}")
@@ -205,7 +204,7 @@ def upload(
         )
         
     if stop_event and stop_event.is_set():
-        logger.info("Stopping due to stop event")
+        logger.debug("Stopping due to stop event")
         return
     
     logger.debug(f"Session upload directory: {session_dir}")
@@ -251,21 +250,14 @@ def upload(
         if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
     
     if stop_event and stop_event.is_set():
-        logger.info("Stopping due to stop event")
+        logger.debug("Stopping due to stop event")
         return
     
     if lock is not None:
         with lock:
             if stop_event and stop_event.is_set():
-                logger.info("Stopping due to stop event")
+                logger.debug("Stopping due to stop event")
                 return
-            if uploads_remaining is not None:
-                if uploads_remaining.value == 0:
-                    raise UploadLimitReachedError()
-                else:
-                    current_value = uploads_remaining.value
-                    uploads_remaining.value -= 1
-                    logger.info(f"Decremented uploads remaining: {current_value} -> {uploads_remaining.value}")
             if delay > 0:
                 logger.info(f"Pausing {delay} seconds before creating upload request")
                 time.sleep(delay)
@@ -282,8 +274,7 @@ def upload(
         dry_run=dry_run,
         save_path=upload_job_path.with_suffix('.json'),
     )
-
-
+            
 def upload_batch(
     batch_dir: pathlib.Path,
     test: bool = False,
@@ -293,7 +284,7 @@ def upload_batch(
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
     chronological_order: bool = False,
-    batch_limit: int | None = None,
+    batch_limit: int | None = None, # number of sessions to process, not upload
 ) -> None:
     if test:
         batch_limit = 3
@@ -309,12 +300,13 @@ def upload_batch(
         )
     ) # to fix tqdm we need the length of files: len(futures_dict) doesn't work for some reason
     upload_count = 0
+    batch_count = 0
     future_to_task_source: dict[concurrent.futures.Future, pathlib.Path] = {}
     with (
         multiprocessing.Manager() as manager, 
         concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor,
     ):  
-        uploads_remaining = manager.Value('i', batch_limit or -1)
+        sessions_remaining = manager.Value('i', batch_limit or -1)
         """Counts down and stops at zero. Set to -1 for no limit"""
         lock = manager.Lock()
         stop_event = manager.Event()
@@ -329,7 +321,6 @@ def upload_batch(
                 hpc_upload_job_email=hpc_upload_job_email, 
                 delay=delay, 
                 lock=lock,
-                uploads_remaining=uploads_remaining,
                 stop_event=stop_event,
                 )
             future_to_task_source[future] = task_source 
@@ -339,12 +330,6 @@ def upload_batch(
                     _ = future.result()
                 except SessionNotUploadedError as exc: # any other errors will be raised: prefer to fail fast when we have 12k files to process
                     logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
-                except UploadLimitReachedError:
-                    pbar.close()
-                    logging.warning(f"Upload limit of {batch_limit} reached: stopping pending and ongoing tasks")
-                    stop_event.set()
-                    executor.shutdown(wait=True, cancel_futures=True)
-                    break
                 except Exception as e:
                     pbar.close()
                     logging.exception(e) 
@@ -353,8 +338,14 @@ def upload_batch(
                     upload_count += 1
                 finally:
                     pbar.update(1) # as_completed will iterate out of order, so update tqdm progress manually
+                    batch_count += 1
+                    if batch_limit is not None and batch_count >= batch_limit:
+                        pbar.close()
+                        logging.warning(f"{batch_limit = } reached: stopping pending and ongoing tasks")
+                        stop_event.set()
+                        executor.shutdown(wait=True, cancel_futures=True)
+                        break
             pbar.close()
-            
     logger.info(f"Batch upload complete: {upload_count} session(s) uploaded")
     listener.stop()
     
