@@ -30,8 +30,18 @@ import np_codeocean.utils
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+def reset_log_file() -> None:
+    log = get_log_file()
+    log.parent.mkdir(exist_ok=True)
+    with contextlib.suppress(OSError):
+        log.unlink(missing_ok=True)
+    
+def get_log_file() -> pathlib.Path:
+    folder = pathlib.Path(".").resolve() / "logs"
+    return folder / f"{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
+
 logging.basicConfig(
-    filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d')}.log",
+    filename=get_log_file().as_posix(),
     level=logging.INFO, 
     format="%(asctime)s | %(name)s | %(levelname)s | PID: %(process)d | TID: %(thread)d | %(message)s", 
     datefmt="%Y-%d-%m %H:%M:%S",
@@ -311,6 +321,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    reset_log_file()
     args = parse_args()
     logger.info(f"Parsed args: {args!r}")
     if not args.task_source.is_dir():
