@@ -11,8 +11,8 @@ import multiprocessing.synchronize
 import pathlib
 import multiprocessing
 import multiprocessing.managers
+import threading
 import time
-from typing import Any
 import warnings
 from pathlib import Path
 
@@ -136,7 +136,7 @@ def upload(
     dry_run: bool = False,
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
-    lock: multiprocessing.synchronize.Lock | None = None,
+    lock: threading.Lock | None = None,
     uploads_remaining: multiprocessing.managers.ValueProxy[int] | None = None,
 ) -> Path:
     """
