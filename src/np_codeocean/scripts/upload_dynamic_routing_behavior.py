@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import contextlib
 import datetime
 import logging
+import logging.config
 import logging.handlers
+import multiprocessing.synchronize
 import pathlib
 import multiprocessing
 import time
+from typing import Any
 import warnings
 from pathlib import Path
 
@@ -61,11 +66,13 @@ RIG_IGNORE_PREFIXES = ("NP", "OG")
 
 DEFAULT_HPC_UPLOAD_JOB_EMAIL = "ben.hardcastle@alleninstitute.org"
 
-DEFAULT_DELAY_BETWEEN_UPLOADS = 20
+DEFAULT_DELAY_BETWEEN_UPLOADS = 40
 
-DELAY_LOCK = multiprocessing.Lock()
 
 class SessionNotUploadedError(ValueError):
+    pass
+
+class UploadLimitReachedError(RuntimeError):
     pass
 
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
@@ -128,6 +135,8 @@ def upload(
     dry_run: bool = False,
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
+    lock: multiprocessing.synchronize.Lock | None = None,
+    uploads_remaining: Any = None,
 ) -> Path:
     """
     Notes
@@ -231,10 +240,14 @@ def upload(
     upload_service_url = np_codeocean.utils.DEV_SERVICE \
         if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
     
-    if delay > 0:
-        with DELAY_LOCK:
-            logger.debug(f"Pausing {delay} seconds before upload")
+    with lock:
+        if uploads_remaining is not None and uploads_remaining.value == 0:
+            raise UploadLimitReachedError()
+        if delay > 0:
+            logger.info(f"Pausing {delay} seconds before submitting upload request")
             time.sleep(delay)
+            if uploads_remaining is not None:
+                uploads_remaining -= 1
     
     logger.info(f"Submitting {session_dir.name} to {upload_service_url}")
     
@@ -276,9 +289,24 @@ def upload_batch(
         )
     ) # to fix tqdm we need the length of files: len(futures_dict) doesn't work for some reason
     future_to_task_source = {}
-    with concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor:
+    with (
+        multiprocessing.Manager() as manager, 
+        concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor,
+    ):
+        lock = manager.Lock()
         for task_source in sorted_files:
-            future = executor.submit(upload, task_source, test, force_cloud_sync, debug, dry_run, hpc_upload_job_email, delay)
+            future = executor.submit(
+                upload, 
+                task_source=task_source, 
+                test=test, 
+                force_cloud_sync=force_cloud_sync, 
+                debug=debug, 
+                dry_run=dry_run, 
+                hpc_upload_job_email=hpc_upload_job_email, 
+                delay=delay, 
+                lock=lock,
+                uploads_remaining=uploads_remaining,
+                )
             future_to_task_source[future] = task_source
         with tqdm.tqdm(total=len(sorted_files), desc="Checking status and uploading new sessions") as pbar: 
             for future in concurrent.futures.as_completed(future_to_task_source):
