@@ -332,7 +332,7 @@ def upload_batch(
                     logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
                 except Exception as e:
                     pbar.close()
-                    logging.exception(e) 
+                    logger.exception(e) 
                     raise e
                 else:
                     upload_count += 1
@@ -341,12 +341,16 @@ def upload_batch(
                     batch_count += 1
                     if batch_limit is not None and batch_count >= batch_limit:
                         pbar.close()
-                        logging.warning(f"{batch_limit = } reached: stopping pending and ongoing tasks")
+                        msg = f"Reached {batch_limit = }: stopping pending and ongoing tasks"
+                        logger.info(msg)
+                        print(msg)
                         stop_event.set()
                         executor.shutdown(wait=True, cancel_futures=True)
                         break
             pbar.close()
-    logger.info(f"Batch upload complete: {upload_count} session(s) uploaded")
+    msg = f"Batch upload complete: {upload_count} session(s) uploaded"
+    logger.info(msg)
+    print(msg)
     listener.stop()
     
 def parse_args() -> argparse.Namespace:
