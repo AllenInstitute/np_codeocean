@@ -10,6 +10,7 @@ import logging.handlers
 import multiprocessing.synchronize
 import pathlib
 import multiprocessing
+import multiprocessing.managers
 import time
 from typing import Any
 import warnings
@@ -136,7 +137,7 @@ def upload(
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
     lock: multiprocessing.synchronize.Lock | None = None,
-    uploads_remaining: Any = None,
+    uploads_remaining: multiprocessing.managers.ValueProxy[int] | None = None,
 ) -> Path:
     """
     Notes
@@ -240,15 +241,17 @@ def upload(
     upload_service_url = np_codeocean.utils.DEV_SERVICE \
         if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
     
-    with lock:
-        if uploads_remaining is not None and uploads_remaining.value == 0:
-            raise UploadLimitReachedError()
-        if delay > 0:
-            logger.info(f"Pausing {delay} seconds before submitting upload request")
-            time.sleep(delay)
+    if lock is not None:
+        with lock:
             if uploads_remaining is not None:
-                uploads_remaining -= 1
-    
+                if uploads_remaining.value == 0:
+                    raise UploadLimitReachedError()
+                else:
+                    uploads_remaining.value -= 1 
+            if delay > 0:
+                logger.info(f"Pausing {delay} seconds before submitting upload request")
+                time.sleep(delay)
+
     logger.info(f"Submitting {session_dir.name} to {upload_service_url}")
     
     np_codeocean.utils.put_jobs_for_hpc_upload(
@@ -277,8 +280,7 @@ def upload_batch(
 ) -> None:
     if test:
         batch_limit = 3
-    uploads_remaining = multiprocessing.Value('i', batch_limit or -1)
-    """Counts down and stops at zero. Set to -1 for no limit"""
+
     logger.addHandler(qh := logging.handlers.QueueHandler(queue := multiprocessing.Queue()))
     listener = logging.handlers.QueueListener(queue, qh)
     listener.start()
@@ -294,7 +296,9 @@ def upload_batch(
     with (
         multiprocessing.Manager() as manager, 
         concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor,
-    ):
+    ):  
+        uploads_remaining: ValueProxy[int] = manager.Value('i', batch_limit or -1)
+        """Counts down and stops at zero. Set to -1 for no limit"""
         lock = manager.Lock()
         for task_source in sorted_files:
             future = executor.submit(
