@@ -247,9 +247,11 @@ def upload(
                 if uploads_remaining.value == 0:
                     raise UploadLimitReachedError()
                 else:
-                    uploads_remaining.value -= 1 
+                    current_value = uploads_remaining.value
+                    uploads_remaining.value -= 1
+                    logger.info(f"Decremented uploads remaining: {current_value} -> {uploads_remaining.value}")
             if delay > 0:
-                logger.info(f"Pausing {delay} seconds before submitting upload request")
+                logger.info(f"Pausing {delay} seconds before creating upload request")
                 time.sleep(delay)
 
     logger.info(f"Submitting {session_dir.name} to {upload_service_url}")
@@ -297,7 +299,7 @@ def upload_batch(
         multiprocessing.Manager() as manager, 
         concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor,
     ):  
-        uploads_remaining: ValueProxy[int] = manager.Value('i', batch_limit or -1)
+        uploads_remaining = manager.Value('i', batch_limit or -1)
         """Counts down and stops at zero. Set to -1 for no limit"""
         lock = manager.Lock()
         for task_source in sorted_files:
