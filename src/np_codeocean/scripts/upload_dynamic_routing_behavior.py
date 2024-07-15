@@ -366,7 +366,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--delay', type=int, help=f"wait time (sec) between job submissions in batch mode, to avoid overloadig upload service. Default is {DEFAULT_DELAY_BETWEEN_UPLOADS}", default=DEFAULT_DELAY_BETWEEN_UPLOADS)
     parser.add_argument('--chronological', action="store_true", help="[batch mode only] Upload files in chronological order (oldest first) - default is newest first")
     parser.add_argument('--batch-limit', type=int, help="[batch mode only] Limit the number of files to upload in batch mode")
-    parser.add_argument('--fail-fast', target="ignore_errors", action="store_false", help="[batch mode only] If a session fails to upload, raise the error - default is to log error and continue with other sessions")
+    parser.add_argument('--fail-fast', dest="ignore_errors", action="store_false", help="[batch mode only] If a session fails to upload, raise the error - default is to log error and continue with other sessions")
     return parser.parse_args()
 
 
