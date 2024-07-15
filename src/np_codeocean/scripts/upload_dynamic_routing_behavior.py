@@ -285,6 +285,7 @@ def upload_batch(
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
     chronological_order: bool = False,
     batch_limit: int | None = None, # number of sessions to process, not upload
+    ignore_errors: bool = True,
 ) -> None:
     if test:
         batch_limit = 3
@@ -331,9 +332,10 @@ def upload_batch(
                 except SessionNotUploadedError as exc: # any other errors will be raised: prefer to fail fast when we have 12k files to process
                     logger.debug('Skipping upload of %s due to %r' % (future_to_task_source[future], exc))
                 except Exception as e:
-                    pbar.close()
-                    logger.exception(e) 
-                    raise e
+                    logger.exception(e)
+                    if not ignore_errors:
+                        pbar.close()
+                        raise e
                 else:
                     upload_count += 1
                 finally:
@@ -364,6 +366,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--delay', type=int, help=f"wait time (sec) between job submissions in batch mode, to avoid overloadig upload service. Default is {DEFAULT_DELAY_BETWEEN_UPLOADS}", default=DEFAULT_DELAY_BETWEEN_UPLOADS)
     parser.add_argument('--chronological', action="store_true", help="[batch mode only] Upload files in chronological order (oldest first) - default is newest first")
     parser.add_argument('--batch-limit', type=int, help="[batch mode only] Limit the number of files to upload in batch mode")
+    parser.add_argument('--fail-fast', target="ignore_errors", action="store_false", help="[batch mode only] If a session fails to upload, raise the error - default is to log error and continue with other sessions")
     return parser.parse_args()
 
 
@@ -393,6 +396,7 @@ def main() -> None:
             delay=args.delay,
             chronological_order=args.chronological,
             batch_limit=args.batch_limit,
+            ignore_errors=args.ignore_errors,
         )
 
 
