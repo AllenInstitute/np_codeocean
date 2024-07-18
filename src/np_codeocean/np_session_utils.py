@@ -221,7 +221,7 @@ def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int |
 
 
 def is_ephys_session(session: np_session.Session) -> bool:
-    return bool(next(session.npexp_path.rglob('settings.xml'), None))
+    return bool(next(session.npexp_path.rglob('settings*.xml'), None))
 
 def get_np_session(session_path_or_folder_name: str) -> np_session.Session:
     """Accommodates surface channel folders, and updates the returned instance's
