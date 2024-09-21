@@ -310,7 +310,7 @@ def upload_session(
     )
     if regenerate_symlinks and upload.root.exists():
         logger.debug(f'Removing existing {upload.root = }')
-        shutil.rmtree(upload.root.as_posix())
+        shutil.rmtree(upload.root.as_posix(), ignore_errors=True)
     if upload.aind_metadata:
         create_aind_metadata_symlinks(upload)
     if upload.ephys:
