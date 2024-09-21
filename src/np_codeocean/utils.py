@@ -401,6 +401,16 @@ def ensure_posix(path: str | pathlib.Path) -> str:
     return posix
 
 
+def convert_symlinks_to_posix(toplevel_dir: str | pathlib.Path) -> None:
+    """Convert all symlinks in `root_dir` (recursively) to POSIX paths. This is a
+    necessary last step before submitting uploads to run on the HPC.
+    """
+    for path in pathlib.Path(toplevel_dir).rglob('*'):
+        if path.is_symlink():
+            posix_target = path.readlink().as_posix().removeprefix('//?/UNC')
+            path.unlink()
+            np_tools.symlink(src=ensure_posix(posix_target), dest=path)
+            
 if __name__ == '__main__':
     import doctest
     doctest.testmod(optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE | doctest.IGNORE_EXCEPTION_DETAIL)

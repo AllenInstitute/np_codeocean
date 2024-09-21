@@ -82,7 +82,7 @@ def create_aind_metadata_symlinks(upload: CodeOceanUpload) -> bool:
     has_metadata_files = False
     for src in upload.session.npexp_path.glob('*'):
         if src.stem in utils.AIND_METADATA_NAMES:
-            np_tools.symlink(utils.ensure_posix(src), upload.aind_metadata / src.name)
+            np_tools.symlink(src, upload.aind_metadata / src.name)
             has_metadata_files = True
     if has_metadata_files:
         logger.debug(f'Finished creating symlinks to aind metadata files in {upload.session.npexp_path}')
@@ -116,7 +116,7 @@ def create_ephys_symlinks(session: np_session.Session, dest: pathlib.Path,
         root_path, specific_recording_dir_names=recording_dirs
         ):
         if not abs_path.is_dir():
-            np_tools.symlink(utils.ensure_posix(abs_path), dest / rel_path)
+            np_tools.symlink(abs_path, dest / rel_path)
     logger.debug(f'Finished creating symlinks to raw ephys data files in {root_path}')
     utils.cleanup_ephys_symlinks(dest)
 
@@ -132,7 +132,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: pathlib.Path | N
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
         if not src.is_dir() and not utils.is_behavior_video_file(src):
-            np_tools.symlink(utils.ensure_posix(src), dest / src.relative_to(session.npexp_path))
+            np_tools.symlink(src, dest / src.relative_to(session.npexp_path))
     logger.debug(f'Finished creating symlinks to top-level files in {session.npexp_path}')
 
     for name in subfolder_names:
@@ -141,7 +141,7 @@ def create_behavior_symlinks(session: np_session.Session, dest: pathlib.Path | N
             continue
         for src in subfolder.rglob('*'):
             if not src.is_dir():
-                np_tools.symlink(utils.ensure_posix(src), dest / src.relative_to(session.npexp_path))
+                np_tools.symlink(src, dest / src.relative_to(session.npexp_path))
         logger.debug(f'Finished creating symlinks to {name!r} files')
 
 
@@ -155,7 +155,7 @@ def create_behavior_videos_symlinks(session: np_session.Session, dest: pathlib.P
     logger.info(f'Creating symlinks in {dest} to files in {session.npexp_path}...')
     for src in session.npexp_path.glob('*'):
         if utils.is_behavior_video_file(src):
-            np_tools.symlink(utils.ensure_posix(src), dest / src.relative_to(session.npexp_path))
+            np_tools.symlink(src, dest / src.relative_to(session.npexp_path))
     logger.debug(f'Finished creating symlinks to behavior video files in {session.npexp_path}')
 
 
@@ -319,6 +319,9 @@ def upload_session(
         create_behavior_symlinks(upload.session, upload.behavior)
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+    for path in (upload.ephys, upload.behavior, upload.behavior_videos, upload.aind_metadata):
+        if path is not None and path.exists():
+            utils.convert_symlinks_to_posix(path)
     csv_content: dict = get_upload_csv_for_session(upload)
     utils.write_upload_csv(csv_content, upload.job)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
