@@ -123,6 +123,7 @@ def write_metadata_and_upload(
     hpc_upload_job_email: str = np_codeocean.HPC_UPLOAD_JOB_EMAIL,
     regenerate_metadata: bool = False,
     regenerate_symlinks: bool = True,
+    adjust_ephys_timestamps: bool = False,
 ) -> None:
     """Writes and updates aind-data-schema to the session directory
      associated with the `session`. The aind-data-schema session model is
@@ -153,6 +154,7 @@ def write_metadata_and_upload(
         test=test,
         hpc_upload_job_email=hpc_upload_job_email,
         regenerate_symlinks=regenerate_symlinks,
+        adjust_ephys_timestamps=adjust_ephys_timestamps,
     )
 
 def parse_args() -> argparse.Namespace:
@@ -165,10 +167,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--dry-run', action='store_true', help="Create upload job but do not submit to hpc upload queue.")
     parser.add_argument('--preserve-symlinks', dest='regenerate_symlinks', action='store_false', help="Existing symlink folders will not be deleted and regenerated - may result in additional data being uploaded")
     parser.add_argument('--regenerate-metadata', action='store_true', help="Regenerate metadata files (session.json and rig.json) even if they already exist")
+    parser.add_argument('--no-sync', dest="adjust_ephys_timestamps", action='store_false', help="(disabled) Skip adjustment of ephys timestamps.npy using sync data for sessions where no sync data is available")
     return parser.parse_args()
 
 def main() -> None:
     args = parse_args()
+    args['adjust_ephys_timestamps'] = False # unnecessary while we have machinery in place for adjusting in npc_sessions (adds 5 GB of timestamps files for each upload)
     write_metadata_and_upload(**vars(args))
 
 
