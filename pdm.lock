@@ -4,8 +4,11 @@
 [metadata]
 groups = ["default", "dynamic-routing-metadata"]
 strategy = ["cross_platform"]
-lock_version = "4.4.1"
-content_hash = "sha256:d0bd14f682abc5d6b3245d613d1113c3ffe8763405072e66dffac65c4fa79c01"
+lock_version = "4.5.0"
+content_hash = "sha256:12f8ec2abea69c42e78ec243ab3d8d44886f31068f15909949d6e8aff6e71648"
+
+[[metadata.targets]]
+requires_python = ">=3.10"
 
 [[package]]
 name = "aind-codeocean-api"
@@ -185,6 +188,9 @@ name = "aioitertools"
 version = "0.11.0"
 requires_python = ">=3.6"
 summary = "itertools and builtins for AsyncIO and mixed iterables"
+dependencies = [
+    "typing-extensions>=4.0; python_version < \"3.10\"",
+]
 files = [
     {file = "aioitertools-0.11.0-py3-none-any.whl", hash = "sha256:04b95e3dab25b449def24d7df809411c10e62aab0cbe31a50ca4e68748c43394"},
     {file = "aioitertools-0.11.0.tar.gz", hash = "sha256:42c68b8dd3a69c2bf7f2233bf7df4bb58b557bca5252ac02ed5187bbc67d6831"},
@@ -208,6 +214,9 @@ name = "annotated-types"
 version = "0.6.0"
 requires_python = ">=3.8"
 summary = "Reusable constraint types to use with typing.Annotated"
+dependencies = [
+    "typing-extensions>=4.0.0; python_version < \"3.9\"",
+]
 files = [
     {file = "annotated_types-0.6.0-py3-none-any.whl", hash = "sha256:0641064de18ba7a25dee8f96403ebc39113d0cb953a01429249d5c7564666a43"},
     {file = "annotated_types-0.6.0.tar.gz", hash = "sha256:563339e807e53ffd9c267e99fc6d9ea23eb8443c08f112651963e24e22f84a5d"},
@@ -226,6 +235,9 @@ name = "async-timeout"
 version = "4.0.3"
 requires_python = ">=3.7"
 summary = "Timeout context manager for asyncio programs"
+dependencies = [
+    "typing-extensions>=3.6.5; python_version < \"3.8\"",
+]
 files = [
     {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
     {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
@@ -236,6 +248,9 @@ name = "attrs"
 version = "23.2.0"
 requires_python = ">=3.7"
 summary = "Classes Without Boilerplate"
+dependencies = [
+    "importlib-metadata; python_version < \"3.8\"",
+]
 files = [
     {file = "attrs-23.2.0-py3-none-any.whl", hash = "sha256:99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1"},
     {file = "attrs-23.2.0.tar.gz", hash = "sha256:935dc3b529c262f6cf76e50877d35a4bd3c1de194fd41f47a2b7ae8f19971f30"},
@@ -246,6 +261,9 @@ name = "backports-cached-property"
 version = "1.0.2"
 requires_python = ">=3.6.0"
 summary = "cached_property() - computed once per instance, cached as attribute"
+dependencies = [
+    "typing>=3.6; python_version < \"3.7\"",
+]
 files = [
     {file = "backports.cached-property-1.0.2.tar.gz", hash = "sha256:9306f9eed6ec55fd156ace6bc1094e2c86fae5fb2bf07b6a9c00745c656e75dd"},
     {file = "backports.cached_property-1.0.2-py3-none-any.whl", hash = "sha256:baeb28e1cd619a3c9ab8941431fe34e8490861fb998c6c4590693d50171db0cc"},
@@ -346,6 +364,7 @@ summary = "Low-level, data-driven core of boto 3."
 dependencies = [
     "jmespath<2.0.0,>=0.7.1",
     "python-dateutil<3.0.0,>=2.1",
+    "urllib3<1.27,>=1.25.4; python_version < \"3.10\"",
     "urllib3<2.1,>=1.25.4; python_version >= \"3.10\"",
 ]
 files = [
@@ -1004,6 +1023,7 @@ summary = "Google Cloud API client core library"
 dependencies = [
     "google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.6",
     "google-auth<3.0dev,>=1.25.0",
+    "importlib-metadata>1.0.0; python_version < \"3.8\"",
 ]
 files = [
     {file = "google-cloud-core-2.4.1.tar.gz", hash = "sha256:9b7749272a812bde58fff28868d0c5e2f585b82f37e09a1f6ed2d4d10f134073"},
@@ -1219,20 +1239,21 @@ files = [
 
 [[package]]
 name = "hdmf"
-version = "3.14.0"
+version = "3.14.4"
 requires_python = ">=3.8"
 summary = "A hierarchical data modeling framework for modern science data standards"
 dependencies = [
     "h5py>=2.10",
+    "importlib-resources; python_version < \"3.9\"",
     "jsonschema>=2.6.0",
-    "numpy<2.0,>=1.18",
+    "numpy>=1.18",
     "pandas>=1.0.5",
     "ruamel-yaml>=0.16",
     "scipy>=1.4",
 ]
 files = [
-    {file = "hdmf-3.14.0-py3-none-any.whl", hash = "sha256:51e965d3e287f87f0d25776405365cc08313257d31e4c249730deac61f925b6f"},
-    {file = "hdmf-3.14.0.tar.gz", hash = "sha256:0c27bdaae468067b119ae416180b88312a8817d585cc38ace2834c62ac3723ee"},
+    {file = "hdmf-3.14.4-py3-none-any.whl", hash = "sha256:a35f216b54f9061f70f1f71177217f942c5b71fe6f4e7d68f46ec3e797db0947"},
+    {file = "hdmf-3.14.4.tar.gz", hash = "sha256:b9236b2a1bf51b2c04f9a182faceaffcb2a70ea8e9d7f81136c6d85f0a518579"},
 ]
 
 [[package]]
@@ -1254,12 +1275,31 @@ files = [
 ]
 
 [[package]]
+name = "hdmf-zarr-bjh"
+version = "0.8.1.post1"
+requires_python = ">=3.8"
+summary = "A package defining a Zarr I/O backend for HDMF - forked to fix a bug"
+dependencies = [
+    "hdmf>=3.9.0",
+    "numcodecs>=0.9.1",
+    "numpy<2.0,>=1.24",
+    "pynwb>=2.5.0",
+    "threadpoolctl>=3.1.0",
+    "zarr==2.17.2",
+]
+files = [
+    {file = "hdmf_zarr_bjh-0.8.1.post1-py3-none-any.whl", hash = "sha256:c5eb74982c2fe322a33ad256a5921df9e598c7866dafc5128afbefc5ad0731ec"},
+    {file = "hdmf_zarr_bjh-0.8.1.post1.tar.gz", hash = "sha256:02c6e060a0eb69d6e50e3d26435938d2fd5ee0bbf28de1ab31de5c3b471c89a8"},
+]
+
+[[package]]
 name = "httplib2"
 version = "0.22.0"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 summary = "A comprehensive HTTP client library."
 dependencies = [
     "pyparsing!=3.0.0,!=3.0.1,!=3.0.2,!=3.0.3,<4,>=2.4.2; python_version > \"3.0\"",
+    "pyparsing<3,>=2.4.2; python_version < \"3.0\"",
 ]
 files = [
     {file = "httplib2-0.22.0-py3-none-any.whl", hash = "sha256:14ae0a53c1ba8f3d37e9e27cf37eabb0fb9980f435ba405d546948b009dd64dc"},
@@ -1281,6 +1321,9 @@ name = "importlib-resources"
 version = "6.1.2"
 requires_python = ">=3.8"
 summary = "Read resources from Python packages"
+dependencies = [
+    "zipp>=3.1.0; python_version < \"3.10\"",
+]
 files = [
     {file = "importlib_resources-6.1.2-py3-none-any.whl", hash = "sha256:9a0a862501dc38b68adebc82970140c9e4209fc99601782925178f8386339938"},
     {file = "importlib_resources-6.1.2.tar.gz", hash = "sha256:308abf8474e2dba5f867d279237cd4076482c3de7104a40b41426370e891549b"},
@@ -1323,7 +1366,9 @@ requires_python = ">=3.8"
 summary = "An implementation of JSON Schema validation for Python"
 dependencies = [
     "attrs>=22.2.0",
+    "importlib-resources>=1.4.0; python_version < \"3.9\"",
     "jsonschema-specifications>=2023.03.6",
+    "pkgutil-resolve-name>=1.3.10; python_version < \"3.9\"",
     "referencing>=0.28.4",
     "rpds-py>=0.7.1",
 ]
@@ -1338,6 +1383,7 @@ version = "2023.12.1"
 requires_python = ">=3.8"
 summary = "The JSON Schema meta-schemas and vocabularies, exposed as a Registry"
 dependencies = [
+    "importlib-resources>=1.4.0; python_version < \"3.9\"",
     "referencing>=0.31.0",
 ]
 files = [
@@ -1362,6 +1408,9 @@ name = "kiwisolver"
 version = "1.4.5"
 requires_python = ">=3.7"
 summary = "A fast implementation of the Cassowary constraint solver"
+dependencies = [
+    "typing-extensions; python_version < \"3.8\"",
+]
 files = [
     {file = "kiwisolver-1.4.5-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:05703cf211d585109fcd72207a31bb170a0f22144d68298dc5e61b3c946518af"},
     {file = "kiwisolver-1.4.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:146d14bebb7f1dc4d5fbf74f8a6cb15ac42baadee8912eb84ac0b3b2a3dc6ac3"},
@@ -1472,6 +1521,7 @@ dependencies = [
     "contourpy>=1.0.1",
     "cycler>=0.10",
     "fonttools>=4.22.0",
+    "importlib-resources>=3.2.0; python_version < \"3.10\"",
     "kiwisolver>=1.3.1",
     "numpy>=1.23",
     "packaging>=20.0",
@@ -1767,21 +1817,25 @@ files = [
 
 [[package]]
 name = "npc-ephys"
-version = "0.1.15"
+version = "0.1.25"
 requires_python = ">=3.9"
 summary = "Tools for accessing and processing raw ephys data, compatible with data in the cloud."
 dependencies = [
+    "hdmf-zarr-bjh==0.8.1.post1",
     "npc-io>=0.1.26",
-    "npc-lims>=0.1.147",
+    "npc-lims>=0.1.73",
     "npc-sync>=0.1.12",
     "pandas>=2.2.0",
+    "polars>=0.20.26",
+    "pyarrow>=14.0",
+    "pynwb>=2.8.0",
     "tqdm>=4.66.1",
-    "wavpack-numcodecs>=0.1.5",
-    "zarr>=2.16.1",
+    "wavpack-numcodecs!=0.2.0,>=0.1.5",
+    "zarr<2.18.1",
 ]
 files = [
-    {file = "npc_ephys-0.1.15-py3-none-any.whl", hash = "sha256:b013adb9b02606bc78670ca4725c901b772aa59e6a66130489d4d353fef8f73f"},
-    {file = "npc_ephys-0.1.15.tar.gz", hash = "sha256:b19353fcdc5339822382bbffe7ce8cd13a3b8feda4ed8956b89b29c565fb8f7b"},
+    {file = "npc_ephys-0.1.25-py3-none-any.whl", hash = "sha256:506e1881e907a6b3e1133607cd87f84feee7d4cb924169e700d937e042e559a9"},
+    {file = "npc_ephys-0.1.25.tar.gz", hash = "sha256:e2c3926b7c104dc6202591b0d59f84e20b52d69ab7cc23303d1283674ccdc7e5"},
 ]
 
 [[package]]
@@ -2081,10 +2135,12 @@ version = "4.9.0.80"
 requires_python = ">=3.6"
 summary = "Wrapper package for OpenCV python bindings."
 dependencies = [
+    "numpy>=1.13.3; python_version < \"3.7\"",
     "numpy>=1.17.0; python_version >= \"3.7\"",
     "numpy>=1.17.3; python_version >= \"3.8\"",
     "numpy>=1.19.3; python_version >= \"3.6\" and platform_system == \"Linux\" and platform_machine == \"aarch64\"",
     "numpy>=1.19.3; python_version >= \"3.9\"",
+    "numpy>=1.21.0; python_version <= \"3.9\" and platform_system == \"Darwin\" and platform_machine == \"arm64\"",
     "numpy>=1.21.2; python_version >= \"3.10\"",
     "numpy>=1.21.4; python_version >= \"3.10\" and platform_system == \"Darwin\"",
     "numpy>=1.23.5; python_version >= \"3.11\"",
@@ -2244,6 +2300,9 @@ name = "platformdirs"
 version = "3.11.0"
 requires_python = ">=3.7"
 summary = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+dependencies = [
+    "typing-extensions>=4.7.1; python_version < \"3.8\"",
+]
 files = [
     {file = "platformdirs-3.11.0-py3-none-any.whl", hash = "sha256:e9d171d00af68be50e9202731309c4e658fd8bc76f55c11c7dd760d023bda68e"},
     {file = "platformdirs-3.11.0.tar.gz", hash = "sha256:cf8ee52a3afdb965072dcc652433e0c7e3e40cf5ea1477cd4b3b1d2eb75495b3"},
@@ -2563,6 +2622,9 @@ name = "pyjwt"
 version = "2.8.0"
 requires_python = ">=3.7"
 summary = "JSON Web Token implementation in Python"
+dependencies = [
+    "typing-extensions; python_version <= \"3.7\"",
+]
 files = [
     {file = "PyJWT-2.8.0-py3-none-any.whl", hash = "sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320"},
     {file = "PyJWT-2.8.0.tar.gz", hash = "sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de"},
@@ -2606,19 +2668,19 @@ files = [
 
 [[package]]
 name = "pynwb"
-version = "2.7.0"
+version = "2.8.2"
 requires_python = ">=3.8"
 summary = "Package for working with Neurodata stored in the NWB format."
 dependencies = [
     "h5py>=2.10",
-    "hdmf>=3.12.2",
-    "numpy<2.0,>=1.18",
+    "hdmf>=3.14.3",
+    "numpy>=1.18",
     "pandas>=1.1.5",
     "python-dateutil>=2.7.3",
 ]
 files = [
-    {file = "pynwb-2.7.0-py3-none-any.whl", hash = "sha256:38ebc074ee822f5a9fdc556ba0762ba02e695fba861a541800cd224807e07adb"},
-    {file = "pynwb-2.7.0.tar.gz", hash = "sha256:49bfbcd4a6f683add20cd57552f1c3abd6fc27cfaed7f48db144c6c46767545a"},
+    {file = "pynwb-2.8.2-py3-none-any.whl", hash = "sha256:930b86858d96b2f850672f69df5704a736a7a89fa47cda3cbf389b15eeb3ee87"},
+    {file = "pynwb-2.8.2.tar.gz", hash = "sha256:53b70d02951803f908678ccbe3aa8851c5997589bf1718830bf6a45bc550a2d8"},
 ]
 
 [[package]]
@@ -2736,6 +2798,7 @@ requires_python = ">=3.6"
 summary = "Python client for Redis database and key-value store"
 dependencies = [
     "deprecated>=1.2.3",
+    "importlib-metadata>=1.0; python_version < \"3.8\"",
     "packaging>=20.4",
 ]
 files = [
@@ -2781,6 +2844,7 @@ summary = "Render rich text, tables, progress bars, syntax highlighting, markdow
 dependencies = [
     "markdown-it-py>=2.2.0",
     "pygments<3.0.0,>=2.13.0",
+    "typing-extensions<5.0,>=4.0.0; python_version < \"3.9\"",
 ]
 files = [
     {file = "rich-13.7.1-py3-none-any.whl", hash = "sha256:4edbae314f59eb482f54e9e30bf00d33350aaa94f4bfcd4e9e3110e64d0d7222"},
@@ -3293,6 +3357,7 @@ summary = "Yet another URL library"
 dependencies = [
     "idna>=2.0",
     "multidict>=4.0",
+    "typing-extensions>=3.7.4; python_version < \"3.8\"",
 ]
 files = [
     {file = "yarl-1.9.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:a8c1df72eb746f4136fe9a2e72b0c9dc1da1cbd23b5372f94b5820ff8ae30e0e"},
@@ -3346,7 +3411,7 @@ files = [
 
 [[package]]
 name = "zarr"
-version = "2.18.0"
+version = "2.17.2"
 requires_python = ">=3.9"
 summary = "An implementation of chunked, compressed, N-dimensional arrays for Python"
 dependencies = [
@@ -3356,6 +3421,6 @@ dependencies = [
     "numpy>=1.23",
 ]
 files = [
-    {file = "zarr-2.18.0-py3-none-any.whl", hash = "sha256:7f8532b6a3f50f22e809e130e09353637ec8b5bb5e95a5a0bfaae91f63978b5d"},
-    {file = "zarr-2.18.0.tar.gz", hash = "sha256:c3b7d2c85b8a42b0ad0ad268a36fb6886ca852098358c125c6b126a417e0a598"},
+    {file = "zarr-2.17.2-py3-none-any.whl", hash = "sha256:70d7cc07c24280c380ef80644151d136b7503b0d83c9f214e8000ddc0f57f69b"},
+    {file = "zarr-2.17.2.tar.gz", hash = "sha256:2cbaa6cb4e342d45152d4a7a4b2013c337fcd3a8e7bc98253560180de60552ce"},
 ]
