@@ -299,6 +299,7 @@ def upload_session(
     test: bool = False,
     hpc_upload_job_email: str = utils.HPC_UPLOAD_JOB_EMAIL,
     regenerate_symlinks: bool = True,
+    adjust_ephys_timestamps: bool = True,
 ) -> None:
     codeocean_root = np_session.NPEXP_PATH / ('codeocean-dev' if test else 'codeocean')
     logger.debug(f'{codeocean_root = }')
@@ -319,6 +320,20 @@ def upload_session(
         create_behavior_symlinks(upload.session, upload.behavior)
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+    if adjust_ephys_timestamps and upload.ephys:
+        if not upload.behavior: # includes surface channel recordings
+            logger.warning(f"Cannot adjust ephys timestamps for {upload.session} - no behavior folder supplied for upload")
+        else:
+            try:
+                utils.write_corrected_ephys_timestamps(ephys_dir=upload.ephys, behavior_dir=upload.behavior)
+            except utils.SyncFileNotFoundError:
+                raise FileNotFoundError(
+                    (
+                        f"Cannot adjust timestamps - no sync file found in {upload.behavior}. "
+                        "If the session doesn't have one, run with "
+                        "`adjust_ephys_timestamps=False` or `--no-sync` flag in CLI"
+                    )
+                ) from None
     for path in (upload.ephys, upload.behavior, upload.behavior_videos, upload.aind_metadata):
         if path is not None and path.exists():
             utils.convert_symlinks_to_posix(path)

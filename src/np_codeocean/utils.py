@@ -4,6 +4,7 @@ import contextlib
 import csv
 import datetime
 import functools
+import itertools
 import json
 import logging
 import os
@@ -15,6 +16,8 @@ import aind_data_transfer_models.core
 import aind_slurm_rest.models
 import np_config
 import np_tools
+import npc_ephys
+import npc_sync
 import npc_session
 import numpy as np
 import polars as pl
@@ -37,6 +40,9 @@ DEFAULT_EPHYS_SLURM_SETTINGS = aind_slurm_rest.models.V0036JobProperties(
     minimum_cpus_per_node=12, # 6 probes * (lfp + ap)
 )
 """Increased timelimit and cpus for running ephys compression on the hpc"""
+
+class SyncFileNotFoundError(FileNotFoundError):
+    pass
 
 @functools.cache
 def get_project_config() -> dict[str, Any]:
@@ -202,6 +208,34 @@ def cleanup_ephys_metadata(toplevel_dir: pathlib.Path) -> None:
             oebin_path.write_text(json.dumps(oebin_obj, indent=4))
             logger.debug('Overwrote symlink to structure.oebin with corrected structure.oebin')
 
+def write_corrected_ephys_timestamps(
+    ephys_dir: pathlib.Path,
+    behavior_dir: pathlib.Path,
+) -> None:
+    for path in itertools.chain(behavior_dir.glob('*.h5'), behavior_dir.glob('*.sync')):
+        with contextlib.suppress(Exception):
+            sync_dataset = npc_sync.SyncDataset(path)
+            _ = sync_dataset.line_labels
+            logger.info(f'Found valid sync file {path.as_posix()}')
+            break
+    else:
+        raise SyncFileNotFoundError(f'No valid sync file found in {behavior_dir.as_posix()}')
+    
+    timing_on_pxi = (
+        timing
+        for timing in npc_ephys.get_ephys_timing_on_pxi(
+            ephys_dir.glob("**/experiment*/recording*"),
+        )
+    )
+    timing_on_sync = (
+        npc_ephys.get_ephys_timing_on_sync(
+            sync=sync_dataset,
+            devices=timing_on_pxi,
+        )
+    )
+    npc_ephys.overwrite_timestamps(timing_on_sync)
+    logger.info(f'Corrected timestamps in {ephys_dir}')
+    
 def decode_symlink_path(oebin_path: pathlib.Path) -> pathlib.Path:
     if not oebin_path.is_symlink():
         return oebin_path
