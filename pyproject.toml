@@ -18,7 +18,7 @@ dependencies = [
     "polars>=0.20.16",
     "aind-data-transfer-models>=0.5.1",
     "npc-lims>=0.1.168",
-    "npc-ephys>=0.1.25",
+    "npc-ephys>=0.1.28",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

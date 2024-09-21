@@ -1817,7 +1817,7 @@ files = [
 
 [[package]]
 name = "npc-ephys"
-version = "0.1.25"
+version = "0.1.28"
 requires_python = ">=3.9"
 summary = "Tools for accessing and processing raw ephys data, compatible with data in the cloud."
 dependencies = [
@@ -1834,8 +1834,8 @@ dependencies = [
     "zarr<2.18.1",
 ]
 files = [
-    {file = "npc_ephys-0.1.25-py3-none-any.whl", hash = "sha256:506e1881e907a6b3e1133607cd87f84feee7d4cb924169e700d937e042e559a9"},
-    {file = "npc_ephys-0.1.25.tar.gz", hash = "sha256:e2c3926b7c104dc6202591b0d59f84e20b52d69ab7cc23303d1283674ccdc7e5"},
+    {file = "npc_ephys-0.1.28-py3-none-any.whl", hash = "sha256:67188c4f5552c59aa4a88ac0aad53d427231b7b396ffe050d6f68718d9d46647"},
+    {file = "npc_ephys-0.1.28.tar.gz", hash = "sha256:e782be9d5453d4feac16a0150677ff2ba8d3c583953e8511fa027edc4df64209"},
 ]
 
 [[package]]
