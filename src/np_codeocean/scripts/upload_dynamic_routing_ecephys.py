@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import datetime
 import logging
 import pathlib
@@ -135,17 +136,18 @@ def write_metadata_and_upload(
     """
     # session = np_session.Session(session) #! this doesn't work for surface_channels
     session = np_codeocean.get_np_session(session_path_or_folder_name)
-    add_metadata(
-        session_directory=session.npexp_path,
-        session_datetime=(
-            session.start 
-            if not np_codeocean.is_surface_channel_recording(session.npexp_path.name)
-            else np_codeocean.get_surface_channel_start_time(session)
-        ),
-        rig_storage_directory=pathlib.Path(np_codeocean.get_project_config()["rig_metadata_dir"]),
-        ignore_errors=True,
-        skip_existing=not regenerate_metadata,
-    )
+    with contextlib.suppress(Exception):
+        add_metadata(
+            session_directory=session.npexp_path,
+            session_datetime=(
+                session.start 
+                if not np_codeocean.is_surface_channel_recording(session.npexp_path.name)
+                else np_codeocean.get_surface_channel_start_time(session)
+            ),
+            rig_storage_directory=pathlib.Path(np_codeocean.get_project_config()["rig_metadata_dir"]),
+            ignore_errors=True,
+            skip_existing=not regenerate_metadata,
+        )
     return np_codeocean.upload_session(
         session_path_or_folder_name,
         recording_dirs=recording_dirs,
@@ -172,8 +174,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    args['adjust_ephys_timestamps'] = False # unnecessary while we have machinery in place for adjusting in npc_sessions (adds 5 GB of timestamps files for each upload)
-    write_metadata_and_upload(**vars(args))
+    kwargs = vars(args)
+    kwargs |= {'adjust_ephys_timestamps':  False} # unnecessary while we have machinery in place for adjusting in npc_sessions (adds 5 GB of timestamps files for each upload)
+    write_metadata_and_upload(**kwargs)
 
 
 if __name__ == '__main__':
