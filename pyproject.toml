@@ -97,7 +97,6 @@ dynamic-routing-metadata = [
     "aind-data-transfer-models>=0.13.1",
     "aind-codeocean-pipeline-monitor[full]>=0.5.0",
     "aind-metadata-mapper==0.18.2",
-    "git+https://github.com/bjhardcastle/np-aind-metadata.git",
 ]
 
 [build-system]
