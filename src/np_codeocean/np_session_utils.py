@@ -7,6 +7,7 @@ import pathlib
 from collections.abc import Iterable
 import shutil
 
+import aind_data_transfer_models.core
 import np_config
 import np_logging
 import np_session
@@ -300,6 +301,7 @@ def upload_session(
     hpc_upload_job_email: str = utils.HPC_UPLOAD_JOB_EMAIL,
     regenerate_symlinks: bool = True,
     adjust_ephys_timestamps: bool = True,
+    codeocean_configs: aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs | None = None,
 ) -> None:
     codeocean_root = np_session.NPEXP_PATH / ('codeocean-dev' if test else 'codeocean')
     logger.debug(f'{codeocean_root = }')
@@ -341,7 +343,7 @@ def upload_session(
     utils.write_upload_csv(csv_content, upload.job)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     utils.put_jobs_for_hpc_upload(
-        utils.get_job_models_from_csv(upload.job),
+        utils.get_job_models_from_csv(upload.job, codeocean_configs=codeocean_configs),
         upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
         user_email=hpc_upload_job_email,
         dry_run=dry_run,

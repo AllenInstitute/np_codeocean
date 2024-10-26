@@ -11,7 +11,11 @@ import npc_session
 import npc_sessions
 from aind_data_schema.core.rig import Rig
 from np_aind_metadata.integrations import dynamic_routing_task
-
+import aind_codeocean_pipeline_monitor.models 
+import aind_data_transfer_models.core
+import codeocean.capsule
+import codeocean.data_asset
+import codeocean.computation 
 import np_codeocean
 
 # Disable divide by zero or NaN warnings
@@ -148,6 +152,18 @@ def write_metadata_and_upload(
             ignore_errors=True,
             skip_existing=not regenerate_metadata,
         )
+    pipelines = [
+        aind_codeocean_pipeline_monitor.models.PipelineMonitorSettings(
+            run_params=codeocean.computation.RunParams(
+                capsule_id="287db808-74ce-4e44-b14b-fde1471eba45",
+            ),
+            computation_polling_interval=15 * 60,
+            computation_timeout=48 * 3600,
+        ),
+    ]
+    codeocean_configs = aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs(
+        pipeline_monitor_capsule_settings=pipelines,
+    )
     return np_codeocean.upload_session(
         session_path_or_folder_name,
         recording_dirs=recording_dirs,
@@ -157,6 +173,7 @@ def write_metadata_and_upload(
         hpc_upload_job_email=hpc_upload_job_email,
         regenerate_symlinks=regenerate_symlinks,
         adjust_ephys_timestamps=adjust_ephys_timestamps,
+        codeocean_configs=codeocean_configs,
     )
 
 def parse_args() -> argparse.Namespace:

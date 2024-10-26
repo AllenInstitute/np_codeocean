@@ -300,6 +300,7 @@ def get_job_models_from_csv(
     path: pathlib.Path,
     ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
     user_email: str = HPC_UPLOAD_JOB_EMAIL,
+    **extra_BasicUploadJobConfigs_params: Any,
 ) -> tuple[aind_data_transfer_models.core.BasicUploadJobConfigs, ...]:
     jobs = pl.read_csv(path, eol_char='\r').with_columns(
         pl.col('subject-id').cast(str),
@@ -327,6 +328,7 @@ def get_job_models_from_csv(
                 **{k.replace('-', '_'): v for k,v in job.items()},
                 modalities=modalities,
                 user_email=user_email,
+                **extra_BasicUploadJobConfigs_params,
             )
         )
     return tuple(models)
