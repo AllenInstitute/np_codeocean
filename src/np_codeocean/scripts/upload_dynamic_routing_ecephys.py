@@ -157,6 +157,12 @@ def write_metadata_and_upload(
             run_params=codeocean.computation.RunParams(
                 capsule_id="287db808-74ce-4e44-b14b-fde1471eba45",
             ),
+            data_assets=[
+                codeocean.data_asset.DataAsset(
+                    mount="ecephys",
+                    id="", # ID of new raw data asset will be inserted here by airflow
+                ),
+            ],
             computation_polling_interval=15 * 60,
             computation_timeout=48 * 3600,
         ),
