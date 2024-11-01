@@ -22,7 +22,7 @@ import np_codeocean
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 logging.basicConfig(
-    filename=f"logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
+    filename=f"//allen/programs/mindscope/workgroups/np-exp/codeocean-logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
     level=logging.DEBUG, 
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s", 
     datefmt="%Y-%d-%m %H:%M:%S",

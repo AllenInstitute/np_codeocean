@@ -43,7 +43,8 @@ def reset_log_file() -> None:
         log.unlink(missing_ok=True)
     
 def get_log_file() -> pathlib.Path:
-    folder = pathlib.Path(".").resolve() / "logs"
+    folder = pathlib.Path("//allen/programs/mindscope/workgroups/np-exp") / "codeocean-logs"
+    folder.mkdir(exist_ok=True)
     return folder / f"{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
 
 logging.basicConfig(
