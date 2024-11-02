@@ -91,7 +91,7 @@ dev = [
     "pdm>=2.4.9",
 ]
 dynamic-routing-metadata = [
-    "np-aind-metadata @ git+https://github.com/bjhardcastle/np-aind-metadata.git",
+    "np-aind-metadata>=0.1.17",
     "npc-lims>=0.1.154",
     "npc-sessions>=0.0.253",
     "aind-data-transfer-models>=0.13.1",

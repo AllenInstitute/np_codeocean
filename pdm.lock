@@ -5,7 +5,7 @@
 groups = ["default", "dynamic-routing-metadata"]
 strategy = ["cross_platform"]
 lock_version = "4.5.0"
-content_hash = "sha256:93c0b90b4e04a9ce31b649895d1618855022938158cae75af324f9487c8ad392"
+content_hash = "sha256:f83fc55c28711b1cdf28e0d76101e37ddb7cb32bd2b77b6f21c0a8fac3dc9a9d"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -1859,17 +1859,20 @@ files = [
 
 [[package]]
 name = "np-aind-metadata"
-version = "0.1.16"
+version = "0.1.17"
 requires_python = ">=3.10"
-git = "https://github.com/bjhardcastle/np-aind-metadata.git"
-revision = "7c154d0651e8ee7497d60178778a7098716df1b9"
 summary = ""
 dependencies = [
-    "aind-metadata-mapper==0.6.2",
+    "aind-data-schema==1.1.1",
+    "aind-metadata-mapper==0.18.2",
     "h5py>=3.10.0",
     "np-config>=0.4.27",
     "np-session>=0.6.40",
     "pyyaml>=6.0.1",
+]
+files = [
+    {file = "np_aind_metadata-0.1.17-py3-none-any.whl", hash = "sha256:6376f6dbde735765a65857300a7d9bb8c1e18433f23eda529b2df6d82f49cf1d"},
+    {file = "np_aind_metadata-0.1.17.tar.gz", hash = "sha256:04be5f486f806c8184c8c76879bfb61f66384153e9e91dc4a3952df9a5dfbf43"},
 ]
 
 [[package]]
