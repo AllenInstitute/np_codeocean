@@ -199,6 +199,7 @@ def main() -> None:
     args = parse_args()
     kwargs = vars(args)
     kwargs |= {'adjust_ephys_timestamps':  False} # unnecessary while we have machinery in place for adjusting in npc_sessions (adds 5 GB of timestamps files for each upload)
+    np_codeocean.utils.set_npc_lims_credentials()
     write_metadata_and_upload(**kwargs)
 
 
