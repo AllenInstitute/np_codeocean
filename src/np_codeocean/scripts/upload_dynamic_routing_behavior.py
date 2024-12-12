@@ -20,6 +20,7 @@ import h5py
 import tqdm
 import np_codeocean
 import np_codeocean.utils
+from np_codeocean.metadata import core as metadata_core
 import np_config
 import np_session
 import np_tools
@@ -27,7 +28,6 @@ import npc_lims
 import npc_session
 import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 from aind_data_schema.core.rig import Rig
-from np_aind_metadata.integrations import dynamic_routing_task
 from npc_lims.exceptions import NoSessionInfo
 
 import np_codeocean
@@ -108,7 +108,7 @@ def add_metadata(
         ._aind_session_metadata.write_standard_file(dest)
     
     session_metadata_path = dest / "session.json"
-    rig_metadata_path = dynamic_routing_task.copy_task_rig(
+    rig_metadata_path = metadata_core.copy_task_rig(
         task_source,
         dest / "rig.json",
         rig_storage_directory,
@@ -122,7 +122,7 @@ def add_metadata(
     rig_metadata.rig_id = reformat_rig_model_rig_id(rig_metadata.rig_id, modification_date)
     rig_metadata.write_standard_file(dest)  # assumes this will work out to dest/rig.json
     
-    dynamic_routing_task.update_session_from_rig(
+    metadata_core.update_session_from_rig(
         session_metadata_path,
         rig_metadata_path,
         session_metadata_path,
