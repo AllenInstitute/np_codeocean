@@ -10,13 +10,13 @@ import np_config
 import npc_session
 import npc_sessions
 from aind_data_schema.core.rig import Rig
-from np_aind_metadata.integrations import dynamic_routing_task
 import aind_codeocean_pipeline_monitor.models 
 import aind_data_transfer_models.core
 import codeocean.capsule
 import codeocean.data_asset
 import codeocean.computation 
 import np_codeocean
+from np_codeocean.metadata import core as metadata_core
 
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -85,7 +85,7 @@ def add_metadata(
             logger.warning("session.json is currently required for the rig.json to be created, so we can't continue with metadata creation")
             return None
         try:
-            dynamic_routing_task.add_np_rig_to_session_dir(
+            metadata_core.add_np_rig_to_session_dir(
                 normalized_session_dir,
                 session_datetime,
                 rig_storage_directory,
@@ -107,10 +107,10 @@ def add_metadata(
     modification_date = extract_modification_date(rig_metadata)
     rig_metadata.rig_id = reformat_rig_model_rig_id(rig_metadata.rig_id, modification_date)
     rig_metadata.write_standard_file(normalized_session_dir)  # assumes this will work out to dest/rig.json
-    session_model_path = dynamic_routing_task.scrape_session_model_path(
+    session_model_path = metadata_core.scrape_session_model_path(
         normalized_session_dir,
     )
-    dynamic_routing_task.update_session_from_rig(
+    metadata_core.update_session_from_rig(
         session_model_path,
         rig_model_path,
         session_model_path,
