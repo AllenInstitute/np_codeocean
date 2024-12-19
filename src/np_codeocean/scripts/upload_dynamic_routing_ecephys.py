@@ -3,6 +3,7 @@ import contextlib
 import datetime
 import logging
 import pathlib
+import time
 import typing
 import warnings
 
@@ -156,15 +157,26 @@ def write_metadata_and_upload(
         aind_codeocean_pipeline_monitor.models.PipelineMonitorSettings(
             run_params=codeocean.computation.RunParams(
                 capsule_id="287db808-74ce-4e44-b14b-fde1471eba45",
+                data_assets=[
+                    codeocean.data_asset.DataAsset(
+                        name="",
+                        id="", # ID of new raw data asset will be inserted here by airflow
+                        mount="ecephys",
+                        created=time.time(),
+                        state=codeocean.data_asset.DataAssetState.Draft,
+                        type=codeocean.data_asset.DataAssetType.Dataset,
+                        last_used=time.time(),
+                    ),
+                ],
             ),
-            data_assets=[
-                codeocean.data_asset.DataAsset(
-                    mount="ecephys",
-                    id="", # ID of new raw data asset will be inserted here by airflow
-                ),
-            ],
             computation_polling_interval=15 * 60,
             computation_timeout=48 * 3600,
+            capture_settings=aind_codeocean_pipeline_monitor.models.CaptureSettings(
+                tags=[str(session.mouse), 'derived', 'ecephys'],
+                custom_metadata={'data level': 'derived', 'experiment type': 'ecephys', 'subject id': str(session.mouse)},
+                process_name_suffix="sorted",
+                process_name_suffix_tz="US/Pacific",
+            ),
         ),
     ]
     codeocean_configs = aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs(
@@ -204,13 +216,13 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
-    # write_metadata_and_upload(
-    #     'DRpilot_708016_20240429_surface_channels',
-    #     force=True,
-    #     regenerate_metadata=False,
-    #     regenerate_symlinks=False,
-    # )
+    # main()
+    write_metadata_and_upload(
+        'DRpilot_744740_20241113_surface_channels',
+        force=False,
+        regenerate_metadata=False,
+        regenerate_symlinks=False,
+    )
     # upload_dr_ecephys DRpilot_712141_20240606 --regenerate-metadata
     # upload_dr_ecephys DRpilot_712141_20240611 recording1 recording2 --regenerate-metadata --force 
     # upload_dr_ecephys DRpilot_712141_20240605 --regenerate-metadata
