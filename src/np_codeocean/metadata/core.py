@@ -10,7 +10,7 @@ import typing
 
 from aind_data_schema.core import rig, session
 
-from np_aind_metadata import common, np, rigs, storage, update, utils
+from np_codeocean.metadata import common, np, rigs, storage, update, utils
 from np_codeocean.metadata.model_templates import behavior_box, neuropixels_rig
 
 logger = logging.getLogger(__name__)

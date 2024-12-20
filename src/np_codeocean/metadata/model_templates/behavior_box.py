@@ -5,7 +5,7 @@ from aind_data_schema.components import devices
 from aind_data_schema.core import rig
 from aind_data_schema_models import organizations
 
-from np_aind_metadata import common, rigs
+from np_codeocean.metadata import common, rigs
 
 logger = logging.getLogger(__name__)
 

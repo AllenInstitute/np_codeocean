@@ -6,7 +6,7 @@ from aind_data_schema.components import coordinates, devices
 from aind_data_schema.core import rig
 from aind_data_schema_models import organizations
 
-from np_aind_metadata import common, rigs
+from np_codeocean.metadata import common, rigs
 
 COPA_NOTES = (
     "The rotation matrix is represented as: a,b,c,d,e,f,g,h,i. Wherein a, b, "
