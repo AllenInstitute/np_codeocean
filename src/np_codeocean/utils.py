@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import pathlib
+import re
 from typing import Any, Generator, Iterable, Literal
 import typing_extensions
 
@@ -134,24 +135,31 @@ def remove_unreadable_ephys_data(toplevel_dir: pathlib.Path) -> None:
             remove_folder_of_symlinks(events_dir.parent)
             
 def remove_duplicate_ephys_data(toplevel_dir: pathlib.Path) -> None:
-    previous_recording_name = ''
-    for continuous_dir in ephys_continuous_dir_generator(toplevel_dir):
-        recording_name = continuous_dir.parent.parent.name
-        if recording_name != previous_recording_name:
-            # reset probes list for each new recording
+    logger.info('Checking for duplicate ephys data...')
+    paths = sorted(ephys_continuous_dir_generator(toplevel_dir))
+    experiments = set(re.findall(r'/experiment(\d+)/', path.as_posix())[0] for path in paths)
+    logger.debug(f'Found {len(experiments)} experiments')
+    for experiment in experiments:
+        exp_paths = sorted(path for path in paths if f'experiment{experiment}' in path.as_posix())
+        recordings = set(re.findall(r'/recording(\d+)/', path.as_posix())[0] for path in exp_paths)
+        logger.debug(f'Found {len(recordings)} recordings in experiment{experiment}')
+        for recording in recordings:
+            recording_paths = sorted(path for path in exp_paths if f'recording{recording}' in path.as_posix())  
             probes = []
-        try:
-            probe = npc_session.ProbeRecord(continuous_dir.name)
-        except ValueError:
-            continue
-        suffix = continuous_dir.name.split('-')[-1]
-        assert suffix in ('AP', 'LFP')
-        recording_name = f"{probe}-{suffix}"
-        if recording_name in probes:
-            logger.info(f'Duplicate {recording_name = } found in {continuous_dir.parent.parent} - removing')
-            remove_folder_of_symlinks(continuous_dir)
-        else:
-            probes.append(recording_name)
+            # import pdb; pdb.set_trace()
+            for continuous_dir in recording_paths:
+                try:
+                    probe = npc_session.ProbeRecord(continuous_dir.name)
+                except ValueError:
+                    continue
+                suffix = continuous_dir.name.split('-')[-1]
+                assert suffix in ('AP', 'LFP')
+                recording_name = f"{probe}-{suffix}"
+                if recording_name in probes:
+                    logger.info(f'Duplicate {recording_name = } found in {continuous_dir.parent.parent} - removing')
+                    remove_folder_of_symlinks(continuous_dir)
+                else:
+                    probes.append(recording_name)
             
 def remove_folder_of_symlinks(folder: pathlib.Path) -> None:
     """Recursive deletion of all files in dir tree, with a check that each is a
