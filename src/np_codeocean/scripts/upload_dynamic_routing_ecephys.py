@@ -153,6 +153,7 @@ def write_metadata_and_upload(
             ignore_errors=True,
             skip_existing=not regenerate_metadata,
         )
+        
     pipelines = [
         aind_codeocean_pipeline_monitor.models.PipelineMonitorSettings(
             run_params=codeocean.computation.RunParams(
@@ -204,13 +205,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--dry-run', action='store_true', help="Create upload job but do not submit to hpc upload queue.")
     parser.add_argument('--preserve-symlinks', dest='regenerate_symlinks', action='store_false', help="Existing symlink folders will not be deleted and regenerated - may result in additional data being uploaded")
     parser.add_argument('--regenerate-metadata', action='store_true', help="Regenerate metadata files (session.json and rig.json) even if they already exist")
-    parser.add_argument('--no-sync', dest="adjust_ephys_timestamps", action='store_false', help="(disabled) Skip adjustment of ephys timestamps.npy using sync data for sessions where no sync data is available")
+    parser.add_argument('--sync', dest="adjust_ephys_timestamps", action='store_true', help="Adjust ephys timestamps.npy prior to upload using sync data (if available)")
     return parser.parse_args()
 
 def main() -> None:
     args = parse_args()
     kwargs = vars(args)
-    kwargs |= {'adjust_ephys_timestamps':  False} # unnecessary while we have machinery in place for adjusting in npc_sessions (adds 5 GB of timestamps files for each upload)
     np_codeocean.utils.set_npc_lims_credentials()
     write_metadata_and_upload(**kwargs)
 
