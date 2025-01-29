@@ -40,7 +40,7 @@ composite = [
 
 [project]
 name = "np_codeocean"
-version = "0.3.2"
+version = "0.3.3"
 description = "Tools for uploading and interacting with Mindscope Neuropixels experiments on Code Ocean"
 authors = [
     { name = "Ben Hardcastle", email = "ben.hardcastle@alleninstitute.org" },
