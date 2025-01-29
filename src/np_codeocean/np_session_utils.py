@@ -342,8 +342,11 @@ def upload_session(
     csv_content: dict = get_upload_csv_for_session(upload)
     utils.write_upload_csv(csv_content, upload.job)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
+    extra_BasicUploadJobConfigs_params = {}
+    if codeocean_configs is not None:
+        extra_BasicUploadJobConfigs_params['codeocean_configs'] = codeocean_configs
     utils.put_jobs_for_hpc_upload(
-        utils.get_job_models_from_csv(upload.job, codeocean_configs=codeocean_configs),
+        utils.get_job_models_from_csv(upload.job, **extra_BasicUploadJobConfigs_params),
         upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
         user_email=hpc_upload_job_email,
         dry_run=dry_run,
