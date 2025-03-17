@@ -6,6 +6,7 @@ import doctest
 import pathlib
 from collections.abc import Iterable
 import shutil
+from typing import Any
 
 import aind_data_transfer_models.core
 import np_config
@@ -302,6 +303,7 @@ def upload_session(
     regenerate_symlinks: bool = True,
     adjust_ephys_timestamps: bool = True,
     codeocean_configs: aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs | None = None,
+    extra_BasicUploadJobConfigs_params: dict[str, Any] | None = None,
 ) -> None:
     codeocean_root = np_session.NPEXP_PATH / ('codeocean-dev' if test else 'codeocean')
     logger.debug(f'{codeocean_root = }')
@@ -342,8 +344,11 @@ def upload_session(
     csv_content: dict = get_upload_csv_for_session(upload)
     utils.write_upload_csv(csv_content, upload.job)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
-    extra_BasicUploadJobConfigs_params = {}
+    if extra_BasicUploadJobConfigs_params is None:
+        extra_BasicUploadJobConfigs_params = {}
     if codeocean_configs is not None:
+        if 'codeocean_configs' in extra_BasicUploadJobConfigs_params:
+            raise ValueError("Cannot pass `codeocean_configs` as a parameter and in `extra_BasicUploadJobConfigs_params`")
         extra_BasicUploadJobConfigs_params['codeocean_configs'] = codeocean_configs
     utils.put_jobs_for_hpc_upload(
         utils.get_job_models_from_csv(upload.job, **extra_BasicUploadJobConfigs_params),
