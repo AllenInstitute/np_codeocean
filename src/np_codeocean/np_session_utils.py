@@ -6,6 +6,7 @@ import doctest
 import pathlib
 from collections.abc import Iterable
 import shutil
+import time
 from typing import Any
 
 import aind_data_transfer_models.core
@@ -324,6 +325,7 @@ def upload_session(
         create_behavior_symlinks(upload.session, upload.behavior)
     if upload.behavior_videos:
         create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+    timestamps_adjusted = False
     if adjust_ephys_timestamps and upload.ephys:
         if not upload.behavior: # includes surface channel recordings
             logger.warning(f"Cannot adjust ephys timestamps for {upload.session} - no behavior folder supplied for upload")
@@ -338,6 +340,8 @@ def upload_session(
                         "`adjust_ephys_timestamps=False` or `--no-sync` flag in CLI"
                     )
                 ) from None
+            else:
+                timestamps_adjusted = True
     for path in (upload.ephys, upload.behavior, upload.behavior_videos, upload.aind_metadata):
         if path is not None and path.exists():
             utils.convert_symlinks_to_posix(path)
@@ -348,10 +352,10 @@ def upload_session(
         extra_BasicUploadJobConfigs_params = {}
     if codeocean_configs is not None:
         if 'codeocean_configs' in extra_BasicUploadJobConfigs_params:
-            raise ValueError("Cannot pass `codeocean_configs` as a parameter and in `extra_BasicUploadJobConfigs_params`")
+            raise ValueError("Cannot pass `codeocean_configs` as a parameter to `extra_BasicUploadJobConfigs_params`")
         extra_BasicUploadJobConfigs_params['codeocean_configs'] = codeocean_configs
     utils.put_jobs_for_hpc_upload(
-        utils.get_job_models_from_csv(upload.job, **extra_BasicUploadJobConfigs_params),
+        utils.get_job_models_from_csv(upload.job, check_timestamps=timestamps_adjusted, **extra_BasicUploadJobConfigs_params),
         upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
         user_email=hpc_upload_job_email,
         dry_run=dry_run,

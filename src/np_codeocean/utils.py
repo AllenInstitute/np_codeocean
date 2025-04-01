@@ -307,6 +307,7 @@ def write_upload_csv(
 def get_job_models_from_csv(
     path: pathlib.Path,
     ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
+    check_timestamps: bool = True, # default in transfer service is True: checks timestamps have been corrected via flag file
     user_email: str = HPC_UPLOAD_JOB_EMAIL,
     **extra_BasicUploadJobConfigs_params: Any,
 ) -> tuple[aind_data_transfer_models.core.BasicUploadJobConfigs, ...]:
@@ -317,15 +318,18 @@ def get_job_models_from_csv(
     models = []
     for job in jobs.copy():
         modalities = []
+        if 'modalities' in extra_BasicUploadJobConfigs_params:
+            raise ValueError('modalities should not be passed as a parameter in extra_BasicUploadJobConfigs_params')
         for modality_column in (k for k in job.keys() if k.startswith('modality') and ".source" not in k):
             modality_name = job[modality_column]
             modalities.append(
                 aind_data_transfer_models.core.ModalityConfigs(
                     modality=modality_name,
                     source=job[f"{modality_column}.source"],
-                    slurm_settings = ephys_slurm_settings if modality_name == 'ecephys' else None,
-                    ),
-                )
+                    slurm_settings=ephys_slurm_settings if modality_name == 'ecephys' else None,
+                    job_settings={'check_timestamps': False} if modality_name == 'ecephys' and not check_timestamps else None,
+                ),
+            )
         for k in (k for k in job.copy().keys() if k.startswith('modality')):
             del job[k]
         for k, v in job.items():

@@ -183,13 +183,6 @@ def write_metadata_and_upload(
     codeocean_configs = aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs(
         pipeline_monitor_capsule_settings=pipelines,
     )
-    ephys_transformation_config = aind_data_transfer_models.core.ModalityConfigs(
-        modality=aind_data_transfer_models.core.Modality.ECEPHYS,
-        source='ecephys',
-        job_settings={
-            'check_timestamps': False,
-        }
-    )
     
     return np_codeocean.upload_session(
         session_path_or_folder_name,
@@ -201,7 +194,6 @@ def write_metadata_and_upload(
         regenerate_symlinks=regenerate_symlinks,
         adjust_ephys_timestamps=adjust_ephys_timestamps,
         extra_BasicUploadJobConfigs_params={
-            'modalities': [ephys_transformation_config],
             'codeocean_configs': codeocean_configs,
         },
     )
