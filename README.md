@@ -1,5 +1,5 @@
 # np_codeocean
-Tools for uploading and interacting with Mindscope Neuropixels experiments on Code Ocean
+Tools for uploading Mindscope Neuropixels experiments to S3 (for Code Ocean).
 
 Requires running as admin on Windows in order to create remote-to-remote symlinks
 on the Isilon.
@@ -14,7 +14,7 @@ on the Isilon.
     upload <session-id>
     ```
  
-    where session-id is a valid input to `np_session.Session()`: 
+    where session-id is any valid input to `np_session.Session()`, e.g.: 
     - a lims ID (`1333741475`) 
     - a workgroups foldername (`DRPilot_366122_20230101`) 
     - a path to a session folder (    `\\allen\programs\mindscope\workgroups\np-exp\1333741475_719667_20240227`)
