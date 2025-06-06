@@ -16,6 +16,7 @@ import np_session
 import np_tools
 
 import np_codeocean.utils as utils
+import typing_extensions
 
 logger = np_logging.get_logger(__name__)
 
@@ -181,6 +182,49 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     return timestamp
 
 
+def get_upload_csv_for_session_v2(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
+    """
+    >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
+    >>> utils.is_surface_channel_recording(path)
+    True
+    >>> upload = create_codeocean_upload(path)
+    >>> ephys_upload_csv = get_upload_csv_for_session(upload)
+    >>> ephys_upload_csv['modality0.source']
+    '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_690706_20231129_surface_channels/ephys'
+    >>> ephys_upload_csv.keys()
+    dict_keys(['project_name', 'platform', 'subject-id', 'force_cloud_sync', 'modality0', 'modality0.source', 'acq-datetime'])
+    """
+    params = {
+        'project_name': upload.project_name,
+        'platform': upload.platform,
+        'subject-id': str(upload.session.mouse),
+        'force_cloud_sync': upload.force_cloud_sync,
+    }
+    idx = 0
+    for modality_name, attr_name in {
+        'ecephys': 'ephys',
+        'behavior': 'behavior',
+        'behavior-videos': 'behavior_videos',
+    }.items():
+        if getattr(upload, attr_name) is not None:
+            params[f'modality{idx}'] = modality_name
+            params[f'modality{idx}.source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
+            idx += 1
+    
+    if upload.aind_metadata:
+        params['metadata_dir'] = upload.aind_metadata.as_posix()
+            
+    if utils.is_surface_channel_recording(upload.session.npexp_path.as_posix()):
+        date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
+        session_date_time = date.combine(upload.session.date, get_surface_channel_start_time(upload.session).time())
+        params['acq-datetime'] = f'{session_date_time.strftime(utils.ACQ_DATETIME_FORMAT)}'
+    else:
+        params['acq-datetime'] = f'{upload.session.start.strftime(utils.ACQ_DATETIME_FORMAT)}'
+    
+    return params # type: ignore
+
+
+@typing_extensions.deprecated("Creates old, pre-v2 csv: use get_upload_csv_for_session_v2")
 def get_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
@@ -294,6 +338,86 @@ def has_metadata(session: np_session.Session) -> bool:
 def get_aind_metadata_path(upload_root: pathlib.Path) -> pathlib.Path:
     return np_config.normalize_path(upload_root / 'aind_metadata')
 
+
+def upload_session_v2(
+    session_path_or_folder_name: str, 
+    recording_dirs: Iterable[str] | None = None,
+    force: bool = False,
+    dry_run: bool = False,
+    test: bool = False,
+    hpc_upload_job_email: str = utils.HPC_UPLOAD_JOB_EMAIL,
+    regenerate_symlinks: bool = True,
+    adjust_ephys_timestamps: bool = True,
+    codeocean_configs: aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs | None = None,
+    extra_BasicUploadJobConfigs_params: dict[str, Any] | None = None,
+) -> None:
+    codeocean_root = np_session.NPEXP_PATH / ('codeocean-dev' if test else 'codeocean')
+    logger.debug(f'{codeocean_root = }')
+    upload = create_codeocean_upload(
+        str(session_path_or_folder_name),
+        codeocean_root=codeocean_root,
+        recording_dirs=recording_dirs,
+        force_cloud_sync=force
+    )
+    if regenerate_symlinks and upload.root.exists():
+        logger.debug(f'Removing existing {upload.root = }')
+        shutil.rmtree(upload.root.as_posix(), ignore_errors=True)
+    if upload.aind_metadata:
+        create_aind_metadata_symlinks(upload)
+    if upload.ephys:
+        create_ephys_symlinks(upload.session, upload.ephys, recording_dirs=recording_dirs)
+    if upload.behavior:
+        create_behavior_symlinks(upload.session, upload.behavior)
+    if upload.behavior_videos:
+        create_behavior_videos_symlinks(upload.session, upload.behavior_videos)
+    timestamps_adjusted = False
+    if adjust_ephys_timestamps and upload.ephys:
+        if not upload.behavior: # includes surface channel recordings
+            logger.warning(f"Cannot adjust ephys timestamps for {upload.session} - no behavior folder supplied for upload")
+        else:
+            try:
+                utils.write_corrected_ephys_timestamps(ephys_dir=upload.ephys, behavior_dir=upload.behavior)
+            except utils.SyncFileNotFoundError:
+                raise FileNotFoundError(
+                    (
+                        f"Cannot adjust timestamps - no sync file found in {upload.behavior}. "
+                        "If the session doesn't have one, run with "
+                        "`adjust_ephys_timestamps=False` or `--no-sync` flag in CLI"
+                    )
+                ) from None
+            else:
+                timestamps_adjusted = True
+    for path in (upload.ephys, upload.behavior, upload.behavior_videos, upload.aind_metadata):
+        if path is not None and path.exists():
+            utils.convert_symlinks_to_posix(path)
+    csv_content: dict = get_upload_csv_for_session(upload)
+    utils.write_upload_csv(csv_content, upload.job)
+    np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
+    if extra_BasicUploadJobConfigs_params is None:
+        extra_BasicUploadJobConfigs_params = {}
+    if codeocean_configs is not None:
+        if 'codeocean_configs' in extra_BasicUploadJobConfigs_params:
+            raise ValueError("Cannot pass `codeocean_configs` as a parameter to `extra_BasicUploadJobConfigs_params`")
+        extra_BasicUploadJobConfigs_params['codeocean_configs'] = codeocean_configs
+    utils.put_jobs_for_hpc_upload(
+        utils.get_job_models_from_csv(upload.job, check_timestamps=timestamps_adjusted, **extra_BasicUploadJobConfigs_params),
+        upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
+        user_email=hpc_upload_job_email,
+        dry_run=dry_run,
+        save_path=upload.job.with_suffix('.json'),
+    )
+    if not dry_run:
+        logger.info(f'Finished submitting {upload.session} - check progress at {utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE}')
+    
+    if (is_split_recording := 
+        recording_dirs is not None 
+        and len(tuple(recording_dirs)) > 1 
+        and isinstance(recording_dirs, str)
+    ):
+        logger.warning(f"Split recording {upload.session} will need to be sorted manually with `CONCAT=True`")
+
+
+@typing_extensions.deprecated("Uses old, pre-v2 endpoints: use upload_session-v2")
 def upload_session(
     session_path_or_folder_name: str, 
     recording_dirs: Iterable[str] | None = None,
