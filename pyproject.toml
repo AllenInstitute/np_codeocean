@@ -59,6 +59,7 @@ dependencies = [
     "wavpack-numcodecs<0.2",
     "cryptography<43.0",
     "aind-data-transfer-models>=0.15.0",
+    "aind-data-transfer-service>=1.14.0",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
