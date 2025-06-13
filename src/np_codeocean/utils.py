@@ -25,8 +25,11 @@ import polars as pl
 import requests
 from aind_data_transfer_service.models.core import (
     SubmitJobRequestV2,
+    Task,
     UploadJobConfigsV2,
 )
+from aind_data_schema_models.modalities import Modality
+from aind_data_schema_models.platforms import Platform
 
 logger = logging.getLogger(__name__)
 
@@ -324,38 +327,70 @@ def get_v2_job_models_from_csv(
     ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
     check_timestamps: bool = True, # default in transfer service is True: checks timestamps have been corrected via flag file
     user_email: str = HPC_UPLOAD_JOB_EMAIL,
-    **extra_BasicUploadJobConfigs_params: Any,
-) -> tuple[aind_data_transfer_models.core.BasicUploadJobConfigs, ...]:
+    **extra_UploadJobConfigsV2_params: Any,
+) -> tuple[UploadJobConfigsV2, ...]:
+    """Read a csv file and convert it to a tuple of UploadJobConfigsV2 models."""
     jobs = pl.read_csv(path, eol_char='\r').with_columns(
-        pl.col('subject-id').cast(str),
+        pl.col('subject_id').cast(str),
     ).to_dicts()
-    jobs = jobs
     models = []
     for job in jobs.copy():
-        modalities = []
-        if 'modalities' in extra_BasicUploadJobConfigs_params:
+        # Each task in airflow can be configured individually
+        # force_cloud_sync
+        check_s3_folder_exists = Task(skip_task=True) if job.get('force_cloud_sync') else None
+        # metadata_dir
+        gather_preliminary_metadata = (
+            Task(job_settings={"metadata_dir": job.pop("metadata_dir")})
+            if "metadata_dir" in job
+            else None
+        )
+        # modality transformation settings
+        modality_transformation_settings = dict() # {modality_abbr: Task}
+        if 'modalities' in extra_UploadJobConfigsV2_params:
             raise ValueError('modalities should not be passed as a parameter in extra_BasicUploadJobConfigs_params')
-        for modality_column in (k for k in job.keys() if k.startswith('modality') and ".source" not in k):
-            modality_name = job[modality_column]
-            modalities.append(
-                aind_data_transfer_models.core.ModalityConfigs(
-                    modality=modality_name,
-                    source=job[f"{modality_column}.source"],
-                    slurm_settings=ephys_slurm_settings if modality_name == 'ecephys' else None,
-                    job_settings={'check_timestamps': False} if modality_name == 'ecephys' and not check_timestamps else None,
-                ),
+        for modality_column in (k for k in job.keys() if k.startswith('modality') and ".input_source" not in k):
+            modality_abbr = job[modality_column]
+            job_settings = {
+                "input_source": job[f"{modality_column}.input_source"],
+            }
+            if (modality_abbr == Modality.ECEPHYS.abbreviation):
+                slurm_settings = ephys_slurm_settings.model_dump(mode="json", exclude_none=True)
+                if not check_timestamps:
+                    job_settings['check_timestamps'] = False
+            else:
+                slurm_settings = None
+            modality_transformation_settings[modality_abbr] = Task(
+                job_settings=job_settings,
+                image_resources=slurm_settings,
             )
         for k in (k for k in job.copy().keys() if k.startswith('modality')):
             del job[k]
         for k, v in job.items():
             if isinstance(v, str) and '\n' in v:
                 job[k] = v.replace('\n', '')
+        # The job_type contains the default settings for compression and Code Ocean
+        # pipelines.
+        job_type = "default"
+        tasks = {
+            "check_s3_folder_exists": check_s3_folder_exists,
+            "gather_preliminary_metadata": gather_preliminary_metadata,
+            "modality_transformation_settings": modality_transformation_settings,
+        }
+        job.update(
+            {
+                "job_type": job_type,
+                "platform": Platform.from_abbreviation(job["platform"]),
+                "modalities": [
+                    Modality.from_abbreviation(m) for m in modality_transformation_settings.keys()
+                ],
+                "tasks": {k: v for k, v in tasks.items() if v is not None},
+                "user_email": user_email,
+            }
+        )
         models.append(
-            aind_data_transfer_models.core.BasicUploadJobConfigs(
-                **{k.replace('-', '_'): v for k,v in job.items()},
-                modalities=modalities,
-                user_email=user_email,
-                **extra_BasicUploadJobConfigs_params,
+            UploadJobConfigsV2(
+                **job,
+                **extra_UploadJobConfigsV2_params,
             )
         )
     return tuple(models)
