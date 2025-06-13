@@ -17,6 +17,7 @@ import np_tools
 
 import np_codeocean.utils as utils
 import typing_extensions
+from aind_data_schema_models.modalities import Modality
 
 logger = np_logging.get_logger(__name__)
 
@@ -182,33 +183,33 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     return timestamp
 
 
-def get_upload_csv_for_session_v2(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
+def get_v2_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
     >>> utils.is_surface_channel_recording(path)
     True
     >>> upload = create_codeocean_upload(path)
-    >>> ephys_upload_csv = get_upload_csv_for_session(upload)
-    >>> ephys_upload_csv['modality0.source']
+    >>> ephys_upload_csv = get_v2_upload_csv_for_session(upload)
+    >>> ephys_upload_csv['modality0.input_source']
     '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_690706_20231129_surface_channels/ephys'
     >>> ephys_upload_csv.keys()
-    dict_keys(['project_name', 'platform', 'subject-id', 'force_cloud_sync', 'modality0', 'modality0.source', 'acq-datetime'])
+    dict_keys(['project_name', 'platform', 'subject_id', 'force_cloud_sync', 'modality0', 'modality0.input_source', 'acq_datetime'])
     """
     params = {
         'project_name': upload.project_name,
         'platform': upload.platform,
-        'subject-id': str(upload.session.mouse),
+        'subject_id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
     }
     idx = 0
-    for modality_name, attr_name in {
-        'ecephys': 'ephys',
-        'behavior': 'behavior',
-        'behavior-videos': 'behavior_videos',
+    for modality_abbr, attr_name in {
+        Modality.ECEPHYS.abbreviation: 'ephys',
+        Modality.BEHAVIOR.abbreviation: 'behavior',
+        Modality.BEHAVIOR_VIDEOS.abbreviation: 'behavior_videos',
     }.items():
         if getattr(upload, attr_name) is not None:
-            params[f'modality{idx}'] = modality_name
-            params[f'modality{idx}.source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
+            params[f'modality{idx}'] = modality_abbr
+            params[f'modality{idx}.input_source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
             idx += 1
     
     if upload.aind_metadata:
@@ -217,9 +218,9 @@ def get_upload_csv_for_session_v2(upload: CodeOceanUpload) -> dict[str, str | in
     if utils.is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
         session_date_time = date.combine(upload.session.date, get_surface_channel_start_time(upload.session).time())
-        params['acq-datetime'] = f'{session_date_time.strftime(utils.ACQ_DATETIME_FORMAT)}'
+        params['acq_datetime'] = f'{session_date_time.strftime(utils.ACQ_DATETIME_FORMAT)}'
     else:
-        params['acq-datetime'] = f'{upload.session.start.strftime(utils.ACQ_DATETIME_FORMAT)}'
+        params['acq_datetime'] = f'{upload.session.start.strftime(utils.ACQ_DATETIME_FORMAT)}'
     
     return params # type: ignore
 
