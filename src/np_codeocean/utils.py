@@ -296,19 +296,8 @@ def is_session_in_hpc_queue(subject: int | str, acq_datetime: str | datetime.dat
     jobs_response.raise_for_status()
     return partial_session_id in jobs_response.content.decode()
 
-def is_v2_job_in_hpc_upload_queue(
-    job: UploadJobConfigsV2, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE
-) -> bool:
-    return is_session_in_hpc_queue(
-        subject=job.subject_id,
-        acq_datetime=job.acq_datetime,
-        platform=job.platform.abbreviation,
-        upload_service_url=upload_service_url,
-    )
-
-@typing_extensions.deprecated("Use is_v2_job_in_hpc_upload_queue with a UploadJobConfigsV2 model instead")
-def is_job_in_hpc_upload_queue(job: aind_data_transfer_models.core.BasicUploadJobConfigs, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
-    return is_session_in_hpc_queue(job.subject_id, job.acq_datetime, job.platform, upload_service_url)
+def is_job_in_hpc_upload_queue(job: UploadJobConfigsV2, upload_service_url: str = AIND_DATA_TRANSFER_SERVICE) -> bool:
+    return is_session_in_hpc_queue(job.subject_id, job.acq_datetime, job.platform.abbreviation, upload_service_url)
 
 def write_upload_csv(
     content: dict[str, Any],
@@ -388,49 +377,7 @@ def create_upload_job_configs_v2(
         **extra_UploadJobConfigsV2_params,
     )
 
-@typing_extensions.deprecated("Assumes old, pre-v2 csv: use create_upload_job_configs_v2")
-def get_job_models_from_csv(
-    path: pathlib.Path,
-    ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
-    check_timestamps: bool = True, # default in transfer service is True: checks timestamps have been corrected via flag file
-    user_email: str = HPC_UPLOAD_JOB_EMAIL,
-    **extra_BasicUploadJobConfigs_params: Any,
-) -> tuple[aind_data_transfer_models.core.BasicUploadJobConfigs, ...]:
-    jobs = pl.read_csv(path, eol_char='\r').with_columns(
-        pl.col('subject-id').cast(str),
-    ).to_dicts()
-    jobs = jobs
-    models = []
-    for job in jobs.copy():
-        modalities = []
-        if 'modalities' in extra_BasicUploadJobConfigs_params:
-            raise ValueError('modalities should not be passed as a parameter in extra_BasicUploadJobConfigs_params')
-        for modality_column in (k for k in job.keys() if k.startswith('modality') and ".source" not in k):
-            modality_name = job[modality_column]
-            modalities.append(
-                aind_data_transfer_models.core.ModalityConfigs(
-                    modality=modality_name,
-                    source=job[f"{modality_column}.source"],
-                    slurm_settings=ephys_slurm_settings if modality_name == 'ecephys' else None,
-                    job_settings={'check_timestamps': False} if modality_name == 'ecephys' and not check_timestamps else None,
-                ),
-            )
-        for k in (k for k in job.copy().keys() if k.startswith('modality')):
-            del job[k]
-        for k, v in job.items():
-            if isinstance(v, str) and '\n' in v:
-                job[k] = v.replace('\n', '')
-        models.append(
-            aind_data_transfer_models.core.BasicUploadJobConfigs(
-                **{k.replace('-', '_'): v for k,v in job.items()},
-                modalities=modalities,
-                user_email=user_email,
-                **extra_BasicUploadJobConfigs_params,
-            )
-        )
-    return tuple(models)
-
-def put_v2_jobs_for_hpc_upload(
+def put_jobs_for_hpc_upload(
     upload_jobs: UploadJobConfigsV2 | Iterable[UploadJobConfigsV2],
     upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,
     user_email: str = HPC_UPLOAD_JOB_EMAIL,
@@ -452,7 +399,7 @@ def put_v2_jobs_for_hpc_upload(
     if isinstance(upload_jobs, UploadJobConfigsV2):
         upload_jobs = (upload_jobs, )
     submit_request = SubmitJobRequestV2(
-        upload_jobs=[job for job in upload_jobs if not is_v2_job_in_hpc_upload_queue(job)],
+        upload_jobs=[job for job in upload_jobs if not is_job_in_hpc_upload_queue(job)],
         user_email=user_email,
         email_notification_types=email_notification_types,
         **extra_model_kwargs,
@@ -479,50 +426,7 @@ def put_v2_jobs_for_hpc_upload(
     logger.info(f"Submitted {len(upload_jobs)} upload job(s) to {upload_service_url}")
     post_json_response.raise_for_status()
 
-@typing_extensions.deprecated("Uses old, pre-v2 endpoints: use put_v2_jobs_for_hpc_upload in combination with create_upload_job_configs_v2")
-def put_jobs_for_hpc_upload(
-    upload_jobs: aind_data_transfer_models.core.BasicUploadJobConfigs | Iterable[aind_data_transfer_models.core.BasicUploadJobConfigs],
-    upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,
-    user_email: str = HPC_UPLOAD_JOB_EMAIL,
-    email_notification_types: Iterable[str | aind_data_transfer_models.core.EmailNotificationType] = ('fail',),
-    dry_run: bool = False,
-    save_path: pathlib.Path | None = None,
-    **extra_model_kwargs: Any,
-) -> None:
-    """Submit one or more jobs to the aind-data-transfer-service, for
-    upload to S3 on the hpc.
-    
-    - accepts one or more aind_data_schema BasicUploadJobConfigs models
-    - assembles a SubmitJobRequest model
-    - excludes jobs for sessions that are already in the upload queue
-    - accepts additional parameters for SubmitHpcJobRequest as kwargs
-    - submits json via http request
-    - optionally saves the json file as a record
-    """
-    if not isinstance(upload_jobs, Iterable):
-        upload_jobs = (upload_jobs, )
-    submit_request = aind_data_transfer_models.core.SubmitJobRequest(
-        upload_jobs=[job for job in upload_jobs if not is_job_in_hpc_upload_queue(job)],
-        user_email=user_email,
-        email_notification_types=email_notification_types,
-        **extra_model_kwargs,
-    )
-    post_request_content = json.loads(
-        submit_request.model_dump_json(round_trip=True, exclude_none=True)
-    ) #! round_trip required for s3 bucket suffix to work correctly
-    if save_path:
-        save_path.write_text(submit_request.model_dump_json(round_trip=True, indent=4), errors='ignore')
-    if dry_run:
-        logger.warning(f'Dry run: not submitting {len(upload_jobs)} upload job(s) to {upload_service_url}')
-        return
-    post_json_response: requests.Response = requests.post(
-        url=f"{upload_service_url}/api/v1/submit_jobs",
-        json=post_request_content,
-    )
-    logger.info(f"Submitted {len(upload_jobs)} upload job(s) to {upload_service_url}")
-    post_json_response.raise_for_status()
-
-@typing_extensions.deprecated("Uses old, pre-v1 endpoints: use put_v2_jobs_for_hpc_upload in combination with create_upload_job_configs_v2")
+@typing_extensions.deprecated("Uses old, pre-v1 endpoints: use put_jobs_for_hpc_upload in combination with create_upload_job_configs_v2")
 def put_csv_for_hpc_upload(
     csv_path: pathlib.Path,
     upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,

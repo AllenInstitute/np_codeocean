@@ -184,7 +184,7 @@ def write_metadata_and_upload(
         pipeline_monitor_capsule_settings=pipelines,
     )
     
-    return np_codeocean.upload_session_v2(
+    return np_codeocean.upload_session(
         session_path_or_folder_name,
         recording_dirs=recording_dirs,
         force=force,
