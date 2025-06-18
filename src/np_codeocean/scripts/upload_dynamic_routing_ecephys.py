@@ -184,7 +184,7 @@ def write_metadata_and_upload(
         pipeline_monitor_capsule_settings=pipelines,
     )
     
-    return np_codeocean.upload_session(
+    return np_codeocean.upload_session_v2(
         session_path_or_folder_name,
         recording_dirs=recording_dirs,
         force=force,
@@ -193,7 +193,7 @@ def write_metadata_and_upload(
         hpc_upload_job_email=hpc_upload_job_email,
         regenerate_symlinks=regenerate_symlinks,
         adjust_ephys_timestamps=adjust_ephys_timestamps,
-        extra_BasicUploadJobConfigs_params={
+        extra_UploadJobConfigsV2_params={
             'codeocean_configs': codeocean_configs,
         },
     )
