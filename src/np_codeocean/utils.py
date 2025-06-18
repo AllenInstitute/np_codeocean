@@ -357,8 +357,13 @@ def create_upload_job_configs_v2(
             job_settings=job_settings,
             image_resources=slurm_settings,
         )
+    # The job_type contains the default settings for compression and Code Ocean pipelines.
+    # For now, use "ecephys" job_type to compress ecephys data by default.
+    if job_type == "default" and Modality.ECEPHYS.abbreviation in modality_transformation_settings_tasks:
+        job_type = "ecephys"
     # Code Ocean pipeline settings
-    # You can specify up to one pipeline conf per modality
+    # You can manually specify up to one pipeline conf per modality.
+    # These will override any pipelines defined by the job_type.
     # In the future, these can be stored in AWS param store as part of a "job_type"
     codeocean_pipeline_settings_tasks = dict() # {modality_abbr: Task}
     if codeocean_pipeline_settings is not None:
