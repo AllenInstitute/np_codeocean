@@ -116,7 +116,7 @@ wheels = [
 
 [[package]]
 name = "aind-data-transfer-service"
-version = "1.14.0"
+version = "1.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aind-data-schema-models" },
@@ -124,9 +124,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/22/ae/1aadf237726ac401ea8db334d7ad060b1e8736f860df0a9bee6ce5e31e81/aind_data_transfer_service-1.14.0.tar.gz", hash = "sha256:6bc36cde8876f4bb10a79bc9b8397f6360c7da2c7a27b363bf1d9ed9f7fa4b4b", size = 216418 }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/62/0a88002ddc59a7009c03bee3b2b1b5281ea48dfe85806f370468c7698ecf/aind_data_transfer_service-1.15.0.tar.gz", hash = "sha256:9b9ccac8fb7c401a85da318e5e1712c0a2eb5f8faf1cb347d9cc1dad95117c98", size = 219527 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/67/cae2bc324fbd77e6852effd3f0ec74f26ae98a1d1926b163f4c74a86787a/aind_data_transfer_service-1.14.0-py3-none-any.whl", hash = "sha256:1ad574302b51353f249f04f09cb8cf0045caee528b7c637ded71c7ccfc9731f1", size = 45367 },
+    { url = "https://files.pythonhosted.org/packages/75/e1/d19d8f2bc54a538da93c1cbb798102cb8ae23954596ea6e2a2c1803034a4/aind_data_transfer_service-1.15.0-py3-none-any.whl", hash = "sha256:92bdf8bdc1a852e039071b9d85b7a2212d9bc3aeef2e74b9539eab765afae655", size = 47073 },
 ]
 
 [[package]]
@@ -155,6 +155,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ca/6d/a3c61ea41e6b79f0f2369599166fd6a6c9fc57283bf2b54821ee69377e71/aind_session-0.3.13.tar.gz", hash = "sha256:3d41465c19fe6c5f0f0c51ce7575a02031adad674f252915d365635c35ed5b66", size = 41640 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/93/fd/27f35db444fa4642d4e052c5630818f6d423a58c921a0e8a1684e3751895/aind_session-0.3.13-py3-none-any.whl", hash = "sha256:6323140080157ec44039d1289e037ab1edfbb69eb9a446258af8c8237d852ecc", size = 44901 },
+]
+
+[[package]]
+name = "aind-slurm-rest"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dateutil" },
+    { name = "typing-extensions" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/32/7c/83bba0ee13f01c17067d5ec2d12bec8a2cf0f64b2d1bbfb9a7850e2d5771/aind_slurm_rest-0.2.0.tar.gz", hash = "sha256:d1a45e8c3e6c2e08b71830997675ba541fe145d0121f1ac70eecccc5792ab7e3", size = 148349 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/cb/afc40da5e56d420f1c0a59f561642bda77f6cee7383f04762bb4f359b5c0/aind_slurm_rest-0.2.0-py3-none-any.whl", hash = "sha256:c80b2ef3746d3532619a0aff00a42da6f08fe1462c214d00dd281ce91acdea1c", size = 358939 },
 ]
 
 [[package]]
@@ -1993,6 +2008,7 @@ version = "0.3.3"
 source = { editable = "." }
 dependencies = [
     { name = "aind-data-transfer-service" },
+    { name = "aind-slurm-rest" },
     { name = "cryptography" },
     { name = "np-config" },
     { name = "np-session" },
@@ -2020,8 +2036,9 @@ dynamicrouting = [
 [package.metadata]
 requires-dist = [
     { name = "aind-codeocean-pipeline-monitor", extras = ["full"], marker = "extra == 'dynamicrouting'", specifier = ">=0.5.0" },
-    { name = "aind-data-transfer-service", specifier = ">=1.14.0" },
+    { name = "aind-data-transfer-service", specifier = ">=1.15.0" },
     { name = "aind-metadata-mapper", marker = "extra == 'dynamicrouting'", specifier = "==0.18.2" },
+    { name = "aind-slurm-rest", specifier = ">=0.1.0,<0.2.1" },
     { name = "bump", marker = "extra == 'dev'", specifier = ">=1.3.2" },
     { name = "cryptography", specifier = "<43.0" },
     { name = "np-config", specifier = ">=0.4.33" },
