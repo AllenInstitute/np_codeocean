@@ -13,7 +13,6 @@ import re
 from typing import Any, Generator, Iterable, Literal
 import typing_extensions
 
-import aind_data_transfer_models.core
 import aind_slurm_rest.models
 import np_config
 import np_tools
@@ -23,6 +22,7 @@ import npc_session
 import numpy as np
 import polars as pl
 import requests
+from aind_codeocean_pipeline_monitor.models import PipelineMonitorSettings
 from aind_data_transfer_service.models.core import (
     SubmitJobRequestV2,
     Task,
@@ -320,6 +320,7 @@ def create_upload_job_configs_v2(
     acq_datetime: datetime.datetime,
     job_type: str = "default",
     metadata_dir: str | None = None,
+    codeocean_pipeline_settings: dict[str, PipelineMonitorSettings] | None = None,
     ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
     check_timestamps: bool = True, # default in transfer service is True: checks timestamps have been corrected via flag file
     user_email: str = HPC_UPLOAD_JOB_EMAIL,
@@ -331,15 +332,15 @@ def create_upload_job_configs_v2(
     """
     # Each task in airflow can be configured individually
     # force_cloud_sync
-    check_s3_folder_exists = Task(skip_task=True) if force_cloud_sync else None
+    check_s3_folder_exists_task = Task(skip_task=True) if force_cloud_sync else None
     # metadata_dir
-    gather_preliminary_metadata = (
+    gather_preliminary_metadata_task = (
         Task(job_settings={"metadata_dir": metadata_dir})
         if metadata_dir is not None
         else None
     )
     # modality transformation settings
-    modality_transformation_settings = dict() # {modality_abbr: Task}
+    modality_transformation_settings_tasks = dict() # {modality_abbr: Task}
     if 'modalities' in extra_UploadJobConfigsV2_params:
         raise ValueError('modalities should not be passed as a parameter in extra_BasicUploadJobConfigs_params')
     for modality_abbr, input_source in modalities.items():
@@ -352,16 +353,25 @@ def create_upload_job_configs_v2(
                 job_settings['check_timestamps'] = False
         else:
             slurm_settings = None
-        modality_transformation_settings[modality_abbr] = Task(
+        modality_transformation_settings_tasks[modality_abbr] = Task(
             job_settings=job_settings,
             image_resources=slurm_settings,
         )
-    # The job_type contains the default settings for compression and Code Ocean
-    # pipelines.
+    # Code Ocean pipeline settings
+    # You can specify up to one pipeline conf per modality
+    # In the future, these can be stored in AWS param store as part of a "job_type"
+    codeocean_pipeline_settings_tasks = dict() # {modality_abbr: Task}
+    if codeocean_pipeline_settings is not None:
+        codeocean_pipeline_settings_tasks = {
+            k: Task(
+                job_settings={ "pipeline_monitor_settings": v.model_dump(mode="json", exclude_none=True)})
+                for k, v in codeocean_pipeline_settings.items()
+        }
     tasks = {
-        "check_s3_folder_exists": check_s3_folder_exists,
-        "gather_preliminary_metadata": gather_preliminary_metadata,
-        "modality_transformation_settings": modality_transformation_settings,
+        "check_s3_folder_exists": check_s3_folder_exists_task,
+        "gather_preliminary_metadata": gather_preliminary_metadata_task,
+        "modality_transformation_settings": modality_transformation_settings_tasks,
+        "codeocean_pipeline_settings": codeocean_pipeline_settings_tasks,
     }
     return UploadJobConfigsV2(
         job_type=job_type,
@@ -370,7 +380,7 @@ def create_upload_job_configs_v2(
         subject_id=subject_id,
         acq_datetime=acq_datetime,
         modalities=[
-            Modality.from_abbreviation(m) for m in modality_transformation_settings.keys()
+            Modality.from_abbreviation(m) for m in modality_transformation_settings_tasks.keys()
         ],
         tasks={k: v for k, v in tasks.items() if v is not None},
         user_email=user_email,
