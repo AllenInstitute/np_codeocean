@@ -265,6 +265,7 @@ def upload(
             metadata_dir=np_config.normalize_path(metadata_dir).as_posix(),
             force_cloud_sync=force_cloud_sync,
             user_email=hpc_upload_job_email,
+            test=test,
         ),
         upload_service_url=upload_service_url,
         user_email=hpc_upload_job_email,

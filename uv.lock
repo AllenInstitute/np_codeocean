@@ -158,8 +158,8 @@ wheels = [
 ]
 
 [[package]]
-name = "aind-slurm-rest"
-version = "0.2.0"
+name = "aind-slurm-rest-v2"
+version = "0.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
@@ -167,9 +167,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/32/7c/83bba0ee13f01c17067d5ec2d12bec8a2cf0f64b2d1bbfb9a7850e2d5771/aind_slurm_rest-0.2.0.tar.gz", hash = "sha256:d1a45e8c3e6c2e08b71830997675ba541fe145d0121f1ac70eecccc5792ab7e3", size = 148349 }
+sdist = { url = "https://files.pythonhosted.org/packages/5f/81/e21e8dc98d597d945b25249d732e2dc2dcf235c868b67cf4df585901c776/aind_slurm_rest_v2-0.0.3.tar.gz", hash = "sha256:e11645c2e5ce4f78a7ec1dbe462caf10a8bd1a6efe560af21935e98eea119e3f", size = 430840 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/cb/afc40da5e56d420f1c0a59f561642bda77f6cee7383f04762bb4f359b5c0/aind_slurm_rest-0.2.0-py3-none-any.whl", hash = "sha256:c80b2ef3746d3532619a0aff00a42da6f08fe1462c214d00dd281ce91acdea1c", size = 358939 },
+    { url = "https://files.pythonhosted.org/packages/d0/3e/660183e9abbaf4704014ec942ec88548719e333fe14597b87bb8d19e4aee/aind_slurm_rest_v2-0.0.3-py3-none-any.whl", hash = "sha256:95e1c9372af440b70f4e50c9651a26659aa3ab6912f94ed43faa327a07836ac5", size = 1128354 },
 ]
 
 [[package]]
@@ -2008,7 +2008,7 @@ version = "0.3.3"
 source = { editable = "." }
 dependencies = [
     { name = "aind-data-transfer-service" },
-    { name = "aind-slurm-rest" },
+    { name = "aind-slurm-rest-v2" },
     { name = "cryptography" },
     { name = "np-config" },
     { name = "np-session" },
@@ -2038,7 +2038,7 @@ requires-dist = [
     { name = "aind-codeocean-pipeline-monitor", extras = ["full"], marker = "extra == 'dynamicrouting'", specifier = ">=0.5.0" },
     { name = "aind-data-transfer-service", specifier = ">=1.15.0" },
     { name = "aind-metadata-mapper", marker = "extra == 'dynamicrouting'", specifier = "==0.18.2" },
-    { name = "aind-slurm-rest", specifier = ">=0.1.0,<0.2.1" },
+    { name = "aind-slurm-rest-v2", specifier = "==0.0.3" },
     { name = "bump", marker = "extra == 'dev'", specifier = ">=1.3.2" },
     { name = "cryptography", specifier = "<43.0" },
     { name = "np-config", specifier = ">=0.4.33" },

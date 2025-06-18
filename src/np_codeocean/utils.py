@@ -13,7 +13,6 @@ import re
 from typing import Any, Generator, Iterable, Literal
 import typing_extensions
 
-import aind_slurm_rest.models
 import np_config
 import np_tools
 import npc_ephys
@@ -30,6 +29,9 @@ from aind_data_transfer_service.models.core import (
 )
 from aind_data_schema_models.modalities import Modality
 from aind_data_schema_models.platforms import Platform
+from aind_slurm_rest_v2.models.v0040_job_desc_msg import (
+    V0040JobDescMsg,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +44,50 @@ ACQ_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 AIND_METADATA_NAMES: tuple[str, ...] = ('session', 'data_description', 'procedures', 'processing', 'rig', 'subject')
 
-DEFAULT_EPHYS_SLURM_SETTINGS = aind_slurm_rest.models.V0036JobProperties(
-    environment=dict(),  # JonY: set this to an empty dictionary
-    time_limit = 15 * 60,
-    minimum_cpus_per_node=12, # 6 probes * (lfp + ap)
-)
+# In the future, default slurm settings can be stored in a job_type in AWS Param Store
+# see http://aind-data-transfer-service/job_params for current job_types
+_DEFAULT_EPHYS_SLURM_SETTINGS_JSON = {
+    "memory_per_cpu": {
+        "set": True,
+        "number": 8000
+    },
+    "minimum_cpus_per_node": 12, # 6 probes * (lfp + ap)
+    "partition": "aind",
+    "tasks": 1,
+    "time_limit": {
+        "set": True,
+        "number": 15 * 60
+    },
+    "environment": [
+        "PATH=/bin:/usr/bin/:/usr/local/bin/",
+        "LD_LIBRARY_PATH=/lib/:/lib64/:/usr/local/lib"
+    ],
+    "maximum_nodes": 1,
+    "minimum_nodes": 1,
+    "current_working_directory": "."
+}
 """Increased timelimit and cpus for running ephys compression on the hpc"""
+DEFAULT_EPHYS_SLURM_SETTINGS = V0040JobDescMsg.model_validate(
+    {
+        **_DEFAULT_EPHYS_SLURM_SETTINGS_JSON,
+        "qos": "production",
+        "standard_error": "/allen/aind/scratch/svc_aind_airflow/prod/logs/%x_%j_error.out",
+        "standard_output": "/allen/aind/scratch/svc_aind_airflow/prod/logs/%x_%j.out",
+    }
+)
+DEFAULT_EPHYS_SLURM_SETTINGS_DEV = V0040JobDescMsg.model_validate(
+    {
+        **_DEFAULT_EPHYS_SLURM_SETTINGS_JSON,
+        "qos": "dev",
+        "standard_error": "/allen/aind/scratch/svc_aind_airflow/dev/logs/%x_%j_error.out",
+        "standard_output": "/allen/aind/scratch/svc_aind_airflow/dev/logs/%x_%j.out",
+    }
+)
+DEFAULT_EPHYS_IMAGE = {
+    "image": "ghcr.io/allenneuraldynamics/aind-ephys-transformation",
+    "image_version": "0.2.1",
+    "command_script": "#!/bin/bash \nsingularity exec --cleanenv docker://%IMAGE:%IMAGE_VERSION python -m aind_ephys_transformation.ephys_job --job-settings ' %JOB_SETTINGS '",
+}
 
 class SyncFileNotFoundError(FileNotFoundError):
     pass
@@ -318,12 +358,12 @@ def create_upload_job_configs_v2(
     force_cloud_sync: bool,
     modalities: dict[str, str],
     acq_datetime: datetime.datetime,
+    user_email: str = HPC_UPLOAD_JOB_EMAIL,
     job_type: str = "default",
     metadata_dir: str | None = None,
     codeocean_pipeline_settings: dict[str, PipelineMonitorSettings] | None = None,
-    ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
     check_timestamps: bool = True, # default in transfer service is True: checks timestamps have been corrected via flag file
-    user_email: str = HPC_UPLOAD_JOB_EMAIL,
+    test: bool = False,
     **extra_UploadJobConfigsV2_params: Any,
 ) -> UploadJobConfigsV2:
     """Create a UploadJobConfigsV2 model. Modalities should be provided in format
@@ -347,20 +387,24 @@ def create_upload_job_configs_v2(
         job_settings: dict[str, Any] = {
             "input_source": input_source,
         }
+        # Ecephys compression settings are currently hardcoded
+        # In the future, these can be stored in AWS param store as part of a "job_type"
         if (modality_abbr == Modality.ECEPHYS.abbreviation):
-            slurm_settings = ephys_slurm_settings.model_dump(mode="json", exclude_none=True)
             if not check_timestamps:
                 job_settings['check_timestamps'] = False
+            image_resources = (DEFAULT_EPHYS_SLURM_SETTINGS_DEV if test else DEFAULT_EPHYS_SLURM_SETTINGS).model_dump(mode="json", exclude_none=True)
+            modality_task = Task(
+                skip_task=False,
+                job_settings=job_settings,
+                image_resources=image_resources,
+                **DEFAULT_EPHYS_IMAGE,
+            )
         else:
-            slurm_settings = None
-        modality_transformation_settings_tasks[modality_abbr] = Task(
-            job_settings=job_settings,
-            image_resources=slurm_settings,
-        )
-    # The job_type contains the default settings for compression and Code Ocean pipelines.
-    # For now, use "ecephys" job_type to compress ecephys data by default.
-    if job_type == "default" and Modality.ECEPHYS.abbreviation in modality_transformation_settings_tasks:
-        job_type = "ecephys"
+            modality_task = Task(
+                job_settings=job_settings,
+            )
+        modality_transformation_settings_tasks[modality_abbr] = modality_task
+
     # Code Ocean pipeline settings
     # You can manually specify up to one pipeline conf per modality.
     # These will override any pipelines defined by the job_type.
