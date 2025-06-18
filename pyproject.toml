@@ -58,7 +58,6 @@ dependencies = [
     "npc-ephys>=0.1.32",
     "wavpack-numcodecs<0.2",
     "cryptography<43.0",
-    "aind-data-transfer-models>=0.15.0",
     "aind-data-transfer-service>=1.14.0",
 ]
 requires-python = ">=3.10"
@@ -93,7 +92,6 @@ dev = [
 dynamicrouting = [
     "npc-lims>=0.1.154",
     "npc-sessions>=0.0.253",
-    "aind-data-transfer-models>=0.13.1",
     "aind-codeocean-pipeline-monitor[full]>=0.5.0",
     "aind-metadata-mapper==0.18.2",
 ]
