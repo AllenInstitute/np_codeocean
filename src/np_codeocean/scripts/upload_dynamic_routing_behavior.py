@@ -230,22 +230,7 @@ def upload(
         behavior_modality_dir / task_source.name,
     )
 
-    upload_job_contents = {
-        'subject-id': extracted_subject_id,
-        'acq-datetime': npc_session.extract_isoformat_datetime(task_source.stem),
-        'project_name': 'Dynamic Routing',
-        'platform': 'behavior',
-        'modality0': 'behavior',
-        'metadata_dir': np_config.normalize_path(metadata_dir).as_posix(),
-        'modality0.source': np_config.normalize_path(
-            behavior_modality_dir).as_posix(),
-        'force_cloud_sync': force_cloud_sync,
-    }
-
-    upload_job_path = np_codeocean.write_upload_csv(
-        upload_job_contents,
-        np_config.normalize_path(session_dir / 'upload.csv'),
-    )
+    upload_job_path = np_config.normalize_path(session_dir / 'upload.json')
 
     upload_service_url = np_codeocean.utils.DEV_SERVICE \
         if test else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
@@ -265,15 +250,26 @@ def upload(
 
     logger.info(f"Submitting {session_dir.name} to {upload_service_url}")
     
-    np_codeocean.utils.put_jobs_for_hpc_upload(
-        upload_jobs=np_codeocean.utils.get_job_models_from_csv(
-            upload_job_path,
+    acq_datetime_str = npc_session.extract_isoformat_datetime(task_source.stem)
+    if not acq_datetime_str:
+        raise SessionNotUploadedError(f"Could not extract acquisition datetime from {task_source.stem}")
+    np_codeocean.utils.put_v2_jobs_for_hpc_upload(
+        upload_jobs=np_codeocean.utils.create_upload_job_configs_v2(
+            subject_id=str(extracted_subject_id),
+            acq_datetime=datetime.datetime.fromisoformat(acq_datetime_str),
+            project_name='Dynamic Routing',
+            platform='behavior',
+            modalities={
+                'behavior': np_config.normalize_path(behavior_modality_dir).as_posix()
+            },
+            metadata_dir=np_config.normalize_path(metadata_dir).as_posix(),
+            force_cloud_sync=force_cloud_sync,
             user_email=hpc_upload_job_email,
         ),
         upload_service_url=upload_service_url,
         user_email=hpc_upload_job_email,
         dry_run=dry_run,
-        save_path=upload_job_path.with_suffix('.json'),
+        save_path=upload_job_path,
     )
             
 def upload_batch(

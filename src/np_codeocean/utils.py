@@ -322,80 +322,73 @@ def write_upload_csv(
         w.writerow(content.values())
     return output_path
 
-def get_v2_job_models_from_csv(
-    path: pathlib.Path,
+def create_upload_job_configs_v2(
+    project_name: str,
+    platform: str,
+    subject_id: str,
+    force_cloud_sync: bool,
+    modalities: dict[str, str],
+    acq_datetime: datetime.datetime,
+    job_type: str = "default",
+    metadata_dir: str | None = None,
     ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
     check_timestamps: bool = True, # default in transfer service is True: checks timestamps have been corrected via flag file
     user_email: str = HPC_UPLOAD_JOB_EMAIL,
     **extra_UploadJobConfigsV2_params: Any,
-) -> tuple[UploadJobConfigsV2, ...]:
-    """Read a csv file and convert it to a tuple of UploadJobConfigsV2 models."""
-    jobs = pl.read_csv(path, eol_char='\r').with_columns(
-        pl.col('subject_id').cast(str),
-    ).to_dicts()
-    models = []
-    for job in jobs.copy():
-        # Each task in airflow can be configured individually
-        # force_cloud_sync
-        check_s3_folder_exists = Task(skip_task=True) if job.get('force_cloud_sync') else None
-        # metadata_dir
-        gather_preliminary_metadata = (
-            Task(job_settings={"metadata_dir": job.pop("metadata_dir")})
-            if "metadata_dir" in job
-            else None
-        )
-        # modality transformation settings
-        modality_transformation_settings = dict() # {modality_abbr: Task}
-        if 'modalities' in extra_UploadJobConfigsV2_params:
-            raise ValueError('modalities should not be passed as a parameter in extra_BasicUploadJobConfigs_params')
-        for modality_column in (k for k in job.keys() if k.startswith('modality') and ".input_source" not in k):
-            modality_abbr = job[modality_column]
-            job_settings = {
-                "input_source": job[f"{modality_column}.input_source"],
-            }
-            if (modality_abbr == Modality.ECEPHYS.abbreviation):
-                slurm_settings = ephys_slurm_settings.model_dump(mode="json", exclude_none=True)
-                if not check_timestamps:
-                    job_settings['check_timestamps'] = False
-            else:
-                slurm_settings = None
-            modality_transformation_settings[modality_abbr] = Task(
-                job_settings=job_settings,
-                image_resources=slurm_settings,
-            )
-        for k in (k for k in job.copy().keys() if k.startswith('modality')):
-            del job[k]
-        for k, v in job.items():
-            if isinstance(v, str) and '\n' in v:
-                job[k] = v.replace('\n', '')
-        # The job_type contains the default settings for compression and Code Ocean
-        # pipelines.
-        job_type = "default"
-        tasks = {
-            "check_s3_folder_exists": check_s3_folder_exists,
-            "gather_preliminary_metadata": gather_preliminary_metadata,
-            "modality_transformation_settings": modality_transformation_settings,
+) -> UploadJobConfigsV2:
+    """Create a UploadJobConfigsV2 model. Modalities should be provided in format
+    {modality_abbr: input_source}. job_type refers to the default or custom
+    presets used for compression and Code Ocean pipelines.
+    """
+    # Each task in airflow can be configured individually
+    # force_cloud_sync
+    check_s3_folder_exists = Task(skip_task=True) if force_cloud_sync else None
+    # metadata_dir
+    gather_preliminary_metadata = (
+        Task(job_settings={"metadata_dir": metadata_dir})
+        if metadata_dir is not None
+        else None
+    )
+    # modality transformation settings
+    modality_transformation_settings = dict() # {modality_abbr: Task}
+    if 'modalities' in extra_UploadJobConfigsV2_params:
+        raise ValueError('modalities should not be passed as a parameter in extra_BasicUploadJobConfigs_params')
+    for modality_abbr, input_source in modalities.items():
+        job_settings: dict[str, Any] = {
+            "input_source": input_source,
         }
-        job.update(
-            {
-                "job_type": job_type,
-                "platform": Platform.from_abbreviation(job["platform"]),
-                "modalities": [
-                    Modality.from_abbreviation(m) for m in modality_transformation_settings.keys()
-                ],
-                "tasks": {k: v for k, v in tasks.items() if v is not None},
-                "user_email": user_email,
-            }
+        if (modality_abbr == Modality.ECEPHYS.abbreviation):
+            slurm_settings = ephys_slurm_settings.model_dump(mode="json", exclude_none=True)
+            if not check_timestamps:
+                job_settings['check_timestamps'] = False
+        else:
+            slurm_settings = None
+        modality_transformation_settings[modality_abbr] = Task(
+            job_settings=job_settings,
+            image_resources=slurm_settings,
         )
-        models.append(
-            UploadJobConfigsV2(
-                **job,
-                **extra_UploadJobConfigsV2_params,
-            )
-        )
-    return tuple(models)
+    # The job_type contains the default settings for compression and Code Ocean
+    # pipelines.
+    tasks = {
+        "check_s3_folder_exists": check_s3_folder_exists,
+        "gather_preliminary_metadata": gather_preliminary_metadata,
+        "modality_transformation_settings": modality_transformation_settings,
+    }
+    return UploadJobConfigsV2(
+        job_type=job_type,
+        platform=Platform.from_abbreviation(platform),
+        project_name=project_name,
+        subject_id=subject_id,
+        acq_datetime=acq_datetime,
+        modalities=[
+            Modality.from_abbreviation(m) for m in modality_transformation_settings.keys()
+        ],
+        tasks={k: v for k, v in tasks.items() if v is not None},
+        user_email=user_email,
+        **extra_UploadJobConfigsV2_params,
+    )
 
-@typing_extensions.deprecated("Assumes old, pre-v2 csv: use get_v2_job_models_from_csv")
+@typing_extensions.deprecated("Assumes old, pre-v2 csv: use create_upload_job_configs_v2")
 def get_job_models_from_csv(
     path: pathlib.Path,
     ephys_slurm_settings: aind_slurm_rest.models.V0036JobProperties = DEFAULT_EPHYS_SLURM_SETTINGS,
@@ -486,7 +479,7 @@ def put_v2_jobs_for_hpc_upload(
     logger.info(f"Submitted {len(upload_jobs)} upload job(s) to {upload_service_url}")
     post_json_response.raise_for_status()
 
-@typing_extensions.deprecated("Uses old, pre-v2 endpoints: use put_v2_jobs_for_hpc_upload in combination with get_v2_job_models_from_csv")
+@typing_extensions.deprecated("Uses old, pre-v2 endpoints: use put_v2_jobs_for_hpc_upload in combination with create_upload_job_configs_v2")
 def put_jobs_for_hpc_upload(
     upload_jobs: aind_data_transfer_models.core.BasicUploadJobConfigs | Iterable[aind_data_transfer_models.core.BasicUploadJobConfigs],
     upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,
@@ -529,7 +522,7 @@ def put_jobs_for_hpc_upload(
     logger.info(f"Submitted {len(upload_jobs)} upload job(s) to {upload_service_url}")
     post_json_response.raise_for_status()
 
-@typing_extensions.deprecated("Uses old, pre-v1 endpoints: use put_v2_jobs_for_hpc_upload in combination with get_v2_job_models_from_csv")
+@typing_extensions.deprecated("Uses old, pre-v1 endpoints: use put_v2_jobs_for_hpc_upload in combination with create_upload_job_configs_v2")
 def put_csv_for_hpc_upload(
     csv_path: pathlib.Path,
     upload_service_url: str = AIND_DATA_TRANSFER_SERVICE,

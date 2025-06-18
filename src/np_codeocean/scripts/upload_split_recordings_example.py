@@ -23,11 +23,11 @@ session_folders_to_upload: set[str] = set([
 
 def main() -> None:
     for session_folder in session_folders_to_upload - split_recording_folders:
-        np_codeocean.upload_session(session_folder)
+        np_codeocean.upload_session_v2(session_folder)
         
     for session_folder, recording_dir_names in split_recordings.items():
         if recording_dir_names:
-            np_codeocean.upload_session(session_folder, recording_dir_names)
+            np_codeocean.upload_session_v2(session_folder, recording_dir_names)
         
 if __name__ == '__main__':
     main()    

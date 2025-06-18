@@ -183,17 +183,17 @@ def get_surface_channel_start_time(session: np_session.Session) -> datetime.date
     return timestamp
 
 
-def get_v2_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
+def get_v2_upload_params_from_session(upload: CodeOceanUpload) -> dict[str, str | int | bool]:
     """
     >>> path = "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_690706_20231129_surface_channels"
     >>> utils.is_surface_channel_recording(path)
     True
     >>> upload = create_codeocean_upload(path)
-    >>> ephys_upload_csv = get_v2_upload_csv_for_session(upload)
-    >>> ephys_upload_csv['modality0.input_source']
+    >>> ephys_upload_params = get_v2_upload_params_from_session(upload)
+    >>> ephys_upload_params['modalities']['ecephys']
     '//allen/programs/mindscope/workgroups/np-exp/codeocean/DRpilot_690706_20231129_surface_channels/ephys'
-    >>> ephys_upload_csv.keys()
-    dict_keys(['project_name', 'platform', 'subject_id', 'force_cloud_sync', 'modality0', 'modality0.input_source', 'acq_datetime'])
+    >>> ephys_upload_params.keys()
+    dict_keys(['project_name', 'platform', 'subject_id', 'force_cloud_sync', 'modalities', 'acq_datetime'])
     """
     params = {
         'project_name': upload.project_name,
@@ -201,27 +201,22 @@ def get_v2_upload_csv_for_session(upload: CodeOceanUpload) -> dict[str, str | in
         'subject_id': str(upload.session.mouse),
         'force_cloud_sync': upload.force_cloud_sync,
     }
-    idx = 0
+    modalities = dict() # {modality_abbr: input_source}
     for modality_abbr, attr_name in {
         Modality.ECEPHYS.abbreviation: 'ephys',
         Modality.BEHAVIOR.abbreviation: 'behavior',
         Modality.BEHAVIOR_VIDEOS.abbreviation: 'behavior_videos',
     }.items():
         if getattr(upload, attr_name) is not None:
-            params[f'modality{idx}'] = modality_abbr
-            params[f'modality{idx}.input_source'] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
-            idx += 1
-    
+            modalities[modality_abbr] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
     if upload.aind_metadata:
         params['metadata_dir'] = upload.aind_metadata.as_posix()
             
     if utils.is_surface_channel_recording(upload.session.npexp_path.as_posix()):
         date = datetime.datetime(upload.session.date.year, upload.session.date.month, upload.session.date.day)
-        session_date_time = date.combine(upload.session.date, get_surface_channel_start_time(upload.session).time())
-        params['acq_datetime'] = f'{session_date_time.strftime(utils.ACQ_DATETIME_FORMAT)}'
+        params['acq_datetime'] = date.combine(upload.session.date, get_surface_channel_start_time(upload.session).time())
     else:
-        params['acq_datetime'] = f'{upload.session.start.strftime(utils.ACQ_DATETIME_FORMAT)}'
-    
+        params['acq_datetime'] = upload.session.start
     return params # type: ignore
 
 
@@ -350,7 +345,7 @@ def upload_session_v2(
     regenerate_symlinks: bool = True,
     adjust_ephys_timestamps: bool = True,
     codeocean_configs: aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs | None = None,
-    extra_BasicUploadJobConfigs_params: dict[str, Any] | None = None,
+    extra_UploadJobConfigsV2_params: dict[str, Any] | None = None,
 ) -> None:
     codeocean_root = np_session.NPEXP_PATH / ('codeocean-dev' if test else 'codeocean')
     logger.debug(f'{codeocean_root = }')
@@ -391,17 +386,17 @@ def upload_session_v2(
     for path in (upload.ephys, upload.behavior, upload.behavior_videos, upload.aind_metadata):
         if path is not None and path.exists():
             utils.convert_symlinks_to_posix(path)
-    csv_content: dict = get_upload_csv_for_session(upload)
-    utils.write_upload_csv(csv_content, upload.job)
+    job_params: dict = get_v2_upload_params_from_session(upload)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
-    if extra_BasicUploadJobConfigs_params is None:
-        extra_BasicUploadJobConfigs_params = {}
+    if extra_UploadJobConfigsV2_params is None:
+        extra_UploadJobConfigsV2_params = {}
+    # TODO: add codeocean configs as v2 Tasks
     if codeocean_configs is not None:
-        if 'codeocean_configs' in extra_BasicUploadJobConfigs_params:
-            raise ValueError("Cannot pass `codeocean_configs` as a parameter to `extra_BasicUploadJobConfigs_params`")
-        extra_BasicUploadJobConfigs_params['codeocean_configs'] = codeocean_configs
-    utils.put_jobs_for_hpc_upload(
-        utils.get_job_models_from_csv(upload.job, check_timestamps=timestamps_adjusted, **extra_BasicUploadJobConfigs_params),
+        if 'codeocean_configs' in extra_UploadJobConfigsV2_params:
+            raise ValueError("Cannot pass `codeocean_configs` as a parameter to `extra_UploadJobConfigsV2_params`")
+        extra_UploadJobConfigsV2_params['codeocean_configs'] = codeocean_configs
+    utils.put_v2_jobs_for_hpc_upload(
+        utils.create_upload_job_configs_v2(**job_params, check_timestamps=timestamps_adjusted, **extra_UploadJobConfigsV2_params),
         upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
         user_email=hpc_upload_job_email,
         dry_run=dry_run,
