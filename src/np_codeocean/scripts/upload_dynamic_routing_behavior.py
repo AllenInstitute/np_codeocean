@@ -253,7 +253,7 @@ def upload(
     acq_datetime_str = npc_session.extract_isoformat_datetime(task_source.stem)
     if not acq_datetime_str:
         raise SessionNotUploadedError(f"Could not extract acquisition datetime from {task_source.stem}")
-    np_codeocean.utils.put_v2_jobs_for_hpc_upload(
+    np_codeocean.utils.put_jobs_for_hpc_upload(
         upload_jobs=np_codeocean.utils.create_upload_job_configs_v2(
             subject_id=str(extracted_subject_id),
             acq_datetime=datetime.datetime.fromisoformat(acq_datetime_str),
