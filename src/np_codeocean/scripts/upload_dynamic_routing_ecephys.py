@@ -12,12 +12,12 @@ import npc_session
 import npc_sessions
 from aind_data_schema.core.rig import Rig
 import aind_codeocean_pipeline_monitor.models 
-import aind_data_transfer_models.core
 import codeocean.capsule
 import codeocean.data_asset
 import codeocean.computation 
 import np_codeocean
 from np_codeocean.metadata import core as metadata_core
+from aind_data_schema_models.modalities import Modality
 
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -154,8 +154,11 @@ def write_metadata_and_upload(
             skip_existing=not regenerate_metadata,
         )
         
-    pipelines = [
-        aind_codeocean_pipeline_monitor.models.PipelineMonitorSettings(
+    # Optional codeocean_pipeline_settings as {modality_abbr: PipelineMonitorSettings}
+    # You can specify up to one pipeline conf per modality
+    # In the future, these can be stored in AWS param store as part of a "job_type"
+    codeocean_pipeline_settings = {
+        Modality.ECEPHYS.abbreviation: aind_codeocean_pipeline_monitor.models.PipelineMonitorSettings(
             run_params=codeocean.computation.RunParams(
                 capsule_id="287db808-74ce-4e44-b14b-fde1471eba45",
                 data_assets=[
@@ -179,10 +182,7 @@ def write_metadata_and_upload(
                 process_name_suffix_tz="US/Pacific",
             ),
         ),
-    ]
-    codeocean_configs = aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs(
-        pipeline_monitor_capsule_settings=pipelines,
-    )
+    }
     
     return np_codeocean.upload_session(
         session_path_or_folder_name,
@@ -193,9 +193,7 @@ def write_metadata_and_upload(
         hpc_upload_job_email=hpc_upload_job_email,
         regenerate_symlinks=regenerate_symlinks,
         adjust_ephys_timestamps=adjust_ephys_timestamps,
-        extra_UploadJobConfigsV2_params={
-            'codeocean_configs': codeocean_configs,
-        },
+        codeocean_pipeline_settings=codeocean_pipeline_settings,
     )
 
 def parse_args() -> argparse.Namespace:

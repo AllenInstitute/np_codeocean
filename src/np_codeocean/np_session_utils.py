@@ -9,7 +9,7 @@ import shutil
 import time
 from typing import Any
 
-import aind_data_transfer_models.core
+from aind_codeocean_pipeline_monitor.models import PipelineMonitorSettings
 import np_config
 import np_logging
 import np_session
@@ -209,7 +209,8 @@ def get_upload_params_from_session(upload: CodeOceanUpload) -> dict[str, Any]:
     }.items():
         if getattr(upload, attr_name) is not None:
             modalities[modality_abbr] = np_config.normalize_path(getattr(upload, attr_name)).as_posix()
-
+    params['modalities'] = modalities
+    
     if upload.aind_metadata:
         params['metadata_dir'] = upload.aind_metadata.as_posix()
             
@@ -301,7 +302,7 @@ def upload_session(
     hpc_upload_job_email: str = utils.HPC_UPLOAD_JOB_EMAIL,
     regenerate_symlinks: bool = True,
     adjust_ephys_timestamps: bool = True,
-    codeocean_configs: aind_data_transfer_models.core.CodeOceanPipelineMonitorConfigs | None = None,
+    codeocean_pipeline_settings: dict[str, PipelineMonitorSettings] | None = None,
     extra_UploadJobConfigsV2_params: dict[str, Any] | None = None,
 ) -> None:
     codeocean_root = np_session.NPEXP_PATH / ('codeocean-dev' if test else 'codeocean')
@@ -343,17 +344,22 @@ def upload_session(
     for path in (upload.ephys, upload.behavior, upload.behavior_videos, upload.aind_metadata):
         if path is not None and path.exists():
             utils.convert_symlinks_to_posix(path)
-    job_params: dict = get_v2_upload_params_from_session(upload)
+    job_params_from_session: dict = get_upload_params_from_session(upload)
     np_logging.web('np_codeocean').info(f'Submitting {upload.session} to hpc upload queue')
     if extra_UploadJobConfigsV2_params is None:
         extra_UploadJobConfigsV2_params = {}
-    # TODO: add codeocean configs as v2 Tasks
-    if codeocean_configs is not None:
-        if 'codeocean_configs' in extra_UploadJobConfigsV2_params:
-            raise ValueError("Cannot pass `codeocean_configs` as a parameter to `extra_UploadJobConfigsV2_params`")
-        extra_UploadJobConfigsV2_params['codeocean_configs'] = codeocean_configs
+    if 'codeocean_pipeline_settings' in extra_UploadJobConfigsV2_params:
+        raise ValueError(
+            "Cannot pass `codeocean_pipeline_settings` as a parameter to `extra_UploadJobConfigsV2_params`. "
+            "Use `codeocean_pipeline_settings` parameter instead."
+        )
     utils.put_jobs_for_hpc_upload(
-        utils.create_upload_job_configs_v2(**job_params, check_timestamps=timestamps_adjusted, **extra_UploadJobConfigsV2_params),
+        utils.create_upload_job_configs_v2(
+            **job_params_from_session,
+            codeocean_pipeline_settings=codeocean_pipeline_settings,
+            check_timestamps=timestamps_adjusted,
+            **extra_UploadJobConfigsV2_params
+        ),
         upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
         user_email=hpc_upload_job_email,
         dry_run=dry_run,
