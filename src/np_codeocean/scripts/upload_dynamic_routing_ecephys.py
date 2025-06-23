@@ -67,40 +67,26 @@ def add_metadata(
     session_json = normalized_session_dir / "session.json"
     if not skip_existing or not (session_json.is_symlink() or session_json.exists()):
         logger.debug("Attempting to create session.json")
-        try:
-            npc_sessions.DynamicRoutingSession(normalized_session_dir)._aind_session_metadata.write_standard_file(normalized_session_dir)
-        except Exception as e:
-            if not ignore_errors:
-                raise e from None
-            else:
-                logger.exception(e)
+        npc_sessions.DynamicRoutingSession(normalized_session_dir)._aind_session_metadata.write_standard_file(normalized_session_dir)
+        if session_json.exists():
+            logger.debug("Created session.json")
         else:
-            if session_json.exists():
-                logger.debug("Created session.json")
-            else:
-                logger.warning("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
+            raise FileNotFoundError("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
 
     rig_model_path = normalized_session_dir / "rig.json"
     if not skip_existing or not (rig_model_path.is_symlink() or rig_model_path.exists()):
         if not (session_json.is_symlink() or session_json.exists()):
             logger.warning("session.json is currently required for the rig.json to be created, so we can't continue with metadata creation")
             return None
-        try:
-            metadata_core.add_np_rig_to_session_dir(
-                normalized_session_dir,
-                session_datetime,
-                rig_storage_directory,
-            )
-        except Exception as e:
-            if not ignore_errors:
-                raise e from None
-            else:
-                logger.exception(e)
+        metadata_core.add_np_rig_to_session_dir(
+            normalized_session_dir,
+            session_datetime,
+            rig_storage_directory,
+        )
+        if rig_model_path.exists():
+            logger.debug("Created rig.json")
         else:
-            if rig_model_path.exists():
-                logger.debug("Created rig.json")
-            else:
-                logger.warning("Failed to find created rig.json, but no error occurred during creation: may be in unexpected location")
+            raise FileNotFoundError("Failed to find created rig.json, but no error occurred during creation: may be in unexpected location")
     if not (rig_model_path.is_symlink() or rig_model_path.exists()):
         return None
 
