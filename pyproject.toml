@@ -60,6 +60,7 @@ dependencies = [
     "cryptography<43.0",
     "aind-data-transfer-service>=1.15.0",
     "aind-slurm-rest-v2==0.0.3",
+    "aind-codeocean-pipeline-monitor>=0.5.2",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
