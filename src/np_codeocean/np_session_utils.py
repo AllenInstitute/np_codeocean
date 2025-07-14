@@ -286,7 +286,7 @@ def create_codeocean_upload(
 
 def has_metadata(session: np_session.Session) -> bool:
     return any(
-        (session.npexp_path / name).exists()
+        (session.npexp_path / f"{name}.json").exists()
         for name in utils.AIND_METADATA_NAMES
     )
     
