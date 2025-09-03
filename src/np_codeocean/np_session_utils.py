@@ -359,6 +359,7 @@ def upload_session(
             codeocean_pipeline_settings=codeocean_pipeline_settings,
             check_timestamps=timestamps_adjusted,
             test=test,
+            user_email=hpc_upload_job_email,
             **extra_UploadJobConfigsV2_params
         ),
         upload_service_url=utils.DEV_SERVICE if test else utils.AIND_DATA_TRANSFER_SERVICE,
