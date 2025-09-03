@@ -386,6 +386,7 @@ def create_upload_job_configs_v2(
     for modality_abbr, input_source in modalities.items():
         job_settings: dict[str, Any] = {
             "input_source": input_source,
+            "output_directory": "%OUTPUT_LOCATION",
         }
         # Ecephys compression settings are currently hardcoded
         # In the future, these can be stored in AWS param store as part of a "job_type"
