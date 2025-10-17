@@ -40,7 +40,7 @@ def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> 
         raise Exception(
             f"Rig is not a neuropixels rig. Only behavior cluster rigs are supported. rig_id={rig_id}")
     room_number = CONFIG.get(rig_record, "UNKNOWN")
-    return rig_record.as_aind_data_schema_rig_id(str(room_number), modification_date)
+    return rig_record.as_aind_data_schema_rig_id(str(room_number), modification_date).replace('.','')
 
 
 def extract_modification_date(rig: Rig) -> datetime.date:
