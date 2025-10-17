@@ -129,18 +129,18 @@ def write_metadata_and_upload(
     """
     # session = np_session.Session(session) #! this doesn't work for surface_channels
     session = np_codeocean.get_np_session(session_path_or_folder_name)
-    with contextlib.suppress(Exception):
-        add_metadata(
-            session_directory=session.npexp_path,
-            session_datetime=(
-                session.start 
-                if not np_codeocean.is_surface_channel_recording(session.npexp_path.name)
-                else np_codeocean.get_surface_channel_start_time(session)
-            ),
-            rig_storage_directory=pathlib.Path(np_codeocean.get_project_config()["rig_metadata_dir"]),
-            ignore_errors=True,
-            skip_existing=not regenerate_metadata,
-        )
+
+    add_metadata(
+        session_directory=session.npexp_path,
+        session_datetime=(
+            session.start 
+            if not np_codeocean.is_surface_channel_recording(session.npexp_path.name)
+            else np_codeocean.get_surface_channel_start_time(session)
+        ),
+        rig_storage_directory=pathlib.Path(np_codeocean.get_project_config()["rig_metadata_dir"]),
+        ignore_errors=True,
+        skip_existing=not regenerate_metadata,
+    )
         
     # Optional codeocean_pipeline_settings as {modality_abbr: PipelineMonitorSettings}
     # You can specify up to one pipeline conf per modality
