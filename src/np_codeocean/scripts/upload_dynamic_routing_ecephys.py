@@ -11,6 +11,7 @@ import np_config
 import npc_session
 import npc_sessions
 from aind_data_schema.core.rig import Rig
+from aind_data_schema.core.session import Session as AindSession
 import aind_codeocean_pipeline_monitor.models 
 import codeocean.capsule
 import codeocean.data_asset
@@ -72,7 +73,8 @@ def add_metadata(
             logger.debug("Created session.json")
         else:
             raise FileNotFoundError("Failed to find created session.json, but no error occurred during creation: may be in unexpected location")
-
+    _ = AindSession.model_validate_json(session_json.read_text())
+    
     rig_model_path = normalized_session_dir / "rig.json"
     if not skip_existing or not (rig_model_path.is_symlink() or rig_model_path.exists()):
         if not (session_json.is_symlink() or session_json.exists()):
