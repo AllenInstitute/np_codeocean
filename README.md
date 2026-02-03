@@ -4,6 +4,29 @@ Tools for uploading Mindscope Neuropixels experiments to S3 (for Code Ocean).
 Requires running as admin on Windows in order to create remote-to-remote symlinks
 on the Isilon.
 
+## Install 
+For Dynamic Routing:
+```shell
+uv sync --extra dynamicrouting
+```
+
+For OpenScope:
+```shell
+uv sync --extra openscope
+```
+
+## Add dependencies
+For shared utilities:
+```shell
+uv add <package-name>
+```
+
+For Dynamic Routing or OpenScope specific utilities:
+```shell
+uv add <package-name> --optional <dynamicrouting|openscope>
+```
+
+## Usage 
 - `upload` CLI tool is provided, which uses the
   [`np_session`](https://github.com/AllenInstitute/np_session) interface to find
   and upload
