@@ -80,6 +80,22 @@ format = ["ruff", "black"]
 bump_pub_tag = "bump-my-version bump patch"
 release = ["format", "bump_pub_tag"]
 
+[tool.bumpversion]
+tag = true
+allow_dirty = true
+commit = true
+commit_args = "-a"
+message = "Bump version: {current_version} → {new_version} [skip actions]"
+pre_commit_hooks = [
+    "uv lock --upgrade-package np_workflows",
+    "git-changelog -o CHANGELOG.md",
+    "uv build",
+    "uv publish",
+]
+post_commit_hooks = [
+    "git push origin main",
+    "git push --tags",
+]
 
 [tool.ruff]
 line-length = 100
