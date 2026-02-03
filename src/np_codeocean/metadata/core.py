@@ -41,7 +41,9 @@ def update_session_from_rig(
     - Overwrites the session model at `output_path`.
     """
     session_model = session.Session.model_validate_json(session_source.read_text())
-    rig_model = rig.Rig.model_validate_json(rig_source.read_text().replace('NP.2','NP2'))
+    rig_model = rig.Rig.model_validate_json(
+        rig_source.read_text().replace("NP.2", "NP2")
+    )
     session_model.rig_id = rig_model.rig_id
     return utils.save_aind_model(session_model, output_path)
 

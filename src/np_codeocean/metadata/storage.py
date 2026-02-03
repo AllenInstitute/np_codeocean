@@ -1,5 +1,5 @@
 """Stores a history of object changes in local storage. Simple updater and
- getter for iterations of a file.
+getter for iterations of a file.
 """
 
 import datetime

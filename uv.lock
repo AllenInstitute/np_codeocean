@@ -2228,7 +2228,7 @@ wheels = [
 
 [[package]]
 name = "np-codeocean"
-version = "0.3.3"
+version = "0.3.6"
 source = { editable = "." }
 dependencies = [
     { name = "aind-codeocean-pipeline-monitor" },

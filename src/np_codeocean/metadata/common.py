@@ -1,6 +1,4 @@
-
-"""Models and controlled language for aind-data-schema devices names.
-"""
+"""Models and controlled language for aind-data-schema devices names."""
 
 import typing
 
