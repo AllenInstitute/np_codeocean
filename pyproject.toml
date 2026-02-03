@@ -1,42 +1,3 @@
-[tool.pdm.scripts]
-ruff = "ruff --fix src"
-blue = "blue src"
-pytest = "pytest --cov"
-bump = "bump -p pyproject.toml"
-
-[tool.pdm.scripts.prebuild]
-composite = [
-    "blue",
-    "ruff",
-    "pytest",
-]
-
-[tool.pdm.scripts.build]
-composite = [
-    "prebuild",
-    "pdm build",
-]
-
-[tool.pdm.scripts.dry-run]
-composite = [
-    "prebuild",
-    "pdm build",
-    "pdm publish --no-build --repository https://test.pypi.org/simple",
-]
-
-[tool.pdm.scripts.publish]
-composite = [
-    "prebuild",
-    "bump",
-    "pdm build",
-    "pdm publish --no-build",
-]
-
-[tool.pdm.scripts.pub]
-composite = [
-    "bump",
-    "pdm publish",
-]
 
 [project]
 name = "np_codeocean"
@@ -86,11 +47,8 @@ upload_dr_behavior = "np_codeocean.scripts.upload_dynamic_routing_behavior:main"
 upload_dr_ecephys = "np_codeocean.scripts.upload_dynamic_routing_ecephys:main"
 upload_sessions = "np_codeocean.scripts.upload_sessions:main"
 
-[dependency-groups]
-dev = [
-    "bump>=1.3.2",
-    "pdm>=2.4.9",
-]
+[project.optional-dependencies]
+dev = ["bump>=1.3.2"]
 dynamicrouting = [
     "npc-lims>=0.1.154",
     "npc-sessions>=0.0.253",
@@ -98,15 +56,59 @@ dynamicrouting = [
     "aind-metadata-mapper==0.18.2",
 ]
 
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+task_runner = ["poethepoet>=0.33.1"]
+linting = ["black>=25.1.0", "isort>=6.0.1", "ruff>=0.11.2"]
+testing = ["mypy>=1.4.1"]
+bump = ["bump-my-version>=1.1.1", "git-changelog>=2.5.3"]
+
 [tool.uv]
 package = true
-default-groups = [
-    "dev",
-    "dynamicrouting",
-]
+default-groups = "all"
 
-[build-system]
-requires = [
-    "pdm-backend",
+
+[tool.poe.tasks]
+mypy = "mypy src --install-types --non-interactive"
+test = ["mypy"]
+ruff = "ruff check src --fix-only"
+black = "black src"
+format = ["ruff", "black"]
+bump_pub_tag = "bump-my-version bump patch"
+release = ["format", "bump_pub_tag"]
+
+
+[tool.ruff]
+line-length = 100
+select = [
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "E",      # pycodestyle
+    "F",      # pyflakes
+    "PGH",    # pygrep-hooks
+    "RUF",    # ruff
+    "W",      # pycodestyle
+    "YTT",    # flake8-2020
+    "ANN",
+    "C",
+    "I",
+    "RUF100",
+    "N",
+    "UP",
 ]
-build-backend = "pdm.backend"
+# extend-ignore = ["B018", "B019"]
+src = ["src"]
+extend-exclude = ["tests/fixtures"]
+target-version = "py39"
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.isort]
+known-first-party = ["np_workflows"]
