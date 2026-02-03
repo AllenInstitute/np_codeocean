@@ -161,3 +161,4 @@ cython_debug/
 .pdm-python
 logs/
 .scratch/
+.ruff_cache/

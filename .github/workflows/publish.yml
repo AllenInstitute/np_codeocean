@@ -1,0 +1,68 @@
+# This workflow will install Python dependencies, lint/format - possibly with a variety of Python versions - bump version, re-commit  publish to PYPI
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Publish Python package
+
+on:
+  push:
+    branches: [ "main" ] 
+    paths: # pushing any files/folders marked ! will not trigger the workflow (exceptions can be added)
+      - '**'
+      - '!**.ipynb'
+      - '!**.json'
+      - '!.vscode'
+      - '!scripts/**'
+      - '!tests/**'
+      - '!notebooks/**'
+      - '!**.md'
+      - '!**.yml'
+      - '.github/workflows/publish.yml'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**.ipynb'
+      - '**.json'
+      - '.vscode'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'notebooks/**'
+      - '**.md'
+      - '**.yml'
+  workflow_dispatch:  # adds a 'Run Workflow' button for manual launching
+
+concurrency: # jobs currently running on main will be cancelled when this workflow starts
+  group: ${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
+      
+jobs:
+    
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0    # get all commits (on default branch)
+        fetch-tags: true  
+
+    - uses: astral-sh/setup-uv@v5.4.1
+      with:
+        python-version: '3.11'
+
+    - name: Publish with bump & tag
+      # actions/checkout 
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        uv run task release
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
+        # use PAT, or push comes from `github-actions` bot, which can't trigger
+        # other workflows   
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
