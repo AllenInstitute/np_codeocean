@@ -4,11 +4,19 @@ Tools for uploading Mindscope Neuropixels experiments to S3 (for Code Ocean).
 Requires running as admin on Windows in order to create remote-to-remote symlinks
 on the Isilon.
 
+## Development workflow
+- clone the repo, or pull with rebase
+- sync the development environment using `uv` (see below)
+- push changes to main (always commit changes to `uv.lock`)
+- github action formats and publishes a new version
+- pull the bump commit
+
 ## Install 
-Setup the development environment for working on a specific project:
+Setup/sync the development environment for working on a specific project:
 ```shell
 uv sync --extra <dynamicrouting|openscope>
 ```
+This ensures all developers are using the same package versions.
 
 ## Add dependencies
 For shared utilities:

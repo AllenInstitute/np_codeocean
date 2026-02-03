@@ -8,8 +8,10 @@
             "name": "Python: upload",
             "type": "python",
             "request": "launch",
-            "module": "np_codeocean.upload",
-            "args": ["1330689294_716465_20240214"],
+            "module": "np_codeocean.scripts.upload_dynamic_routing_ecephys",
+            // "args": ["DRpilot_807082_20251002", "--regenerate-metadata"],  
+            // ^^^^^^ frame times from stim files not matching sync file
+            "args": ["DRpilot_810752_20251007", "--regenerate-metadata"],
             "justMyCode": false
         },
         {
