@@ -56,7 +56,7 @@ dynamicrouting = [
     "aind-metadata-mapper==0.18.2",
 ]
 openscope = [
-    "aind-metadata-mapper==0.18.1",
+    "aind-metadata-mapper",
 ]
 
 [tool.uv]
