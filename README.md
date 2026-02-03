@@ -5,14 +5,9 @@ Requires running as admin on Windows in order to create remote-to-remote symlink
 on the Isilon.
 
 ## Install 
-For Dynamic Routing:
+Setup the development environment for working on a specific project:
 ```shell
-uv sync --extra dynamicrouting
-```
-
-For OpenScope:
-```shell
-uv sync --extra openscope
+uv sync --extra <dynamicrouting|openscope>
 ```
 
 ## Add dependencies
@@ -21,9 +16,20 @@ For shared utilities:
 uv add <package-name>
 ```
 
-For Dynamic Routing or OpenScope specific utilities:
+For project-specific utilities (added to optional dependency groups):
 ```shell
 uv add <package-name> --optional <dynamicrouting|openscope>
+```
+
+## Update dependencies
+All:
+```shell
+uv lock --upgrade
+```
+
+Single package:
+```shell
+uv lock --upgrade-package  <package-name>
 ```
 
 ## Usage 
