@@ -5,20 +5,19 @@ import pathlib
 import time
 import typing
 import warnings
+from typing import Callable
 
 import aind_codeocean_pipeline_monitor.models
-import codeocean.capsule
+import aind_data_schema.base
 import codeocean.computation
 import codeocean.data_asset
 import np_config
 import npc_session
 import npc_sessions
-from aind_data_schema.core.rig import Rig
-from aind_data_schema.core.session import Session as AindSession
+import npc_sessions.aind_data_schema
 from aind_data_schema_models.modalities import Modality
 
 import np_codeocean
-from np_codeocean.metadata import core as metadata_core
 
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -46,82 +45,47 @@ def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> 
     ).replace(".", "")
 
 
-def extract_modification_date(rig: Rig) -> datetime.date:
-    _, _, date_str = rig.rig_id.split("_")
-    if len(date_str) == 6:
-        return datetime.datetime.strptime(date_str, "%y%m%d").date()
-    elif len(date_str) == 8:
-        return datetime.datetime.strptime(date_str, "%Y%m%d").date()
-    else:
-        raise Exception(f"Unsupported date format: {date_str}")
-
-
 def add_metadata(
     session_directory: str | pathlib.Path,
-    session_datetime: datetime.datetime,
-    rig_storage_directory: pathlib.Path,
-    ignore_errors: bool = True,
+    ignore_errors: bool = False,
     skip_existing: bool = True,
 ) -> None:
     """Adds rig and sessions metadata to a session directory."""
     normalized_session_dir = np_config.normalize_path(session_directory)
-    logger.debug(f"{normalized_session_dir = }")
-    logger.debug(f"{rig_storage_directory = }")
-    session_json = normalized_session_dir / "session.json"
-    if not skip_existing or not (session_json.is_symlink() or session_json.exists()):
-        logger.debug("Attempting to create session.json")
-        npc_sessions.DynamicRoutingSession(
-            normalized_session_dir
-        )._aind_session_metadata.write_standard_file(normalized_session_dir)
-        if session_json.exists():
-            logger.debug("Created session.json")
-        else:
-            raise FileNotFoundError(
-                "Failed to find created session.json, but no error occurred during creation: may be in unexpected location"
-            )
-    _ = AindSession.model_validate_json(session_json.read_text())
-
-    rig_model_path = normalized_session_dir / "rig.json"
-    if not skip_existing or not (
-        rig_model_path.is_symlink() or rig_model_path.exists()
+    fname_to_fn: dict[
+        str, Callable[[npc_sessions.Session], aind_data_schema.base.DataCoreModel]
+    ] = {
+        "acquisition.json": npc_sessions.aind_data_schema.get_acquisition_model,
+        "instrument.json": npc_sessions.aind_data_schema.get_instrument_model,
+        "data_description.json": npc_sessions.aind_data_schema.get_data_description_model,
+    }
+    if skip_existing and all(
+        (normalized_session_dir / fname).exists() for fname in fname_to_fn
     ):
-        if not (session_json.is_symlink() or session_json.exists()):
-            logger.warning(
-                "session.json is currently required for the rig.json to be created, so we can't continue with metadata creation"
-            )
-            return None
-        metadata_core.add_np_rig_to_session_dir(
-            normalized_session_dir,
-            session_datetime,
-            rig_storage_directory,
-        )
-        if rig_model_path.exists():
-            logger.debug("Created rig.json")
-        else:
-            raise FileNotFoundError(
-                "Failed to find created rig.json, but no error occurred during creation: may be in unexpected location"
-            )
-    if not (rig_model_path.is_symlink() or rig_model_path.exists()):
+        # exit before making a session object if we don't need to
+        logger.info(f"{len(fname_to_fn)} required metadata files exist. Skipping.")
         return None
-
-    rig_metadata = Rig.model_validate_json(rig_model_path.read_text())
-    modification_date = extract_modification_date(rig_metadata)
-    rig_metadata.rig_id = reformat_rig_model_rig_id(
-        rig_metadata.rig_id, modification_date
-    )
-    rig_metadata.write_standard_file(
-        normalized_session_dir
-    )  # assumes this will work out to dest/rig.json
-    session_model_path = metadata_core.scrape_session_model_path(
-        normalized_session_dir,
-    )
-    metadata_core.update_session_from_rig(
-        session_model_path,
-        rig_model_path,
-        session_model_path,
-    )
-
-    return None
+    logger.debug(f"Trying to create npc_sessions.Session({normalized_session_dir})")
+    try:
+        session = npc_sessions.DynamicRoutingSession(normalized_session_dir)
+    except Exception as e:
+        logger.error(f"Error creating npc_sessions.DynamicRoutingSession: {e!r}")
+        if ignore_errors:
+            return None
+        raise
+    for fname, fn in fname_to_fn.items():
+        path = normalized_session_dir / fname
+        if not skip_existing or not path.exists():
+            try:
+                model = fn(session)
+            except Exception as e:
+                logger.error(f"Error creating model for {fname}: {e!r}")
+                if ignore_errors:
+                    continue
+                raise
+            else:
+                model.write_standard_file(normalized_session_dir)
+                logger.info(f"Wrote {fname}")
 
 
 def write_metadata_and_upload(
@@ -145,18 +109,9 @@ def write_metadata_and_upload(
     """
     # session = np_session.Session(session) #! this doesn't work for surface_channels
     session = np_codeocean.get_np_session(session_path_or_folder_name)
-
     add_metadata(
         session_directory=session.npexp_path,
-        session_datetime=(
-            session.start
-            if not np_codeocean.is_surface_channel_recording(session.npexp_path.name)
-            else np_codeocean.get_surface_channel_start_time(session)
-        ),
-        rig_storage_directory=pathlib.Path(
-            np_codeocean.get_project_config()["rig_metadata_dir"]
-        ),
-        ignore_errors=True,
+        ignore_errors=False,
         skip_existing=not regenerate_metadata,
     )
 
