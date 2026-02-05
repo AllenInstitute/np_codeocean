@@ -25,11 +25,11 @@ import npc_session
 import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
 import tqdm
 from aind_data_schema.core.rig import Rig
+from np_codeocean.metadata import core as metadata_core
 from npc_lims.exceptions import NoSessionInfo
 
 import np_codeocean
 import np_codeocean.utils
-from np_codeocean.metadata import core as metadata_core
 
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
