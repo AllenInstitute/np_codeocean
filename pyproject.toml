@@ -48,24 +48,15 @@ upload_dr_ecephys = "np_codeocean.scripts.upload_dynamic_routing_ecephys:main"
 upload_sessions = "np_codeocean.scripts.upload_sessions:main"
 
 [project.optional-dependencies]
-dev = ["bump>=1.3.2"]
 dynamicrouting = [
     "npc-lims>=0.1.154",
-    "npc-sessions>=0.0.273",
+    "npc-sessions[metadata] @ git+https://github.com/alleninstitute/npc_sessions",
     "aind-codeocean-pipeline-monitor[full]>=0.5.0",
-    "aind-metadata-mapper==0.18.2",
 ]
-openscope = [
-    "aind-metadata-mapper",
-]
+openscope = ["aind-metadata-mapper"]
 
 [tool.uv]
-conflicts = [
-    [
-      { extra = "dynamicrouting" },
-      { extra = "openscope" },
-    ],
-]
+conflicts = [[{ extra = "dynamicrouting" }, { extra = "openscope" }]]
 package = true
 default-groups = "all"
 
@@ -102,10 +93,7 @@ pre_commit_hooks = [
     "uv build",
     "uv publish",
 ]
-post_commit_hooks = [
-    "git push origin main",
-    "git push --tags",
-]
+post_commit_hooks = ["git push origin main", "git push --tags"]
 
 [tool.ruff]
 line-length = 100
