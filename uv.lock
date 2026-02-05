@@ -2,28 +2,21 @@ version = 1
 revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
-    "python_full_version >= '3.13' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.12.*' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.11.*' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope'",
-    "python_full_version < '3.11' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope'",
-    "python_full_version >= '3.13' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version >= '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version >= '3.13' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version == '3.12.*' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.12.*' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version == '3.12.*' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version == '3.11.*' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version < '3.11' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version >= '3.13' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.12.*' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.11.*' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version < '3.11' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
+    "python_full_version >= '3.13' and sys_platform == 'darwin'",
+    "python_full_version == '3.12.*' and sys_platform == 'darwin'",
+    "python_full_version >= '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.13' and sys_platform != 'darwin' and sys_platform != 'linux')",
+    "(python_full_version == '3.12.*' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux')",
+    "python_full_version == '3.11.*' and sys_platform == 'darwin'",
+    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "(python_full_version == '3.11.*' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'linux')",
+    "python_full_version < '3.11' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux')",
 ]
 conflicts = [[
+    { package = "np-codeocean", extra = "drdev" },
     { package = "np-codeocean", extra = "dynamicrouting" },
     { package = "np-codeocean", extra = "openscope" },
 ]]
@@ -57,7 +50,7 @@ wheels = [
 [package.optional-dependencies]
 full = [
     { name = "aind-alert-utils" },
-    { name = "aind-data-schema-models", version = "5.1.1", source = { registry = "https://pypi.org/simple" } },
+    { name = "aind-data-schema-models" },
 ]
 
 [[package]]
@@ -86,7 +79,7 @@ name = "aind-data-schema"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "aind-data-schema-models", version = "5.1.1", source = { registry = "https://pypi.org/simple" } },
+    { name = "aind-data-schema-models" },
     { name = "pydantic" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1f/cc/71f38df69f02e942d098f9310982082aac334de5c496bd3fc605bcd3b431/aind_data_schema-2.4.0.tar.gz", hash = "sha256:a239e38591113f445ca316bc4386c466718e8715a92d8bdbca891a82b9d7ff16", size = 873259, upload-time = "2026-01-06T18:00:34.875Z" }
@@ -96,49 +89,12 @@ wheels = [
 
 [[package]]
 name = "aind-data-schema-models"
-version = "0.5.7"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "importlib-resources", marker = "extra == 'extra-12-np-codeocean-openscope'" },
-    { name = "pydantic", marker = "extra == 'extra-12-np-codeocean-openscope'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/65/c4/c48fba171a5ae3f5c308beb4e13a9085aa926dcbb584879745f171e45e7c/aind_data_schema_models-0.5.7.tar.gz", hash = "sha256:741cd5c106457e19dd461b456e3ba9a4bc8034d61e60b739ac70fc9053caa214", size = 190835, upload-time = "2024-10-22T17:30:12.023Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/0a/bbf81ac3bb7206cdf4790795fb1de334e2d1dc6617854c8e6911fbd1680f/aind_data_schema_models-0.5.7-py3-none-any.whl", hash = "sha256:4a9d69a4a4135b8f70e453a7f7165769dac4ed7d51f6033e57a5075044dd0734", size = 164444, upload-time = "2024-10-22T17:30:10.346Z" },
-]
-
-[[package]]
-name = "aind-data-schema-models"
 version = "5.1.1"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version >= '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version >= '3.13' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version == '3.12.*' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.12.*' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version == '3.12.*' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version == '3.11.*' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version < '3.11' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version >= '3.13' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.12.*' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.11.*' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version < '3.11' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-]
 dependencies = [
-    { name = "importlib-resources", marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or extra != 'extra-12-np-codeocean-openscope'" },
-    { name = "pydantic", marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or extra != 'extra-12-np-codeocean-openscope'" },
-    { name = "requests", marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or extra != 'extra-12-np-codeocean-openscope'" },
+    { name = "importlib-resources" },
+    { name = "pydantic" },
+    { name = "requests" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/00/49/16f0ab33ad39e476ec1b6b2bbb0308003f6ba2dc2bb82b93e5c812a7d328/aind_data_schema_models-5.1.1.tar.gz", hash = "sha256:8470875575dbf910707a43af0d1b7c3f79b2779b0a17ea89ce6cac5fec1b4300", size = 338612, upload-time = "2026-01-14T21:59:44.688Z" }
 wheels = [
@@ -147,52 +103,13 @@ wheels = [
 
 [[package]]
 name = "aind-data-transfer-service"
-version = "1.15.0"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "aind-data-schema-models", version = "0.5.7", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-np-codeocean-openscope'" },
-    { name = "email-validator", marker = "extra == 'extra-12-np-codeocean-openscope'" },
-    { name = "pydantic", marker = "extra == 'extra-12-np-codeocean-openscope'" },
-    { name = "pydantic-settings", marker = "extra == 'extra-12-np-codeocean-openscope'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/62/0a88002ddc59a7009c03bee3b2b1b5281ea48dfe85806f370468c7698ecf/aind_data_transfer_service-1.15.0.tar.gz", hash = "sha256:9b9ccac8fb7c401a85da318e5e1712c0a2eb5f8faf1cb347d9cc1dad95117c98", size = 219527, upload-time = "2025-06-16T23:01:15.013Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/75/e1/d19d8f2bc54a538da93c1cbb798102cb8ae23954596ea6e2a2c1803034a4/aind_data_transfer_service-1.15.0-py3-none-any.whl", hash = "sha256:92bdf8bdc1a852e039071b9d85b7a2212d9bc3aeef2e74b9539eab765afae655", size = 47073, upload-time = "2025-06-16T23:01:13.772Z" },
-]
-
-[[package]]
-name = "aind-data-transfer-service"
 version = "2.0.2"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version >= '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version >= '3.13' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version == '3.12.*' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.12.*' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version == '3.12.*' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version == '3.11.*' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version < '3.11' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope')",
-    "python_full_version >= '3.13' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.12.*' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version == '3.11.*' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-    "python_full_version < '3.11' and extra != 'extra-12-np-codeocean-dynamicrouting' and extra != 'extra-12-np-codeocean-openscope'",
-]
 dependencies = [
-    { name = "aind-data-schema-models", version = "5.1.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or extra != 'extra-12-np-codeocean-openscope'" },
-    { name = "email-validator", marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or extra != 'extra-12-np-codeocean-openscope'" },
-    { name = "pydantic", marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or extra != 'extra-12-np-codeocean-openscope'" },
-    { name = "pydantic-settings", marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or extra != 'extra-12-np-codeocean-openscope'" },
+    { name = "aind-data-schema-models" },
+    { name = "email-validator" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cd/03/60306855616b701cac67c01f552a26a7ebe211fc0168f355520ce14a69da/aind_data_transfer_service-2.0.2.tar.gz", hash = "sha256:753063c1c626ff263f8299a5a7448efa74ce535559d3ad3a80fa812ecd653889", size = 36889, upload-time = "2026-01-27T00:23:56.012Z" }
 wheels = [
@@ -201,15 +118,15 @@ wheels = [
 
 [[package]]
 name = "aind-metadata-mapper"
-version = "0.29.3"
+version = "0.23.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "aind-data-schema-models", version = "0.5.7", source = { registry = "https://pypi.org/simple" } },
+    { name = "aind-data-schema-models" },
     { name = "pydantic-settings" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0c/3c/714e9510d79f8d4d0a892a77bf5ebc31a6d21776e846fc960f0535fc2304/aind_metadata_mapper-0.29.3.tar.gz", hash = "sha256:6f048c13d87686cdf6a0ae11fcd6d7cd2f2b783df8804e32681103d72eb2ea06", size = 126259, upload-time = "2025-12-05T00:32:33.351Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/68/84e545e1be5b8eee8717382c1b43bc636ec706a0aba43993a99ad5aa7237/aind_metadata_mapper-0.23.2.tar.gz", hash = "sha256:a628ed46b1106dc362f3a0c809280190551d1be864d50ba110ebac41f87eca5f", size = 772858, upload-time = "2025-02-12T19:32:54.973Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/80/08c1505b7bf81357128898838c0be5ccf26c37fa6177de584f4dd3b56a07/aind_metadata_mapper-0.29.3-py3-none-any.whl", hash = "sha256:2c2f0175dba1614cb2542a8400ef7338b36fa8ccce6418e58cf01d4a7c88b32d", size = 142920, upload-time = "2025-12-05T00:32:31.9Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/33/daf0f6416d09ef03e078abb8a71d7e11535c6d30df945233806c679f2ab2/aind_metadata_mapper-0.23.2-py3-none-any.whl", hash = "sha256:0773c4234b7d8c77585972e2ac30f992dd89f62d1f087c21eb9695ceae5da327", size = 93429, upload-time = "2025-02-12T19:32:53.62Z" },
 ]
 
 [[package]]
@@ -275,7 +192,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohappyeyeballs" },
     { name = "aiosignal" },
-    { name = "async-timeout", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "async-timeout", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "attrs" },
     { name = "frozenlist" },
     { name = "multidict" },
@@ -381,10 +298,10 @@ name = "anyio"
 version = "4.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "idna" },
     { name = "sniffio" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f6/40/318e58f669b1a9e00f5c4453910682e2d9dd594334539c7b7817dabb765f/anyio-4.7.0.tar.gz", hash = "sha256:2f834749c602966b7d456a7567cafcb309f96482b5081d14ac93ccd457f9dd48", size = 177076, upload-time = "2024-12-05T15:42:09.056Z" }
 wheels = [
@@ -485,8 +402,8 @@ dependencies = [
     { name = "pathspec" },
     { name = "platformdirs" },
     { name = "pytokens" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/13/88/560b11e521c522440af991d46848a2bde64b5f7202ec14e1f46f9509d328/black-26.1.0.tar.gz", hash = "sha256:d294ac3340eef9c9eb5d29288e96dc719ff269a88e27b396340459dd85da4c58", size = 658785, upload-time = "2026-01-18T04:50:11.993Z" }
 wheels = [
@@ -525,7 +442,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgpack" },
     { name = "ndindex" },
-    { name = "numexpr", marker = "platform_machine != 'wasm32'" },
+    { name = "numexpr", marker = "platform_machine != 'wasm32' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "numpy" },
     { name = "requests" },
 ]
@@ -782,7 +699,7 @@ name = "click"
 version = "8.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/96/d3/f04c7bfcf5c1862a2a5b845c6b2b360488cf47af55dfa79c98f6a6bf98b5/click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de", size = 336121, upload-time = "2023-08-17T17:29:11.868Z" }
 wheels = [
@@ -794,7 +711,7 @@ name = "codeocean"
 version = "0.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "backports-strenum", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "backports-strenum", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "dataclasses-json" },
     { name = "requests" },
     { name = "requests-toolbelt" },
@@ -950,7 +867,7 @@ name = "cryptography"
 version = "42.0.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/93/a7/1498799a2ea06148463a9a2c10ab2f6a921a74fb19e231b27dc412a748e2/cryptography-42.0.8.tar.gz", hash = "sha256:8d09d05439ce7baa8e9e95b07ec5b6c886f548deb7e0f69ef25f64b3bce842f2", size = 671250, upload-time = "2024-06-04T19:55:08.609Z" }
 wheels = [
@@ -1112,9 +1029,9 @@ version = "6.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cachecontrol" },
-    { name = "google-api-core", extra = ["grpc"], marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "google-api-core", extra = ["grpc"], marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "google-api-python-client" },
-    { name = "google-cloud-firestore", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "google-cloud-firestore", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "google-cloud-storage" },
     { name = "pyjwt", extra = ["crypto"] },
 ]
@@ -1251,8 +1168,8 @@ dependencies = [
     { name = "jinja2" },
     { name = "packaging" },
     { name = "semver" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/13/74/ad7d638db5e6d4976f020b96306dd80e84fc7182368ebfb20fdad103b2df/git_changelog-2.6.1.tar.gz", hash = "sha256:bc2046c59c564e80212d06dbd7beec8013e3924537e49528164b8a1595e60c0c", size = 81165, upload-time = "2025-09-01T17:57:59.834Z" }
 wheels = [
@@ -2091,7 +2008,7 @@ name = "multidict"
 version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d6/be/504b89a5e9ca731cd47487e91c469064f8ae5af93b7259758dcfc2b9c848/multidict-6.1.0.tar.gz", hash = "sha256:22ae2ebf9b0c69d206c003e2f6a914ea33f0a932d4aa16f236afc049d9958f4a", size = 64002, upload-time = "2024-09-09T23:49:38.163Z" }
 wheels = [
@@ -2163,10 +2080,10 @@ name = "mypy"
 version = "1.19.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "librt", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "librt", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "mypy-extensions" },
     { name = "pathspec" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f5/db/4efed9504bc01309ab9c2da7e352cc223569f05478012b5d9ece38fd44d2/mypy-1.19.1.tar.gz", hash = "sha256:19d88bb05303fe63f71dd2c6270daca27cb9401c4ca8255fe50d1d920e0eb9ba", size = 3582404, upload-time = "2025-12-15T05:03:48.42Z" }
@@ -2283,8 +2200,7 @@ version = "0.3.8"
 source = { editable = "." }
 dependencies = [
     { name = "aind-codeocean-pipeline-monitor" },
-    { name = "aind-data-transfer-service", version = "1.15.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-np-codeocean-openscope'" },
-    { name = "aind-data-transfer-service", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or extra != 'extra-12-np-codeocean-openscope'" },
+    { name = "aind-data-transfer-service" },
     { name = "aind-slurm-rest-v2" },
     { name = "cryptography" },
     { name = "np-config" },
@@ -2300,9 +2216,9 @@ dependencies = [
 
 [package.optional-dependencies]
 dynamicrouting = [
-    { name = "aind-codeocean-pipeline-monitor", extra = ["full"], marker = "extra == 'extra-12-np-codeocean-dynamicrouting'" },
+    { name = "aind-codeocean-pipeline-monitor", extra = ["full"], marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "npc-lims" },
-    { name = "npc-sessions", extra = ["metadata"], marker = "extra == 'extra-12-np-codeocean-dynamicrouting'" },
+    { name = "npc-sessions", extra = ["metadata"], marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 openscope = [
     { name = "aind-metadata-mapper" },
@@ -2312,6 +2228,11 @@ openscope = [
 bump = [
     { name = "bump-my-version" },
     { name = "git-changelog" },
+]
+drdev = [
+    { name = "np-codeocean" },
+    { name = "np-codeocean", extra = ["dynamicrouting"], marker = "extra == 'extra-12-np-codeocean-dynamicrouting' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "npc-sessions", extra = ["metadata"] },
 ]
 linting = [
     { name = "black" },
@@ -2340,7 +2261,7 @@ requires-dist = [
     { name = "npc-lims", specifier = ">=0.1.168" },
     { name = "npc-lims", marker = "extra == 'dynamicrouting'", specifier = ">=0.1.154" },
     { name = "npc-session", specifier = ">=0.1.34" },
-    { name = "npc-sessions", extras = ["metadata"], marker = "extra == 'dynamicrouting'", git = "https://github.com/alleninstitute/npc_sessions" },
+    { name = "npc-sessions", extras = ["metadata"], marker = "extra == 'dynamicrouting'", specifier = ">=0.0.274" },
     { name = "polars", specifier = ">=0.20.16" },
     { name = "requests", specifier = ">=2.31.0" },
     { name = "wavpack-numcodecs", specifier = "<0.2" },
@@ -2351,6 +2272,10 @@ provides-extras = ["dynamicrouting", "openscope"]
 bump = [
     { name = "bump-my-version", specifier = ">=1.1.1" },
     { name = "git-changelog", specifier = ">=2.5.3" },
+]
+drdev = [
+    { name = "np-codeocean", extras = ["dynamicrouting"] },
+    { name = "npc-sessions", extras = ["metadata"], git = "https://github.com/alleninstitute/npc_sessions" },
 ]
 linting = [
     { name = "black", specifier = ">=25.1.0" },
@@ -2556,20 +2481,20 @@ dependencies = [
     { name = "numba" },
     { name = "numcodecs" },
     { name = "pandas" },
-    { name = "polars", extra = ["pyarrow"], marker = "extra == 'extra-12-np-codeocean-dynamicrouting'" },
+    { name = "polars", extra = ["pyarrow"] },
     { name = "pynwb" },
     { name = "python-dotenv" },
     { name = "rich" },
     { name = "scipy" },
-    { name = "tables", version = "3.10.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
-    { name = "tables", version = "3.10.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "tables", version = "3.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "tables", version = "3.10.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 
 [package.optional-dependencies]
 metadata = [
-    { name = "aind-data-access-api", extra = ["docdb"], marker = "extra == 'extra-12-np-codeocean-dynamicrouting'" },
+    { name = "aind-data-access-api", extra = ["docdb"] },
     { name = "aind-data-schema" },
-    { name = "aind-data-schema-models", version = "5.1.1", source = { registry = "https://pypi.org/simple" } },
+    { name = "aind-data-schema-models" },
 ]
 
 [[package]]
@@ -2965,7 +2890,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pastel" },
     { name = "pyyaml" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/38/9d/054c8435b03324ed9abd5d5ab8c45065b1f42c23952cd23f13a5921d8465/poethepoet-0.40.0.tar.gz", hash = "sha256:91835f00d03d6c4f0e146f80fa510e298ad865e7edd27fe4cb9c94fdc090791b", size = 81114, upload-time = "2026-01-05T19:09:13.116Z" }
 wheels = [
@@ -3666,7 +3591,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markdown-it-py" },
     { name = "pygments" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ab/3a/0316b28d0761c6734d6bc14e770d85506c986c85ffb239e688eeaab2c2bc/rich-13.9.4.tar.gz", hash = "sha256:439594978a49a09530cff7ebc4b5c7103ef57baf48d5ea3184f21d9a2befa098", size = 223149, upload-time = "2024-11-01T16:43:57.873Z" }
 wheels = [
@@ -3679,9 +3604,9 @@ version = "1.9.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "rich" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/04/27/091e140ea834272188e63f8dd6faac1f5c687582b687197b3e0ec3c78ebf/rich_click-1.9.7.tar.gz", hash = "sha256:022997c1e30731995bdbc8ec2f82819340d42543237f033a003c7b1f843fc5dc", size = 74838, upload-time = "2026-01-31T04:29:27.707Z" }
 wheels = [
@@ -3790,7 +3715,7 @@ name = "ruamel-yaml"
 version = "0.18.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ruamel-yaml-clib", marker = "(python_full_version < '3.13' and platform_python_implementation == 'CPython') or (python_full_version >= '3.13' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope') or (platform_python_implementation != 'CPython' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "ruamel-yaml-clib", marker = "(python_full_version < '3.13' and platform_python_implementation == 'CPython') or (python_full_version >= '3.13' and extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (python_full_version >= '3.13' and extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (python_full_version >= '3.13' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope') or (platform_python_implementation != 'CPython' and extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (platform_python_implementation != 'CPython' and extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (platform_python_implementation != 'CPython' and extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/29/81/4dfc17eb6ebb1aac314a3eb863c1325b907863a1b8b1382cdffcb6ac0ed9/ruamel.yaml-0.18.6.tar.gz", hash = "sha256:8b27e6a217e786c6fbe5634d8f3f11bc63e0f80f6a5890f28863d9c45aac311b", size = 143362, upload-time = "2024-02-07T06:47:20.283Z" }
 wheels = [
@@ -3993,12 +3918,12 @@ resolution-markers = [
     "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux')",
 ]
 dependencies = [
-    { name = "blosc2", marker = "python_full_version < '3.11'" },
-    { name = "numexpr", marker = "python_full_version < '3.11'" },
-    { name = "numpy", marker = "python_full_version < '3.11'" },
-    { name = "packaging", marker = "python_full_version < '3.11'" },
-    { name = "py-cpuinfo", marker = "python_full_version < '3.11'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "blosc2", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "numexpr", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "numpy", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "packaging", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "py-cpuinfo", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0d/5d/96708a84e9fcd29d1f684d56d4c38a23d29b1c934599a072a49f27ccfa71/tables-3.10.1.tar.gz", hash = "sha256:4aa07ac734b9c037baeaf44aec64ec902ad247f57811b59f30c4e31d31f126cf", size = 4762413, upload-time = "2024-08-17T09:57:47.127Z" }
 wheels = [
@@ -4029,22 +3954,22 @@ version = "3.10.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.13' and sys_platform == 'darwin'",
-    "python_full_version >= '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux'",
-    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.13' and sys_platform != 'darwin' and sys_platform != 'linux')",
     "python_full_version == '3.12.*' and sys_platform == 'darwin'",
+    "python_full_version >= '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux'",
     "python_full_version == '3.12.*' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.13' and sys_platform != 'darwin' and sys_platform != 'linux')",
     "(python_full_version == '3.12.*' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux')",
     "python_full_version == '3.11.*' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'aarch64' and sys_platform == 'linux'",
     "(python_full_version == '3.11.*' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'linux')",
 ]
 dependencies = [
-    { name = "blosc2", marker = "python_full_version >= '3.11'" },
-    { name = "numexpr", marker = "python_full_version >= '3.11'" },
-    { name = "numpy", marker = "python_full_version >= '3.11'" },
-    { name = "packaging", marker = "python_full_version >= '3.11'" },
-    { name = "py-cpuinfo", marker = "python_full_version >= '3.11'" },
-    { name = "typing-extensions", marker = "python_full_version >= '3.11'" },
+    { name = "blosc2", marker = "python_full_version >= '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "numexpr", marker = "python_full_version >= '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "numpy", marker = "python_full_version >= '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "packaging", marker = "python_full_version >= '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "py-cpuinfo", marker = "python_full_version >= '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "typing-extensions", marker = "python_full_version >= '3.11' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/15/50/23ead25f60bb1babe7f2f061d8a2f8c2f6804c1a20b3058677beb9085b56/tables-3.10.2.tar.gz", hash = "sha256:2544812a7186fadba831d6dd34eb49ccd788d6a83f4e4c2b431b835b6796c910", size = 4779722, upload-time = "2025-01-04T20:44:13.034Z" }
 wheels = [
@@ -4127,7 +4052,7 @@ name = "tqdm"
 version = "4.67.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737, upload-time = "2024-11-24T20:12:22.481Z" }
 wheels = [
@@ -4395,7 +4320,7 @@ version = "2.17.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asciitree" },
-    { name = "fasteners", marker = "sys_platform != 'emscripten' or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
+    { name = "fasteners", marker = "sys_platform != 'emscripten' or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-dynamicrouting') or (extra == 'extra-12-np-codeocean-drdev' and extra == 'extra-12-np-codeocean-openscope') or (extra == 'extra-12-np-codeocean-dynamicrouting' and extra == 'extra-12-np-codeocean-openscope')" },
     { name = "numcodecs" },
     { name = "numpy" },
 ]

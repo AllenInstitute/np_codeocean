@@ -50,15 +50,10 @@ upload_sessions = "np_codeocean.scripts.upload_sessions:main"
 [project.optional-dependencies]
 dynamicrouting = [
     "npc-lims>=0.1.154",
-    "npc-sessions[metadata] @ git+https://github.com/alleninstitute/npc_sessions",
+    "npc-sessions[metadata]>=0.0.274",
     "aind-codeocean-pipeline-monitor[full]>=0.5.0",
 ]
 openscope = ["aind-metadata-mapper"]
-
-[tool.uv]
-conflicts = [[{ extra = "dynamicrouting" }, { extra = "openscope" }]]
-package = true
-default-groups = "all"
 
 
 [build-system]
@@ -70,7 +65,12 @@ task_runner = ["poethepoet>=0.33.1"]
 linting = ["black>=25.1.0", "isort>=6.0.1", "ruff>=0.11.2"]
 testing = ["mypy>=1.4.1"]
 bump = ["bump-my-version>=1.1.1", "git-changelog>=2.5.3"]
+drdev = ["np_codeocean[dynamicrouting]", "npc-sessions[metadata] @ git+https://github.com/alleninstitute/npc_sessions"]
 
+[tool.uv]
+conflicts = [[{ extra = "dynamicrouting" }, { extra = "openscope" }, { extra = "drdev" }]]
+package = true
+default-groups = ["task_runner", "linting", "testing", "bump"]
 
 [tool.poe.tasks]
 mypy = "mypy src --install-types --non-interactive"
