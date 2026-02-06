@@ -67,8 +67,10 @@ def add_metadata(
         return None
     logger.debug(f"Trying to create npc_sessions.Session({normalized_session_dir})")
     try:
-        if '_surface_channels' in normalized_session_dir.as_posix():
-            session = npc_sessions.DynamicRoutingSurfaceRecording(normalized_session_dir, is_sync=False)
+        if "_surface_channels" in normalized_session_dir.as_posix():
+            session = npc_sessions.DynamicRoutingSurfaceRecording(
+                normalized_session_dir, is_sync=False
+            )
         else:
             session = npc_sessions.DynamicRoutingSession(normalized_session_dir)
     except Exception as e:
