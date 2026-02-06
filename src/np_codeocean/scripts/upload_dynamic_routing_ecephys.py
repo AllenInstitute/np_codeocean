@@ -183,6 +183,7 @@ def parse_args() -> argparse.Namespace:
         dest="hpc_upload_job_email",
         type=str,
         help=f"[optional] specify email address for hpc upload job updates. Default is {np_codeocean.HPC_UPLOAD_JOB_EMAIL}",
+        default=np_codeocean.HPC_UPLOAD_JOB_EMAIL,
     )
     parser.add_argument(
         "--force",
