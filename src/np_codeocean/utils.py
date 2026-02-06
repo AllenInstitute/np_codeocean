@@ -50,6 +50,8 @@ AIND_METADATA_NAMES: tuple[str, ...] = (
     "processing",
     "rig",
     "subject",
+    "acquisition",
+    "instrument",
 )
 
 # In the future, default slurm settings can be stored in a job_type in AWS Param Store
