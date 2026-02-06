@@ -502,6 +502,7 @@ def create_upload_job_configs_v2(
         "gather_preliminary_metadata": gather_preliminary_metadata_task,
         "modality_transformation_settings": modality_transformation_settings_tasks,
         "codeocean_pipeline_settings": codeocean_pipeline_settings_tasks,
+        "remove_source_folders": Task(skip_task=True),
     }
     return UploadJobConfigsV2(
         job_type=job_type,
