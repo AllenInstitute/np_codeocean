@@ -12,7 +12,6 @@ import aind_data_schema.base
 import codeocean.computation
 import codeocean.data_asset
 import np_config
-import npc_session
 import npc_sessions
 import npc_sessions.aind_data_schema
 from aind_data_schema_models.modalities import Modality
@@ -22,9 +21,15 @@ import np_codeocean
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-UPLOAD_ROOT = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/codeocean-upload')
+UPLOAD_ROOT = pathlib.Path(
+    "//allen/programs/mindscope/workgroups/dynamicrouting/codeocean-upload"
+)
 logging.basicConfig(
-    filename=(UPLOAD_ROOT / "logs" / f"{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log").as_posix(),
+    filename=(
+        UPLOAD_ROOT
+        / "logs"
+        / f"{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+    ).as_posix(),
     level=logging.DEBUG,
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
     datefmt="%Y-%d-%m %H:%M:%S",
@@ -205,7 +210,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Adjust ephys timestamps.npy prior to upload using sync data (if available)",
     )
-    
+
     return parser.parse_args()
 
 
