@@ -363,8 +363,8 @@ def upload_session(
     adjust_ephys_timestamps: bool = True,
     codeocean_pipeline_settings: dict[str, PipelineMonitorSettings] | None = None,
     extra_UploadJobConfigsV2_params: dict[str, Any] | None = None,
+    codeocean_root = np_session.NPEXP_PATH / "codeocean",
 ) -> None:
-    codeocean_root = np_session.NPEXP_PATH / ("codeocean-dev" if test else "codeocean")
     logger.debug(f"{codeocean_root = }")
     upload = create_codeocean_upload(
         str(session_path_or_folder_name),

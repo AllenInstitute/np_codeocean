@@ -22,27 +22,14 @@ import np_codeocean
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+UPLOAD_ROOT = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/codeocean-upload')
 logging.basicConfig(
-    filename=f"//allen/programs/mindscope/workgroups/np-exp/codeocean-logs/{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
+    filename=(UPLOAD_ROOT / "logs" / f"{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log").as_posix(),
     level=logging.DEBUG,
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
     datefmt="%Y-%d-%m %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
-
-CONFIG = np_config.fetch("/rigs/room_numbers")
-
-
-def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
-    rig_record = npc_session.RigRecord(rig_id)
-    if not rig_record.is_neuro_pixels_rig:
-        raise Exception(
-            f"Rig is not a neuropixels rig. Only behavior cluster rigs are supported. rig_id={rig_id}"
-        )
-    room_number = CONFIG.get(rig_record, "UNKNOWN")
-    return rig_record.as_aind_data_schema_rig_id(
-        str(room_number), modification_date
-    ).replace(".", "")
 
 
 def add_metadata(
@@ -164,6 +151,7 @@ def write_metadata_and_upload(
         regenerate_symlinks=regenerate_symlinks,
         adjust_ephys_timestamps=adjust_ephys_timestamps,
         codeocean_pipeline_settings=codeocean_pipeline_settings,
+        codeocean_root=UPLOAD_ROOT,
     )
 
 
@@ -217,6 +205,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Adjust ephys timestamps.npy prior to upload using sync data (if available)",
     )
+    
     return parser.parse_args()
 
 
