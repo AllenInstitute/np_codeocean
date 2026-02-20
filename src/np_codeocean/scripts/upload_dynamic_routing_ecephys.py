@@ -21,18 +21,21 @@ import np_codeocean
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+# Ensure log directory exists
 UPLOAD_ROOT = pathlib.Path(
     "//allen/programs/mindscope/workgroups/dynamicrouting/codeocean-upload"
 )
+(UPLOAD_ROOT / "logs").mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     filename=(
         UPLOAD_ROOT
         / "logs"
-        / f"{pathlib.Path(__file__).stem}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        / f"ephys_upload_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
     ).as_posix(),
     level=logging.DEBUG,
+    force=True,
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-    datefmt="%Y-%d-%m %H:%M:%S",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
