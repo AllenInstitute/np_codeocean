@@ -2255,7 +2255,7 @@ requires-dist = [
     { name = "npc-ephys", specifier = ">=0.1.32" },
     { name = "npc-lims", specifier = ">=0.1.168" },
     { name = "npc-lims", marker = "extra == 'dynamicrouting'", specifier = ">=0.1.154" },
-    { name = "npc-session", specifier = ">=0.1.34" },
+    { name = "npc-session", specifier = ">=0.1.41" },
     { name = "npc-sessions", extras = ["metadata"], marker = "extra == 'dynamicrouting'", specifier = ">=0.0.275" },
     { name = "polars", specifier = ">=0.20.16" },
     { name = "requests", specifier = ">=2.31.0" },
@@ -2442,14 +2442,14 @@ wheels = [
 
 [[package]]
 name = "npc-session"
-version = "0.1.40"
+version = "0.1.41"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/10/9323cfedd4ab89f7ce15661292deeb5add7485a47a8385bd72012c8fd12d/npc_session-0.1.40.tar.gz", hash = "sha256:6199827c598edcf7e7d9dbb372946f971a0b056c6afc9eee2372b85435206ea2", size = 12360, upload-time = "2024-12-04T18:34:04.024Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/e3/77022d4951ed4ac8dc3eac147843fb864f9b07e32340d383a7ba1ad8abcd/npc_session-0.1.41.tar.gz", hash = "sha256:e5079064a6af24569ee7cf193798b97f60f2b0d7c7f0c57c396d765a61bffe67", size = 12359, upload-time = "2026-02-22T07:22:26.896Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/11/79/750adc971f376ad6c7d3d1962259365fc70324e35fad137a720b9619254f/npc_session-0.1.40-py3-none-any.whl", hash = "sha256:4f123a2feac68f2a5f6f5c586f7c397d042f31d97a21cfcf21e264598e439c58", size = 11637, upload-time = "2024-12-04T18:34:02.533Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/b8/34590c9bea28d2edfa20728d06706eb985ae193dd3be0052f782961062a3/npc_session-0.1.41-py3-none-any.whl", hash = "sha256:c5bd0891b4a86dcef79bc2f777c2255a6f10364079b93667ca58ce36e8ac7f27", size = 11649, upload-time = "2026-02-22T07:22:25.755Z" },
 ]
 
 [[package]]
