@@ -11,6 +11,7 @@ import multiprocessing
 import multiprocessing.managers
 import multiprocessing.synchronize
 import pathlib
+import sqlite3
 import threading
 import time
 import warnings
@@ -23,13 +24,14 @@ import np_tools
 import npc_lims
 import npc_session
 import npc_sessions  # this is heavy, but has the logic for hdf5 -> session.json
+import platformdirs
 import tqdm
-from aind_data_schema.core.rig import Rig
-from np_codeocean.metadata import core as metadata_core
 from npc_lims.exceptions import NoSessionInfo
 
 import np_codeocean
 import np_codeocean.utils
+from np_codeocean.scripts import upload_dynamic_routing_ecephys
+
 
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -74,13 +76,14 @@ SESSION_FOLDER_DIRS = (
     ),
 )
 
-EXCLUDED_SUBJECT_IDS = (0, 366122, 555555, 000000, 598796, 603810, 599657)
+EXCLUDED_SUBJECT_IDS = (0, 366122, 555555, 000000, 598796, 603810, 599657,)
 TASK_HDF5_GLOB = "DynamicRouting1*.hdf5"
 RIG_IGNORE_PREFIXES = ("NP", "OG")
 
 DEFAULT_HPC_UPLOAD_JOB_EMAIL = "ben.hardcastle@alleninstitute.org"
 
 DEFAULT_DELAY_BETWEEN_UPLOADS = 40
+UPLOAD_STATUS_CACHE_FILENAME = "dynamic_routing_behavior_upload_status.sqlite"
 
 
 class SessionNotUploadedError(ValueError):
@@ -89,6 +92,90 @@ class SessionNotUploadedError(ValueError):
 
 class UploadLimitReachedError(RuntimeError):
     pass
+
+
+def get_upload_status_cache_path() -> pathlib.Path:
+    cache_path = (
+        platformdirs.user_data_path(
+            appname="np_codeocean",
+            appauthor="AllenInstitute",
+        )
+        / UPLOAD_STATUS_CACHE_FILENAME
+    )
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    return pathlib.Path(cache_path)
+
+
+def get_upload_status_cache_connection() -> sqlite3.Connection:
+    conn = sqlite3.connect(get_upload_status_cache_path(), timeout=30)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS uploaded_sessions (
+            session_id TEXT PRIMARY KEY,
+            task_source_name TEXT NOT NULL,
+            checked_at TEXT NOT NULL
+        )
+        """
+    )
+    return conn
+
+
+def cache_reports_session_uploaded(session_id: str) -> bool:
+    with contextlib.closing(get_upload_status_cache_connection()) as conn:
+        with conn:
+            return (
+                conn.execute(
+                    "SELECT 1 FROM uploaded_sessions WHERE session_id = ?",
+                    (session_id,),
+                ).fetchone()
+                is not None
+            )
+
+
+def cache_reports_sessions_uploaded(session_ids: tuple[str, ...]) -> set[str]:
+    if not session_ids:
+        return set()
+
+    uploaded_session_ids: set[str] = set()
+    chunk_size = 900
+    with contextlib.closing(get_upload_status_cache_connection()) as conn:
+        with conn:
+            for start in range(0, len(session_ids), chunk_size):
+                chunk = session_ids[start : start + chunk_size]
+                placeholders = ",".join("?" for _ in chunk)
+                uploaded_session_ids.update(
+                    row[0]
+                    for row in conn.execute(
+                        f"""
+                        SELECT session_id
+                        FROM uploaded_sessions
+                        WHERE session_id IN ({placeholders})
+                        """,
+                        chunk,
+                    )
+                )
+    return uploaded_session_ids
+
+
+def cache_session_uploaded_report(session_id: str, task_source_name: str) -> None:
+    with contextlib.closing(get_upload_status_cache_connection()) as conn:
+        with conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO uploaded_sessions (
+                    session_id,
+                    task_source_name,
+                    checked_at
+                )
+                VALUES (?, ?, ?)
+                """,
+                (
+                    session_id,
+                    task_source_name,
+                    datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                ),
+            )
 
 
 def reformat_rig_model_rig_id(rig_id: str, modification_date: datetime.date) -> str:
@@ -191,10 +278,19 @@ def upload(
         upload_root
         / f"{extracted_subject_id}_{npc_session.extract_isoformat_date(task_source.stem)}"
     )
+    session_id = task_source.stem
+
+    # The cache stores only positive npc_lims reports. Do not cache negative
+    # reports here: those sessions may be uploaded later by this script.
+    if not (force_cloud_sync or test) and cache_reports_session_uploaded(session_id):
+        raise SessionNotUploadedError(
+            f" {task_source.name} is already uploaded according to the local npc_lims cache. "
+            "Use --force-cloud-sync to re-upload."
+        )
 
     np_codeocean.utils.set_npc_lims_credentials()
     try:
-        session_info = npc_lims.get_session_info(task_source.stem)
+        session_info = npc_lims.get_session_info(session_id)
     except NoSessionInfo:
         raise SessionNotUploadedError(
             f"{task_source.name} not in Sam's spreadsheets (yet) - cannot deduce project etc."
@@ -204,6 +300,7 @@ def upload(
     if (
         not (force_cloud_sync or test) and session_info.is_uploaded
     ):  # note: session_info.is_uploaded doesnt work for uploads to dev service
+        cache_session_uploaded_report(session_id, task_source.name)
         raise SessionNotUploadedError(
             f" {task_source.name} is already uploaded. Use --force-cloud-sync to re-upload."
         )
@@ -218,7 +315,7 @@ def upload(
     # whether the folder exists on S3 or not
     force_cloud_sync = True
 
-    rig_name = ""
+
     rig_name = session_info.training_info.get("rig_name", "")
     if not rig_name:
         with h5py.File(task_source, "r") as file, contextlib.suppress(KeyError):
@@ -329,14 +426,28 @@ def upload_batch(
             batch_dir.rglob(TASK_HDF5_GLOB),
             key=lambda p: npc_session.extract_isoformat_date(p.name),  # type: ignore[return-value]
             reverse=not chronological_order,
-        )
+        ) # type: ignore[no-matching-overload]
     )  # to fix tqdm we need the length of files: len(futures_dict) doesn't work for some reason
+    if not (force_cloud_sync or test):
+        cached_uploaded_session_ids = cache_reports_sessions_uploaded(
+            tuple(task_source.stem for task_source in sorted_files)
+        )
+        if cached_uploaded_session_ids:
+            logger.info(
+                "Skipping %d batch job(s) already uploaded according to the local npc_lims cache",
+                len(cached_uploaded_session_ids),
+            )
+            sorted_files = tuple(
+                task_source
+                for task_source in sorted_files
+                if task_source.stem not in cached_uploaded_session_ids
+            )
     upload_count = 0
     batch_count = 0
     future_to_task_source: dict[concurrent.futures.Future, pathlib.Path] = {}
     with (
         multiprocessing.Manager() as manager,
-        concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor,
+        concurrent.futures.ProcessPoolExecutor(max_workers=1 if test else None) as executor,
     ):
         sessions_remaining = manager.Value("i", batch_limit or -1)
         """Counts down and stops at zero. Set to -1 for no limit"""
