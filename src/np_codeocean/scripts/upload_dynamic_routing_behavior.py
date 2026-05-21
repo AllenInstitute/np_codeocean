@@ -5,14 +5,8 @@ import concurrent.futures
 import contextlib
 import datetime
 import logging
-import logging.config
-import logging.handlers
-import multiprocessing
-import multiprocessing.managers
-import multiprocessing.synchronize
 import pathlib
 import sqlite3
-import threading
 import time
 import warnings
 from pathlib import Path
@@ -31,7 +25,6 @@ from npc_lims.exceptions import NoSessionInfo
 import np_codeocean
 import np_codeocean.utils
 from np_codeocean.scripts import upload_dynamic_routing_ecephys
-
 
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -240,8 +233,6 @@ def upload(
     dry_run: bool = False,
     hpc_upload_job_email: str = DEFAULT_HPC_UPLOAD_JOB_EMAIL,
     delay: int = DEFAULT_DELAY_BETWEEN_UPLOADS,
-    lock: threading.Lock | None = None,
-    stop_event: threading.Event | None = None,
 ) -> None:
     """
     Notes
@@ -251,10 +242,6 @@ def upload(
     """
     if debug:
         logger.setLevel(logging.DEBUG)
-
-    if stop_event and stop_event.is_set():
-        logger.debug("Stopping due to stop event")
-        return
 
     extracted_subject_id = npc_session.extract_subject(task_source.stem)
     if extracted_subject_id is None:
@@ -326,10 +313,6 @@ def upload(
             f"Not uploading {task_source} because rig_id starts with one of {RIG_IGNORE_PREFIXES!r}"
         )
 
-    if stop_event and stop_event.is_set():
-        logger.debug("Stopping due to stop event")
-        return
-
     logger.debug(f"Session upload directory: {session_dir}")
 
     # external systems start getting modified here.
@@ -360,18 +343,9 @@ def upload(
         else np_codeocean.utils.AIND_DATA_TRANSFER_SERVICE
     )
 
-    if stop_event and stop_event.is_set():
-        logger.debug("Stopping due to stop event")
-        return
-
-    if lock is not None:
-        with lock:
-            if stop_event and stop_event.is_set():
-                logger.debug("Stopping due to stop event")
-                return
-            if delay > 0:
-                logger.info(f"Pausing {delay} seconds before creating upload request")
-                time.sleep(delay)
+    if delay > 0:
+        logger.info(f"Pausing {delay} seconds before creating upload request")
+        time.sleep(delay)
 
     logger.info(f"Submitting {session_dir.name} to {upload_service_url}")
 
@@ -416,11 +390,6 @@ def upload_batch(
     if test:
         batch_limit = 3
 
-    logger.addHandler(
-        qh := logging.handlers.QueueHandler(queue := multiprocessing.Queue())
-    )
-    listener = logging.handlers.QueueListener(queue, qh)
-    listener.start()
     sorted_files = tuple(
         sorted(
             batch_dir.rglob(TASK_HDF5_GLOB),
@@ -445,14 +414,9 @@ def upload_batch(
     upload_count = 0
     batch_count = 0
     future_to_task_source: dict[concurrent.futures.Future, pathlib.Path] = {}
-    with (
-        multiprocessing.Manager() as manager,
-        concurrent.futures.ProcessPoolExecutor(max_workers=1 if test else None) as executor,
-    ):
-        sessions_remaining = manager.Value("i", batch_limit or -1)
-        """Counts down and stops at zero. Set to -1 for no limit"""
-        lock = manager.Lock()
-        stop_event = manager.Event()
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=1 if test else None
+    ) as executor:
         for task_source in sorted_files:
             future = executor.submit(
                 upload,
@@ -463,8 +427,6 @@ def upload_batch(
                 dry_run=dry_run,
                 hpc_upload_job_email=hpc_upload_job_email,
                 delay=delay,
-                lock=lock,
-                stop_event=stop_event,
             )
             future_to_task_source[future] = task_source
         with tqdm.tqdm(
@@ -494,17 +456,15 @@ def upload_batch(
                     batch_count += 1
                     if batch_limit is not None and batch_count >= batch_limit:
                         pbar.close()
-                        msg = f"Reached {batch_limit = }: stopping pending and ongoing tasks"
+                        msg = f"Reached {batch_limit = }: canceling pending tasks"
                         logger.info(msg)
                         print(msg)
-                        stop_event.set()
                         executor.shutdown(wait=True, cancel_futures=True)
                         break
             pbar.close()
     msg = f"Batch upload complete: {upload_count} session(s) uploaded"
     logger.info(msg)
     print(msg)
-    listener.stop()
 
 
 def parse_args() -> argparse.Namespace:
