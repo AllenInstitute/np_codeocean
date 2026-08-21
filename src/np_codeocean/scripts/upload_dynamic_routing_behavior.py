@@ -24,7 +24,6 @@ from npc_lims.exceptions import NoSessionInfo
 
 import np_codeocean
 import np_codeocean.utils
-from np_codeocean.scripts import upload_dynamic_routing_ecephys
 
 # Disable divide by zero or NaN warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -69,7 +68,15 @@ SESSION_FOLDER_DIRS = (
     ),
 )
 
-EXCLUDED_SUBJECT_IDS = (0, 366122, 555555, 000000, 598796, 603810, 599657,)
+EXCLUDED_SUBJECT_IDS = (
+    0,
+    366122,
+    555555,
+    000000,
+    598796,
+    603810,
+    599657,
+)
 TASK_HDF5_GLOB = "DynamicRouting1*.hdf5"
 RIG_IGNORE_PREFIXES = ("NP", "OG")
 
@@ -102,15 +109,13 @@ def get_upload_status_cache_path() -> pathlib.Path:
 def get_upload_status_cache_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(get_upload_status_cache_path(), timeout=30)
     conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS uploaded_sessions (
             session_id TEXT PRIMARY KEY,
             task_source_name TEXT NOT NULL,
             checked_at TEXT NOT NULL
         )
-        """
-    )
+        """)
     return conn
 
 
@@ -302,7 +307,6 @@ def upload(
     # whether the folder exists on S3 or not
     force_cloud_sync = True
 
-
     rig_name = session_info.training_info.get("rig_name", "")
     if not rig_name:
         with h5py.File(task_source, "r") as file, contextlib.suppress(KeyError):
@@ -395,7 +399,7 @@ def upload_batch(
             batch_dir.rglob(TASK_HDF5_GLOB),
             key=lambda p: npc_session.extract_isoformat_date(p.name),  # type: ignore[return-value]
             reverse=not chronological_order,
-        ) # type: ignore[no-matching-overload]
+        )  # type: ignore[no-matching-overload]
     )  # to fix tqdm we need the length of files: len(futures_dict) doesn't work for some reason
     if not (force_cloud_sync or test):
         cached_uploaded_session_ids = cache_reports_sessions_uploaded(
