@@ -51,7 +51,7 @@ upload_sessions = "np_codeocean.scripts.upload_sessions:main"
 [project.optional-dependencies]
 dynamicrouting = [
     "npc-lims>=0.1.154",
-    "npc-sessions[metadata]>=0.0.275",
+    "npc-sessions[metadata] @ git+https://github.com/AllenInstitute/npc_sessions.git@main",
     "aind-codeocean-pipeline-monitor[full]>=0.5.0",
 ]
 openscope = ["aind-metadata-mapper"]
