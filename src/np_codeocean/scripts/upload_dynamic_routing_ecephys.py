@@ -221,7 +221,7 @@ def main() -> None:
     )
     args = parse_args()
     kwargs = vars(args)
-    np_codeocean.utils.set_npc_lims_credentials()
+    # np_codeocean.utils.set_npc_lims_credentials()
     write_metadata_and_upload(**kwargs)
 
 

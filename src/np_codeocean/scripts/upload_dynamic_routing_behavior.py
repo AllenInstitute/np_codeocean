@@ -280,7 +280,7 @@ def upload(
             "Use --force-cloud-sync to re-upload."
         )
 
-    np_codeocean.utils.set_npc_lims_credentials()
+    # np_codeocean.utils.set_npc_lims_credentials()
     try:
         session_info = npc_lims.get_session_info(session_id)
     except NoSessionInfo:
