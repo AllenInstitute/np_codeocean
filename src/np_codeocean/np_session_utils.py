@@ -372,6 +372,12 @@ def upload_session(
         recording_dirs=recording_dirs,
         force_cloud_sync=force,
     )
+    h5_files = tuple(upload.session.npexp_path.glob("*.h5"))
+    if len(h5_files) > 1:
+        raise ValueError(
+            f"Not uploading {upload.session.npexp_path}: found "
+            f"{len(h5_files)} top-level .h5 files."
+        )
     if regenerate_symlinks and upload.root.exists():
         logger.debug(f"Removing existing {upload.root = }")
         shutil.rmtree(upload.root.as_posix(), ignore_errors=True)
